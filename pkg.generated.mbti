@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "Lfan-ke/moonctl"
+package "moonbitstack/moonctl"
 
 // Values
 pub fn deps(String, from? : String) -> Array[String]

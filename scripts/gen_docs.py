@@ -30,17 +30,17 @@ SECTIONS = [
      "A minimal .proto (proto3) parser and the moonrpc service-stub generator - "
      "parse_proto turns source into a Proto; generate_grpc emits message structs, "
      "@moonrpc.Method descriptors and a <Service>Server handler skeleton that "
-     "compiles against Lfan-ke/moonrpc."),
+     "compiles against moonbitstack/moonrpc."),
     ("model", "model.mbt", "ORM model codegen",
      "The moonorm model generator - generate_model turns a Spec's .api type "
      "blocks into a model struct, a @moonorm.Model with declared columns plus "
      "from_row / to_columns closures, a @moonorm.Table descriptor and an "
-     "up/down migration pair, all compiling against Lfan-ke/moonorm + moondb."),
+     "up/down migration pair, all compiling against moonbitstack/moonorm + moondb."),
     ("ddl", "ddl.mbt", "DDL to CRUD codegen",
      "The SQL DDL front end - parse_ddl reads CREATE TABLE statements (types, "
      "primary keys, NOT NULL, defaults) and generate_crud emits a moonorm model "
      "plus typed CRUD (find_by_id / insert / update / delete_by_id / all) with "
-     "parameterised SQL, compiling against Lfan-ke/moonorm + moondb."),
+     "parameterised SQL, compiling against moonbitstack/moonorm + moondb."),
     ("tag", "tag.mbt", "Struct tags",
      "What a field's back-tick tag says - Field::bind reads whether the value "
      "comes from the body, the query string, a URL segment or a header, "
@@ -266,7 +266,7 @@ def main():
              '<button class="theme-btn" id="theme">◐ toggle theme</button>'
              '<div class="side-foot">'
              '<a href="https://github.com/moonbitstack/moonctl/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/moonbitstack/moonctl/ci.yml?branch=master&label=CI&logo=github"></a>'
-             '<a href="https://mooncakes.io/docs/Lfan-ke/moonctl"><img alt="mooncakes" src="https://img.shields.io/badge/mooncakes-Lfan--ke%2Fmoonctl-1f6feb"></a>'
+             '<a href="https://mooncakes.io/docs/moonbitstack/moonctl"><img alt="mooncakes" src="https://img.shields.io/badge/mooncakes-Lfan--ke%2Fmoonctl-1f6feb"></a>'
              '</div></aside>']
 
     hero = ('<main><header class="hero"><h1>moonctl</h1>'
@@ -278,8 +278,8 @@ def main():
             '<img alt="tests" src="https://img.shields.io/badge/tests-2%20passing%20%C3%974%20backends-0ca678">'
             '<a href="https://github.com/moonbitstack/moonctl"><img alt="GitHub" src="https://img.shields.io/badge/GitHub-source-24292f?logo=github"></a>'
             '<img alt="license" src="https://img.shields.io/badge/license-Apache--2.0-6d5efc"></div>'
-            '<div class="install"><span class="prompt">$</span><code>moon add Lfan-ke/moonctl</code>'
-            '<button class="copy" data-copy="moon add Lfan-ke/moonctl">copy</button></div>'
+            '<div class="install"><span class="prompt">$</span><code>moon add moonbitstack/moonctl</code>'
+            '<button class="copy" data-copy="moon add moonbitstack/moonctl">copy</button></div>'
             '<div class="contract"><h2><span class="spark">&#10038;</span> The contract at a glance</h2>'
             '<pre>' + tint(CONTRACT) + '</pre></div></header>')
 
@@ -295,7 +295,7 @@ def main():
                         % (kind, kind, tint(sig), ('<p class="doc">%s</p>' % prose(doc)) if doc else ''))
         body.append('</section>')
     body.append('<footer>Generated from source <code>///</code> doc-comments · '
-                '<a href="https://mooncakes.io/docs/Lfan-ke/moonctl">mooncakes</a> · '
+                '<a href="https://mooncakes.io/docs/moonbitstack/moonctl">mooncakes</a> · '
                 '<a href="https://github.com/moonbitstack/moonctl">GitHub</a> · Apache-2.0 &#169; Leo Cheng</footer>')
     body.append('</main></div><script>' + JS + '</script></body></html>')
 

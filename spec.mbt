@@ -1182,8 +1182,8 @@ fn group_note(g : Group) -> String {
 ///|
 /// Generate compilable moonapi scaffolding from a spec: a MoonBit struct for
 /// every `type` block, a `build_app` that wires every route to its handler, plus
-/// a stub for each handler. The routing part depends only on `Lfan-ke/moonapi`
-/// and `Lfan-ke/moonasgi`; the emitted schemas are dependency-free.
+/// a stub for each handler. The routing part depends only on `moonbitstack/moonapi`
+/// and `moonbitstack/moonasgi`; the emitted schemas are dependency-free.
 ///
 /// Pass `template` to render the spec through the runtime template engine (see
 /// `generate_with`) instead of the built-in generator; omit it for the default

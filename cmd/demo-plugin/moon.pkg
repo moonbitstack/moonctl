@@ -2,7 +2,7 @@
 // as the {"files":[...]} reply on stdout. Native-only — it uses async stdio to read
 // its input and write its output.
 import {
-  "Lfan-ke/moonctl",
+  "moonbitstack/moonctl",
   "moonbitlang/async",
   "moonbitlang/async/stdio",
   "moonbitlang/core/json",

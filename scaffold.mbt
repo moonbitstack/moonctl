@@ -110,14 +110,17 @@ pub fn scaffold_api(name : String) -> Array[GenFile] {
     {
       path: name + "/moon.mod.json",
       content: mod_json(name, [
-        ("Lfan-ke/moonapi", "0.6.0"),
-        ("Lfan-ke/moonasgi", "0.1.0"),
+        ("moonbitstack/moonapi", "0.6.0"),
+        ("moonbitstack/moonasgi", "0.1.0"),
       ]),
     },
     { path: name + "/" + name + ".api", content: api, },
     {
       path: name + "/src/moon.pkg.json",
-      content: pkg_json(["Lfan-ke/moonapi", "Lfan-ke/moonasgi"], false),
+      content: pkg_json(
+        ["moonbitstack/moonapi", "moonbitstack/moonasgi"],
+        false,
+      ),
     },
     { path: name + "/src/app.mbt", content: app, },
     {
@@ -144,12 +147,12 @@ pub fn scaffold_rpc(name : String) -> Array[GenFile] {
   [
     {
       path: name + "/moon.mod.json",
-      content: mod_json(name, [("Lfan-ke/moonrpc", "0.6.0")]),
+      content: mod_json(name, [("moonbitstack/moonrpc", "0.6.0")]),
     },
     { path: name + "/" + name + ".proto", content: proto, },
     {
       path: name + "/src/moon.pkg.json",
-      content: pkg_json(["Lfan-ke/moonrpc"], false),
+      content: pkg_json(["moonbitstack/moonrpc"], false),
     },
     { path: name + "/src/service.mbt", content: stub, },
     {
@@ -177,14 +180,14 @@ pub fn scaffold_model(name : String) -> Array[GenFile] {
     {
       path: name + "/moon.mod.json",
       content: mod_json(name, [
-        ("Lfan-ke/moonorm", "0.6.1"),
-        ("Lfan-ke/moondb", "0.1.3"),
+        ("moonbitstack/moonorm", "0.6.1"),
+        ("moonbitstack/moondb", "0.1.3"),
       ]),
     },
     { path: name + "/schema.sql", content: sql, },
     {
       path: name + "/src/moon.pkg.json",
-      content: pkg_json(["Lfan-ke/moonorm", "Lfan-ke/moondb"], false),
+      content: pkg_json(["moonbitstack/moonorm", "moonbitstack/moondb"], false),
     },
     { path: name + "/src/model.mbt", content: model, },
     {

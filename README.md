@@ -6,9 +6,11 @@
 
 [![Check and Test](https://github.com/moonbitstack/moonctl/actions/workflows/ci.yml/badge.svg)](https://github.com/moonbitstack/moonctl/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
-[![mooncakes](https://img.shields.io/badge/mooncakes-Lfan--ke%2Fmoonctl-brightgreen)](https://mooncakes.io/docs/Lfan-ke/moonctl)
+[![mooncakes](https://img.shields.io/badge/mooncakes-Lfan--ke%2Fmoonctl-brightgreen)](https://mooncakes.io/docs/moonbitstack/moonctl)
 
 </div>
+
+> Moved on mooncakes from `Lfan-ke/moonctl` to `moonbitstack/moonctl`.
 
 `moonctl` parses a `.api` service spec and emits **compilable [`moonapi`](https://github.com/moonbitstack/moonapi) scaffolding** — the role `goctl` plays for Go. It's pure logic (parse → generate text), so it has no runtime dependencies and runs on every backend.
 

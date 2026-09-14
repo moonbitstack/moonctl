@@ -1,4 +1,4 @@
-name = "Lfan-ke/moonctl"
+name = "moonbitstack/moonctl"
 
 version = "0.7.1"
 
@@ -22,7 +22,7 @@ description = "moonctl (mctl) — a spec-driven code generator for MoonBit (← 
 
 import {
   "moonbitlang/async@0.20.3",
-  "Lfan-ke/moondb@0.1.6",
-  "Lfan-ke/moonsqlite@0.3.0",
-  "Lfan-ke/moonpostgres@0.4.0",
+  "moonbitstack/moondb@0.1.8",
+  "moonbitstack/moonsqlite@0.3.0",
+  "moonbitstack/moonpostgres@0.4.0",
 }

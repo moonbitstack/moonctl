@@ -4,7 +4,7 @@
 /// moongql code-first object type (mapping MoonBit scalars to GraphQL scalars, an
 /// `Array[T]` to a non-null list, a `Map[...]` to a JSON string), adds a `Query`
 /// root with a `<type>(id: ID!)` lookup per type, and emits a resolver stub per
-/// field. The output compiles against `Lfan-ke/moongql`; fill in the stub bodies.
+/// field. The output compiles against `moonbitstack/moongql`; fill in the stub bodies.
 ///
 ///     moon run examples/11-gql
 #coverage.skip

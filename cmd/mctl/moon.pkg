@@ -3,10 +3,10 @@
 // IO rides moonbitlang/async, so this executable is native-only; the library
 // itself stays dependency-free and all-backend.
 import {
-  "Lfan-ke/moonctl",
-  "Lfan-ke/moonctl/reflect",
-  "Lfan-ke/moonsqlite" @sqlite,
-  "Lfan-ke/moonpostgres" @pg,
+  "moonbitstack/moonctl",
+  "moonbitstack/moonctl/reflect",
+  "moonbitstack/moonsqlite" @sqlite,
+  "moonbitstack/moonpostgres" @pg,
   "moonbitlang/core/env",
   "moonbitlang/async",
   "moonbitlang/async/fs",

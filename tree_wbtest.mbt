@@ -158,7 +158,10 @@ test "the tree is a module, with an entry point and a config to start from" {
     true,
   )
   assert_eq(
-    contains(tree_at(tree, "moon.mod.json"), "\"Lfan-ke/moonapi\": \"0.6.0\""),
+    contains(
+      tree_at(tree, "moon.mod.json"),
+      "\"moonbitstack/moonapi\": \"0.6.0\"",
+    ),
     true,
   )
   assert_eq(contains(tree_at(tree, "moon.pkg.json"), "\"is-main\": true"), true)

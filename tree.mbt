@@ -129,15 +129,15 @@ pub fn generate_tree(
   let svc_pkg = mod_ + "/internal/svc"
   let handler_pkg = mod_ + "/internal/handler"
   let logic_pkg = mod_ + "/internal/logic"
-  let api = ("Lfan-ke/moonapi", "")
-  let asgi = ("Lfan-ke/moonasgi", "")
+  let api = ("moonbitstack/moonapi", "")
+  let asgi = ("moonbitstack/moonasgi", "")
 
   // The module itself.
   out.push({
     path: at(dir, "moon.mod.json"),
     content: mod_json(mod_, [
-      ("Lfan-ke/moonapi", "0.6.0"),
-      ("Lfan-ke/moonasgi", "0.1.0"),
+      ("moonbitstack/moonapi", "0.6.0"),
+      ("moonbitstack/moonasgi", "0.1.0"),
     ]),
     regen: Once,
   })

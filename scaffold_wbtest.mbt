@@ -14,10 +14,10 @@ test "scaffold_api emits a compilable moonapi project tree" {
   let files = scaffold_api("greet")
   assert_eq(files.length(), 5)
   let m = file_at(files, "greet/moon.mod.json")
-  assert_eq(contains(m, "\"Lfan-ke/moonapi\": \"0.6.0\""), true)
-  assert_eq(contains(m, "\"Lfan-ke/moonasgi\": \"0.1.0\""), true)
+  assert_eq(contains(m, "\"moonbitstack/moonapi\": \"0.6.0\""), true)
+  assert_eq(contains(m, "\"moonbitstack/moonasgi\": \"0.1.0\""), true)
   let pkg = file_at(files, "greet/src/moon.pkg.json")
-  assert_eq(contains(pkg, "Lfan-ke/moonapi"), true)
+  assert_eq(contains(pkg, "moonbitstack/moonapi"), true)
   let api = file_at(files, "greet/greet.api")
   assert_eq(contains(api, "service greet {"), true)
   let app = file_at(files, "greet/src/app.mbt")
@@ -33,7 +33,7 @@ test "scaffold_rpc emits a moonrpc project tree" {
   let files = scaffold_rpc("echo")
   assert_eq(files.length(), 5)
   assert_eq(
-    contains(file_at(files, "echo/moon.mod.json"), "\"Lfan-ke/moonrpc\""),
+    contains(file_at(files, "echo/moon.mod.json"), "\"moonbitstack/moonrpc\""),
     true,
   )
   let proto = file_at(files, "echo/echo.proto")
@@ -48,8 +48,8 @@ test "scaffold_model emits a moonorm project tree" {
   let files = scaffold_model("account")
   assert_eq(files.length(), 5)
   let m = file_at(files, "account/moon.mod.json")
-  assert_eq(contains(m, "\"Lfan-ke/moonorm\""), true)
-  assert_eq(contains(m, "\"Lfan-ke/moondb\""), true)
+  assert_eq(contains(m, "\"moonbitstack/moonorm\""), true)
+  assert_eq(contains(m, "\"moonbitstack/moondb\""), true)
   let sql = file_at(files, "account/schema.sql")
   assert_eq(contains(sql, "CREATE TABLE account"), true)
   let model = file_at(files, "account/src/model.mbt")

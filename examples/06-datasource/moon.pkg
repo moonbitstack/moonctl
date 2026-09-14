@@ -1,5 +1,5 @@
 import {
-  "Lfan-ke/moonctl",
+  "moonbitstack/moonctl",
 }
 
 pkgtype(kind: "executable")
