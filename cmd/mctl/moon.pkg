@@ -5,8 +5,8 @@
 import {
   "Lfan-ke/moonctl",
   "Lfan-ke/moonctl/reflect",
-  "Lfan-ke/moon-sqlite" @sqlite,
-  "Lfan-ke/moon-postgres" @pg,
+  "Lfan-ke/moonsqlite" @sqlite,
+  "Lfan-ke/moonpostgres" @pg,
   "moonbitlang/core/env",
   "moonbitlang/async",
   "moonbitlang/async/fs",

@@ -265,7 +265,7 @@ def main():
     side += ['</nav>'
              '<button class="theme-btn" id="theme">◐ toggle theme</button>'
              '<div class="side-foot">'
-             '<a href="https://github.com/Lfan-ke/moonctl/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/Lfan-ke/moonctl/ci.yml?branch=master&label=CI&logo=github"></a>'
+             '<a href="https://github.com/moonbitstack/moonctl/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/moonbitstack/moonctl/ci.yml?branch=master&label=CI&logo=github"></a>'
              '<a href="https://mooncakes.io/docs/Lfan-ke/moonctl"><img alt="mooncakes" src="https://img.shields.io/badge/mooncakes-Lfan--ke%2Fmoonctl-1f6feb"></a>'
              '</div></aside>']
 
@@ -274,9 +274,9 @@ def main():
             'compilable moonapi scaffolding, the way goctl does for Go. Pure logic, no '
             'runtime dependencies, verified to build against real moonapi.</p>'
             '<div class="badges">'
-            '<a href="https://github.com/Lfan-ke/moonctl/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/Lfan-ke/moonctl/ci.yml?branch=master&label=CI&logo=github"></a>'
+            '<a href="https://github.com/moonbitstack/moonctl/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/moonbitstack/moonctl/ci.yml?branch=master&label=CI&logo=github"></a>'
             '<img alt="tests" src="https://img.shields.io/badge/tests-2%20passing%20%C3%974%20backends-0ca678">'
-            '<a href="https://github.com/Lfan-ke/moonctl"><img alt="GitHub" src="https://img.shields.io/badge/GitHub-source-24292f?logo=github"></a>'
+            '<a href="https://github.com/moonbitstack/moonctl"><img alt="GitHub" src="https://img.shields.io/badge/GitHub-source-24292f?logo=github"></a>'
             '<img alt="license" src="https://img.shields.io/badge/license-Apache--2.0-6d5efc"></div>'
             '<div class="install"><span class="prompt">$</span><code>moon add Lfan-ke/moonctl</code>'
             '<button class="copy" data-copy="moon add Lfan-ke/moonctl">copy</button></div>'
@@ -296,7 +296,7 @@ def main():
         body.append('</section>')
     body.append('<footer>Generated from source <code>///</code> doc-comments · '
                 '<a href="https://mooncakes.io/docs/Lfan-ke/moonctl">mooncakes</a> · '
-                '<a href="https://github.com/Lfan-ke/moonctl">GitHub</a> · Apache-2.0 &#169; Leo Cheng</footer>')
+                '<a href="https://github.com/moonbitstack/moonctl">GitHub</a> · Apache-2.0 &#169; Leo Cheng</footer>')
     body.append('</main></div><script>' + JS + '</script></body></html>')
 
     out = ROOT / "docs" / "index.html"

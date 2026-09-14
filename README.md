@@ -4,13 +4,13 @@
 
 **A spec-driven code generator for MoonBit — `← goctl`.**
 
-[![Check and Test](https://github.com/Lfan-ke/moonctl/actions/workflows/ci.yml/badge.svg)](https://github.com/Lfan-ke/moonctl/actions/workflows/ci.yml)
+[![Check and Test](https://github.com/moonbitstack/moonctl/actions/workflows/ci.yml/badge.svg)](https://github.com/moonbitstack/moonctl/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
 [![mooncakes](https://img.shields.io/badge/mooncakes-Lfan--ke%2Fmoonctl-brightgreen)](https://mooncakes.io/docs/Lfan-ke/moonctl)
 
 </div>
 
-`moonctl` parses a `.api` service spec and emits **compilable [`moonapi`](https://github.com/Lfan-ke/moonapi) scaffolding** — the role `goctl` plays for Go. It's pure logic (parse → generate text), so it has no runtime dependencies and runs on every backend.
+`moonctl` parses a `.api` service spec and emits **compilable [`moonapi`](https://github.com/moonbitstack/moonapi) scaffolding** — the role `goctl` plays for Go. It's pure logic (parse → generate text), so it has no runtime dependencies and runs on every backend.
 
 ## From spec to code
 
@@ -220,7 +220,7 @@ $ mctl plugin    ./my-plugin greet.api     # run an external plugin over the par
 Like `goctl`, `mctl` is the code generator for the whole stack, not just the web
 tier. Two more front-ends feed the sibling libraries:
 
-- **`.proto` → [`moonrpc`](https://github.com/Lfan-ke/moonrpc)**: `parse_proto`
+- **`.proto` → [`moonrpc`](https://github.com/moonbitstack/moonrpc)**: `parse_proto`
   reads a proto3 file (`service` / `rpc` / `message`, including `stream`,
   `repeated`, and `map<K, V>`); `generate_grpc` emits a struct per `message`, a
   `@moonrpc.Method` descriptor per RPC (its gRPC `:path` is
@@ -228,7 +228,7 @@ tier. Two more front-ends feed the sibling libraries:
   (one synchronous-core handler per RPC, returning its reply or a gRPC
   `@moonrpc.Status`), and a `<service>_methods()` listing.
 
-- **`.api` `type` → [`moonorm`](https://github.com/Lfan-ke/moonorm)**:
+- **`.api` `type` → [`moonorm`](https://github.com/moonbitstack/moonorm)**:
   `generate_model` turns each storable `type` block into a model struct, a
   `<table>_model : @moonorm.Model[T]` (declared columns — an `id` column is the
   primary key — plus the `from_row` decoder and `to_columns` projection that

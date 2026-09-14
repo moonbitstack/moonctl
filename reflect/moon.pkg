@@ -8,6 +8,6 @@ supported_targets = "native"
 import {
   "Lfan-ke/moonctl",
   "Lfan-ke/moondb",
-  "Lfan-ke/moon-sqlite" @sqlite,
-  "Lfan-ke/moon-postgres" @pg,
+  "Lfan-ke/moonsqlite" @sqlite,
+  "Lfan-ke/moonpostgres" @pg,
 }
