@@ -54,7 +54,7 @@ test "the request carries goctl's four keys" {
   assert_eq(contains(req, "\"Style\": \"go_zero\""), true)
   assert_eq(contains(req, "\"Dir\": \"out\""), true)
   // and a plugin reads all four back
-  let back = plugin_from_json(@json.parse(req))
+  let back = plugin_from_json(@json.loads(req))
   assert_eq(back.api.service, "greet")
   assert_eq(back.api.routes.length(), 2)
   assert_eq(back.api_file_path, "spec/greet.api")
@@ -67,7 +67,7 @@ test "a request that names no style is read as the default one" {
   let req = plugin_request(parse(plugin_spec_src))
   // the request itself names the default, so a plugin reading the raw JSON sees one
   assert_eq(contains(req, "\"Style\": \"gozero\""), true)
-  let back = plugin_from_json(@json.parse(req))
+  let back = plugin_from_json(@json.loads(req))
   assert_eq(back.style, "gozero")
   assert_eq(back.api_file_path, "")
   assert_eq(back.dir, "")
@@ -78,7 +78,7 @@ test "a request that names no style is read as the default one" {
     "gozero",
   )
   // a plugin that wants nothing but the spec need not unwrap the envelope
-  let spec = spec_from_json(@json.parse(plugin_request(parse(plugin_spec_src))))
+  let spec = spec_from_json(@json.loads(plugin_request(parse(plugin_spec_src))))
   assert_eq(spec.service, "greet")
   assert_eq(spec.routes[0].handler, "ping")
   // and a bare spec still reads as one
@@ -116,7 +116,7 @@ test "an embedded block reaches the plugin" {
 
 ///|
 test "parse_gen_files accepts the {files:[...]} envelope" {
-  let j = @json.parse(
+  let j = @json.loads(
     (
       #|{"files": [
       #|  {"path": "a.mbt", "content": "let a = 1"},
@@ -133,7 +133,7 @@ test "parse_gen_files accepts the {files:[...]} envelope" {
 
 ///|
 test "parse_gen_files accepts a bare array and skips path-less entries" {
-  let j = @json.parse(
+  let j = @json.loads(
     (
       #|[
       #|  {"path": "x.txt", "content": "hi"},

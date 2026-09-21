@@ -22,6 +22,9 @@ pub(all) enum Regen {
 } derive(Eq)
 
 ///|
+pub extend Regen with Eq::{equal, not_equal}
+
+///|
 /// One file of a generated project tree: where it goes, what is in it, and whether
 /// regenerating the tree is allowed to overwrite it.
 pub(all) struct TreeFile {

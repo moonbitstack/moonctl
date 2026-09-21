@@ -69,7 +69,7 @@ fn jat(arr : Array[Json], i : Int) -> Map[String, Json] {
 ///|
 /// The document `src` generates, as its root object.
 fn document(src : String, version : DocVersion) -> Map[String, Json] raise {
-  match @json.parse(generate_doc(parse(src), version~)) {
+  match @json.loads(generate_doc(parse(src), version~)) {
     Object(m) => m
     _ => Map([])
   }
@@ -111,7 +111,7 @@ test "generated OpenAPI 3.1 parses and carries the expected paths" {
     #|}
   let spec = parse(src)
   let js = generate_doc(spec, version=OpenApi31, api_version="1.2.3")
-  let parsed = @json.parse(js)
+  let parsed = @json.loads(js)
   let root = match parsed {
     Object(m) => m
     _ => Map([])
@@ -165,7 +165,7 @@ test "Swagger 2.0 uses definitions and inline path-param type" {
     #|  id: int
     #|}
   let js = generate_doc(parse(src), version=Swagger20)
-  let root = match @json.parse(js) {
+  let root = match @json.loads(js) {
     Object(m) => m
     _ => Map([])
   }
@@ -196,7 +196,7 @@ test "component schema types: array items, map additionalProperties, $ref" {
     #|  id: int64
     #|}
   let js = generate_doc(parse(src), version=OpenApi30)
-  let root = match @json.parse(js) {
+  let root = match @json.loads(js) {
     Object(m) => m
     _ => Map([])
   }

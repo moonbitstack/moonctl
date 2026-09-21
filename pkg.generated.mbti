@@ -50,6 +50,8 @@ pub fn plugin_from_json(Json) -> Plugin
 
 pub fn plugin_request(Spec, api_file_path? : String, style? : String, dir? : String) -> String
 
+pub let port : Int
+
 pub fn proto_reserved_conflicts(ProtoMessage) -> Array[String]
 
 pub fn render(String, Value) -> String raise TemplateError
@@ -104,6 +106,8 @@ pub(all) enum Bind {
   Path
   Header
 } derive(Eq)
+pub fn Bind::equal(Self, Self) -> Bool
+pub fn Bind::not_equal(Self, Self) -> Bool
 
 type Case
 
@@ -130,6 +134,8 @@ pub(all) enum DocVersion {
   OpenApi30
   OpenApi31
 } derive(Eq)
+pub fn DocVersion::equal(Self, Self) -> Bool
+pub fn DocVersion::not_equal(Self, Self) -> Bool
 
 pub(all) struct Field {
   name : String
@@ -222,6 +228,8 @@ pub(all) struct Range {
   lo_inc : Bool
   hi_inc : Bool
 } derive(Eq)
+pub fn Range::equal(Self, Self) -> Bool
+pub fn Range::not_equal(Self, Self) -> Bool
 
 pub(all) struct ReflectedColumn {
   table : String
@@ -235,6 +243,8 @@ pub(all) enum Regen {
   Always
   Once
 } derive(Eq)
+pub fn Regen::equal(Self, Self) -> Bool
+pub fn Regen::not_equal(Self, Self) -> Bool
 
 pub(all) struct Route {
   verb : String

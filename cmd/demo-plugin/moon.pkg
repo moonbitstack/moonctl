@@ -5,7 +5,6 @@ import {
   "moonbitstack/moonctl",
   "moonbitlang/async",
   "moonbitlang/async/stdio",
-  "moonbitlang/core/json",
 }
 
 supported_targets = "+native"

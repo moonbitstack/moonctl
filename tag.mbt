@@ -17,6 +17,9 @@ pub(all) enum Bind {
 } derive(Eq)
 
 ///|
+pub extend Bind with Eq::{equal, not_equal}
+
+///|
 /// A `range=` constraint, e.g. `range=[1:120]` or `range=(0:]`. Each bound is
 /// written as the spec wrote it and is empty when that end is open; `lo_inc` /
 /// `hi_inc` say whether the bracket was inclusive (`[` `]`) or exclusive (`(` `)`).
@@ -26,6 +29,9 @@ pub(all) struct Range {
   lo_inc : Bool
   hi_inc : Bool
 } derive(Eq)
+
+///|
+pub extend Range with Eq::{equal, not_equal}
 
 ///|
 /// The binding key a tag carries and the body of its `"…"`, e.g. `path:"region"` →

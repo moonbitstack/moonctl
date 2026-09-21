@@ -1,6 +1,6 @@
 name = "moonbitstack/moonctl"
 
-version = "0.7.1"
+version = "0.8.0"
 
 readme = "README.md"
 
@@ -22,6 +22,7 @@ description = "moonctl (mctl) — a spec-driven code generator for MoonBit (← 
 
 import {
   "moonbitlang/async@0.20.3",
+  "moonbitstack/moonjson@0.3.0",
   "moonbitstack/moondb@0.1.8",
   "moonbitstack/moonsqlite@0.3.0",
   "moonbitstack/moonpostgres@0.4.0",

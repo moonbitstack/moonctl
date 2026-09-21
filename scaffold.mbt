@@ -239,48 +239,80 @@ pub fn scaffold_docker(name : String, port? : Int = 8080) -> Array[GenFile] {
 }
 
 ///|
-/// Scaffold a Kubernetes deployment for the service under `deploy/`: a `Deployment`
-/// (`replicas` pods of the `<name>` image, a container port, and a liveness probe on
-/// `/ping`) and a `Service` exposing it. goctl's `goctl kube deploy`.
+/// The port a scaffolded service listens on.
+///
+/// 12000, the one every server in this family defaults to: HTTP, WebSocket and
+/// h2c share it because one listener tells them apart, so a generated manifest
+/// and a generated configuration name the same number without anyone saying
+/// which they meant.
+pub let port : Int = 12000
+
+///|
+/// Scaffold a Kubernetes deployment for the service under `deploy/`: a
+/// `Deployment` (`replicas` pods of the `<name>` image, a container port, and a
+/// liveness probe on `/ping`) and a `Service` exposing it. goctl's
+/// `goctl kube deploy`.
+///
+/// The manifests are built as values and written by `moonjson/yaml`, not joined
+/// out of string fragments. A generator that joins fragments has the indentation
+/// in its string literals, where a missed space is invisible, and quotes nothing
+/// — so the first service name with a colon in it emits a file Kubernetes reads
+/// as something else.
 pub fn scaffold_kube(
   name : String,
-  port? : Int = 8080,
+  port? : Int = port,
   replicas? : Int = 2,
 ) -> Array[GenFile] {
-  let p = port.to_string()
-  let r = replicas.to_string()
-  let deployment = "apiVersion: apps/v1\n" +
-    "kind: Deployment\n" +
-    "metadata:\n  name: " +
-    name +
-    "\n  labels:\n    app: " +
-    name +
-    "\nspec:\n  replicas: " +
-    r +
-    "\n  selector:\n    matchLabels:\n      app: " +
-    name +
-    "\n  template:\n    metadata:\n      labels:\n        app: " +
-    name +
-    "\n    spec:\n      containers:\n        - name: " +
-    name +
-    "\n          image: " +
-    name +
-    ":latest\n          ports:\n            - containerPort: " +
-    p +
-    "\n          livenessProbe:\n            httpGet:\n              path: /ping\n              port: " +
-    p +
-    "\n            initialDelaySeconds: 5\n            periodSeconds: 10\n"
-  let service = "apiVersion: v1\n" +
-    "kind: Service\n" +
-    "metadata:\n  name: " +
-    name +
-    "\nspec:\n  selector:\n    app: " +
-    name +
-    "\n  ports:\n    - protocol: TCP\n      port: 80\n      targetPort: " +
-    p +
-    "\n  type: ClusterIP\n"
+  let labels = Json::object({ "app": Json::string(name) })
+  let deployment = Json::object({
+    "apiVersion": Json::string("apps/v1"),
+    "kind": Json::string("Deployment"),
+    "metadata": Json::object({ "name": Json::string(name), "labels": labels }),
+    "spec": Json::object({
+      "replicas": Json::number(replicas.to_double()),
+      "selector": Json::object({ "matchLabels": labels }),
+      "template": Json::object({
+        "metadata": Json::object({ "labels": labels }),
+        "spec": Json::object({
+          "containers": Json::array([
+            Json::object({
+              "name": Json::string(name),
+              "image": Json::string(name + ":latest"),
+              "ports": Json::array([
+                Json::object({ "containerPort": Json::number(port.to_double()) }),
+              ]),
+              "livenessProbe": Json::object({
+                "httpGet": Json::object({
+                  "path": Json::string("/ping"),
+                  "port": Json::number(port.to_double()),
+                }),
+                "initialDelaySeconds": Json::number(5),
+                "periodSeconds": Json::number(10),
+              }),
+            }),
+          ]),
+        }),
+      }),
+    }),
+  })
+  let service = Json::object({
+    "apiVersion": Json::string("v1"),
+    "kind": Json::string("Service"),
+    "metadata": Json::object({ "name": Json::string(name) }),
+    "spec": Json::object({
+      "selector": labels,
+      "ports": Json::array([
+        Json::object({
+          "protocol": Json::string("TCP"),
+          "port": Json::number(80),
+          "targetPort": Json::number(port.to_double()),
+        }),
+      ]),
+      "type": Json::string("ClusterIP"),
+    }),
+  })
   [
-    { path: "deploy/deployment.yaml", content: deployment, },
-    { path: "deploy/service.yaml", content: service, },
+    { path: "deploy/deployment.yaml", content: @yaml.dumps(deployment), },
+    { path: "deploy/service.yaml", content: @yaml.dumps(service), },
   ]
 }

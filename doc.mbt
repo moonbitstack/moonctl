@@ -9,6 +9,9 @@ pub(all) enum DocVersion {
 } derive(Eq)
 
 ///|
+pub extend DocVersion with Eq::{equal, not_equal}
+
+///|
 /// (root document key, version string) for a doc version.
 fn doc_version_field(v : DocVersion) -> (String, String) {
   match v {
@@ -559,7 +562,7 @@ pub fn generate_doc(
   title? : String = "",
   api_version? : String = "0.1.0",
 ) -> String {
-  openapi_document(spec, version~, title~, api_version~).stringify(indent=2)
+  @json.dumps(openapi_document(spec, version~, title~, api_version~), indent=2)
 }
 
 ///|
