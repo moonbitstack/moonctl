@@ -204,7 +204,7 @@ pub fn scaffold_model(name : String) -> Array[GenFile] {
 /// (a MoonBit build stage that produces the native binary, then a slim runtime
 /// stage that runs it) and a `.dockerignore`. `name` is the binary/image name,
 /// `port` the port the service listens on. goctl's `goctl docker`.
-pub fn scaffold_docker(name : String, port? : Int = 8080) -> Array[GenFile] {
+pub fn scaffold_docker(name : String, port? : Int = port) -> Array[GenFile] {
   let p = port.to_string()
   let dockerfile = "# syntax=docker/dockerfile:1\n" +
     "# Build stage: compile the native mctl-generated service.\n" +
