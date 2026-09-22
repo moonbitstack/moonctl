@@ -1,6 +1,6 @@
 // The `agent` generator: scaffold a moonkoog agent from a `.api` spec — each
 // service operation becomes an agent `Tool`, assembled into an `AIAgent`. goctl
-// has no agent target; this is the moon-heke suite extending mctl to scaffold its
+// has no agent target; this is the moonbitstack suite extending mctl to scaffold its
 // agent layer (moonkoog). The output compiles against `moonbitstack/moonkoog`.
 
 ///|

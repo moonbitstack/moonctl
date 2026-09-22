@@ -48,3 +48,39 @@ jobs:
       - name: lint (fmt is clean)
         run: |
           moon fmt && git diff --exit-code
+
+  scaffold:
+    # A scaffold is only as good as the versions it pins. Generate each kind of
+    # project and build it against them, so a pin that no longer compiles fails
+    # here rather than in the first project someone scaffolds.
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: install
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> $GITHUB_PATH
+
+      - name: build mctl
+        run: |
+          moon update
+          moon build --target native
+
+      - name: scaffold and build every kind
+        run: |
+          mctl="$PWD/_build/native/debug/build/cmd/mctl/mctl.exe"
+          work="$(mktemp -d)"
+          cd "$work"
+          "$mctl" api new demoapi
+          "$mctl" rpc new demorpc
+          "$mctl" model new demomodel
+          mkdir tree && cp demoapi/demoapi.api tree/
+          (cd tree && "$mctl" gen api demoapi.api)
+          for dir in demoapi demorpc demomodel tree; do
+            (cd "$dir" && moon check --target native --deny-warn && moon build --target native)
+          done

@@ -44,6 +44,8 @@ pub fn parse_lenient(String) -> Spec
 
 pub fn parse_proto(String) -> Proto
 
+pub let pins : Map[String, String]
+
 pub fn plugin_argv(String) -> (String, Array[String])
 
 pub fn plugin_from_json(Json) -> Plugin

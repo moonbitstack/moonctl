@@ -1,7 +1,7 @@
 // The `gql` generator: turn a `.api` spec's `type` blocks into a moongql
 // code-first schema plus resolver stubs, the GraphQL counterpart of the moonapi
 // (`generate`) and moonrpc (`generate_grpc`) generators. goctl has no GraphQL
-// target; this is the moon-heke suite extending mctl to scaffold the whole stack.
+// target; this is the moonbitstack suite extending mctl to scaffold the whole stack.
 // The output compiles against `moonbitstack/moongql`.
 
 ///|

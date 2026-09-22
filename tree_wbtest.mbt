@@ -59,26 +59,26 @@ test "a generated tree lays the service out the way goctl does" {
   inspect(
     paths(generate_tree(sample_spec())),
     content=(
-      #|moon.mod.json
-      #|moon.pkg.json
+      #|moon.mod
+      #|moon.pkg
       #|greet.mbt
       #|etc/greet.yaml
-      #|internal/config/moon.pkg.json
+      #|internal/config/moon.pkg
       #|internal/config/config.mbt
-      #|internal/svc/moon.pkg.json
+      #|internal/svc/moon.pkg
       #|internal/svc/servicecontext.mbt
-      #|internal/types/moon.pkg.json
+      #|internal/types/moon.pkg
       #|internal/types/types.mbt
-      #|internal/handler/moon.pkg.json
+      #|internal/handler/moon.pkg
       #|internal/handler/routes.mbt
-      #|internal/handler/user/moon.pkg.json
+      #|internal/handler/user/moon.pkg
       #|internal/handler/user/loginhandler.mbt
       #|internal/handler/getonehandler.mbt
-      #|internal/logic/moon.pkg.json
-      #|internal/logic/user/moon.pkg.json
+      #|internal/logic/moon.pkg
+      #|internal/logic/user/moon.pkg
       #|internal/logic/user/loginlogic.mbt
       #|internal/logic/getonelogic.mbt
-      #|internal/middleware/moon.pkg.json
+      #|internal/middleware/moon.pkg
       #|internal/middleware/logmiddleware.mbt
     ),
   )
@@ -109,8 +109,8 @@ test "a grouped route lives under its group, an ungrouped one beside the routes"
   // and the handler package that routes.mbt calls into is imported under that name
   assert_eq(
     contains(
-      tree_at(tree, "out/internal/handler/moon.pkg.json"),
-      "{ \"path\": \"greet/internal/handler/user\", \"alias\": \"user\" }",
+      tree_at(tree, "out/internal/handler/moon.pkg"),
+      "\"greet/internal/handler/user\" @user,",
     ),
     true,
   )
@@ -153,23 +153,24 @@ test "the types file carries the spec's schemas and the routes file the routes" 
 ///|
 test "the tree is a module, with an entry point and a config to start from" {
   let tree = generate_tree(sample_spec())
+  assert_eq(contains(tree_at(tree, "moon.mod"), "name = \"greet\""), true)
   assert_eq(
-    contains(tree_at(tree, "moon.mod.json"), "\"name\": \"greet\""),
+    contains(tree_at(tree, "moon.mod"), pinned("moonbitstack/moonapi")),
     true,
   )
-  assert_eq(
-    contains(
-      tree_at(tree, "moon.mod.json"),
-      "\"moonbitstack/moonapi\": \"0.6.0\"",
-    ),
-    true,
-  )
-  assert_eq(contains(tree_at(tree, "moon.pkg.json"), "\"is-main\": true"), true)
+  let main_pkg = tree_at(tree, "moon.pkg")
+  assert_eq(contains(main_pkg, "pkgtype(kind: \"executable\")"), true)
+  assert_eq(contains(main_pkg, "supported_targets = \"native\""), true)
   assert_eq(
     contains(tree_at(tree, "greet.mbt"), "@handler.register_handlers("),
     true,
   )
-  assert_eq(contains(tree_at(tree, "etc/greet.yaml"), "port: 8888"), true)
+  // The family's default port, in the file and in the code that stands in for it.
+  assert_eq(contains(tree_at(tree, "etc/greet.yaml"), "port: 12000"), true)
+  assert_eq(
+    contains(tree_at(tree, "internal/config/config.mbt"), "port? : Int = 12000"),
+    true,
+  )
   assert_eq(
     contains(
       tree_at(tree, "internal/config/config.mbt"),
@@ -237,23 +238,23 @@ test "every name the tree invents is spelled in the style, not just the handlers
   inspect(
     paths(generate_tree(worded_spec(), style=Style::parse("GoZero"))),
     content=(
-      #|moon.mod.json
-      #|moon.pkg.json
+      #|moon.mod
+      #|moon.pkg
       #|UserCenter.mbt
       #|etc/UserCenter.yaml
-      #|internal/config/moon.pkg.json
+      #|internal/config/moon.pkg
       #|internal/config/Config.mbt
-      #|internal/svc/moon.pkg.json
+      #|internal/svc/moon.pkg
       #|internal/svc/ServiceContext.mbt
-      #|internal/types/moon.pkg.json
+      #|internal/types/moon.pkg
       #|internal/types/Types.mbt
-      #|internal/handler/moon.pkg.json
+      #|internal/handler/moon.pkg
       #|internal/handler/Routes.mbt
-      #|internal/handler/OrderAdmin/moon.pkg.json
+      #|internal/handler/OrderAdmin/moon.pkg
       #|internal/handler/OrderAdmin/ListOrdersHandler.mbt
-      #|internal/logic/OrderAdmin/moon.pkg.json
+      #|internal/logic/OrderAdmin/moon.pkg
       #|internal/logic/OrderAdmin/ListOrdersLogic.mbt
-      #|internal/middleware/moon.pkg.json
+      #|internal/middleware/moon.pkg
       #|internal/middleware/AuditLogMiddleware.mbt
     ),
   )
@@ -261,8 +262,8 @@ test "every name the tree invents is spelled in the style, not just the handlers
   let tree = generate_tree(worded_spec(), style=Style::parse("goZero"))
   assert_eq(
     contains(
-      tree_at(tree, "internal/handler/moon.pkg.json"),
-      "{ \"path\": \"user_center/internal/handler/orderAdmin\", \"alias\": \"orderAdmin\" }",
+      tree_at(tree, "internal/handler/moon.pkg"),
+      "\"user_center/internal/handler/orderAdmin\" @orderAdmin,",
     ),
     true,
   )
@@ -300,29 +301,29 @@ test "a name two blocks ask for is written once, wherever the tree goes" {
   inspect(
     paths(generate_tree(spec, dir="out")),
     content=(
-      #|out/moon.mod.json
-      #|out/moon.pkg.json
+      #|out/moon.mod
+      #|out/moon.pkg
       #|out/greet.mbt
       #|out/etc/greet.yaml
-      #|out/internal/config/moon.pkg.json
+      #|out/internal/config/moon.pkg
       #|out/internal/config/config.mbt
-      #|out/internal/svc/moon.pkg.json
+      #|out/internal/svc/moon.pkg
       #|out/internal/svc/servicecontext.mbt
-      #|out/internal/types/moon.pkg.json
+      #|out/internal/types/moon.pkg
       #|out/internal/types/types.mbt
-      #|out/internal/handler/moon.pkg.json
+      #|out/internal/handler/moon.pkg
       #|out/internal/handler/routes.mbt
-      #|out/internal/handler/user/moon.pkg.json
-      #|out/internal/handler/admin/moon.pkg.json
+      #|out/internal/handler/user/moon.pkg
+      #|out/internal/handler/admin/moon.pkg
       #|out/internal/handler/user/loginhandler.mbt
       #|out/internal/handler/user/logouthandler.mbt
       #|out/internal/handler/admin/purgehandler.mbt
-      #|out/internal/logic/user/moon.pkg.json
-      #|out/internal/logic/admin/moon.pkg.json
+      #|out/internal/logic/user/moon.pkg
+      #|out/internal/logic/admin/moon.pkg
       #|out/internal/logic/user/loginlogic.mbt
       #|out/internal/logic/user/logoutlogic.mbt
       #|out/internal/logic/admin/purgelogic.mbt
-      #|out/internal/middleware/moon.pkg.json
+      #|out/internal/middleware/moon.pkg
       #|out/internal/middleware/logmiddleware.mbt
       #|out/internal/middleware/tracemiddleware.mbt
     ),
@@ -341,7 +342,7 @@ test "a service with no routes still gets a tree that compiles" {
     true,
   )
   // and a service that asked for no middleware gets no middleware package
-  assert_eq(tree_at(tree, "internal/middleware/moon.pkg.json"), "")
+  assert_eq(tree_at(tree, "internal/middleware/moon.pkg"), "")
 }
 
 ///|
@@ -357,7 +358,7 @@ test "a second generation refreshes the routes and types and touches nothing els
     gen_paths(tree_plan(generate_tree(sample_spec()), p => on_disk.contains(p))),
     content=(
       #|internal/types/types.mbt
-      #|internal/handler/moon.pkg.json
+      #|internal/handler/moon.pkg
       #|internal/handler/routes.mbt
     ),
   )

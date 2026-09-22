@@ -70,9 +70,13 @@ SECTIONS = [
      "produces. The schema reading itself lives in the native reflect sub-package."),
     ("scaffold", "scaffold.mbt", "Project scaffolds",
      "The nested project generators - scaffold_api / scaffold_rpc / scaffold_model "
-     "emit a whole runnable project tree (moon.mod.json, a sample spec, generated "
+     "emit a whole runnable project tree (moon.mod, a sample spec, generated "
      "source, README), and scaffold_docker / scaffold_kube emit a Dockerfile and a "
      "Kubernetes deployment, as goctl's api new / rpc new / docker / kube do."),
+    ("manifest", "manifest.mbt", "Generated manifests",
+     "The moon.mod and moon.pkg every generated project is written with, and pins - "
+     "the version of each library they import, which CI builds every kind of "
+     "scaffold against."),
     ("gql", "gql.mbt", "GraphQL generator",
      "A moongql schema and its resolver skeletons from the same .api spec the REST "
      "routes come from, so one description feeds both surfaces."),

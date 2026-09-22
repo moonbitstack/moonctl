@@ -122,15 +122,15 @@ A block can inline another by naming it on a line of its own (`Base`), and a nes
 
 ```console
 $ mctl gen api greet.api --dir out --style go_zero
-out/moon.mod.json                        out/internal/types/types.mbt
-out/moon.pkg.json                        out/internal/handler/routes.mbt
+out/moon.mod                             out/internal/types/types.mbt
+out/moon.pkg                             out/internal/handler/routes.mbt
 out/greet.mbt                            out/internal/handler/user/login_handler.mbt
 out/etc/greet.yaml                       out/internal/logic/user/login_logic.mbt
 out/internal/config/config.mbt           out/internal/middleware/log_middleware.mbt
 out/internal/svc/service_context.mbt
 ```
 
-A grouped route's handler and logic go under the group's own directory, an ungrouped one's sit beside the routes, and every directory gets the `moon.pkg.json` that makes it a MoonBit package. `--flat` writes the single `<file>.mbt` earlier versions did.
+A grouped route's handler and logic go under the group's own directory, an ungrouped one's sit beside the routes, and every directory gets the `moon.pkg` that makes it a MoonBit package. `--flat` writes the single `<file>.mbt` earlier versions did.
 
 **Run it again and your code survives.** Only the two files moonctl owns — `internal/types/types.mbt` and `internal/handler/routes.mbt`, both of which must follow the spec — are rewritten. Everything else is written once and then left alone, because that is where the handler and logic bodies you filled in live. A route added to the spec since the last run still gets its stubs; the ones already on disk are not touched.
 
@@ -298,12 +298,17 @@ Like goctl's `api new` / `rpc new` / `docker` / `kube`, `mctl` scaffolds whole n
 project trees, not just single files:
 
 ```console
-$ mctl api  new  blog        # blog/{moon.mod.json, blog.api, src/{moon.pkg.json, app.mbt}, README.md}
-$ mctl rpc  new  echo        # echo/{moon.mod.json, echo.proto, src/{moon.pkg.json, service.mbt}, README.md}
-$ mctl model new account     # account/{moon.mod.json, schema.sql, src/{moon.pkg.json, model.mbt}, README.md}
+$ mctl api  new  blog        # blog/{moon.mod, blog.api, src/{moon.pkg, app.mbt}, README.md}
+$ mctl rpc  new  echo        # echo/{moon.mod, echo.proto, src/{moon.pkg, service.mbt}, README.md}
+$ mctl model new account     # account/{moon.mod, schema.sql, src/{moon.pkg, model.mbt}, README.md}
 $ mctl docker    greet       # Dockerfile (two-stage native build) + .dockerignore
 $ mctl kube      greet       # deploy/deployment.yaml + deploy/service.yaml
 ```
+
+Every generated `moon.mod` imports the libraries at the versions in `pins`, and CI
+scaffolds each kind of project and builds it against them on every push. A
+generated project is promised to compile with those versions; one that wants a
+later release edits its own `moon.mod`.
 
 The `api`, `rpc` and `model` skeletons emit their source through the same built-in
 generators the `gen` commands use, seeded from a sample spec, so a fresh scaffold

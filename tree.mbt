@@ -62,36 +62,6 @@ fn uniq(xs : Array[String]) -> Array[String] {
 }
 
 ///|
-/// A `moon.pkg.json` importing `entries` — each a `(path, alias)` pair, where an
-/// empty alias leaves the path's last segment as the name — marked as the module's
-/// executable when `main_`.
-fn pkg_manifest(
-  entries : Array[(String, String)],
-  main_? : Bool = false,
-) -> String {
-  let lines : Array[String] = []
-  for e in entries {
-    lines.push(
-      if e.1 == "" {
-        "    " + quote(e.0)
-      } else {
-        "    { \"path\": " + quote(e.0) + ", \"alias\": " + quote(e.1) + " }"
-      },
-    )
-  }
-  let body = if lines.length() == 0 {
-    "[]"
-  } else {
-    "[\n" + join_commas(lines) + "\n  ]"
-  }
-  let mut out = "{\n  \"import\": " + body
-  if main_ {
-    out = out + ",\n  \"is-main\": true,\n  \"supported-targets\": [\"native\"]"
-  }
-  out + "\n}\n"
-}
-
-///|
 /// The directory a route's handler and logic live in — its group, spelled in the
 /// style — or "" for a route declared outside any `@server` block.
 fn route_dir(r : Route, style : Style) -> String {
@@ -103,11 +73,11 @@ fn route_dir(r : Route, style : Style) -> String {
 
 ///|
 /// Generate the layered project tree goctl writes, in MoonBit: the service entry
-/// point and its `moon.mod.json`, `etc/<service>.yaml`, `internal/config`,
+/// point and its `moon.mod`, `etc/<service>.yaml`, `internal/config`,
 /// `internal/svc`, `internal/types`, `internal/handler` (the generated routes plus a
 /// stub per handler, under `internal/handler/<group>/` for a grouped route),
 /// `internal/logic`, `internal/middleware` for every middleware an `@server` block
-/// named, and a `moon.pkg.json` for each of those packages.
+/// named, and a `moon.pkg` for each of those packages.
 ///
 /// `style` (default `gozero`) names the files and the handler, logic and middleware
 /// entry points inside them. Names the spec itself chose — the `type` blocks and
@@ -137,16 +107,13 @@ pub fn generate_tree(
 
   // The module itself.
   out.push({
-    path: at(dir, "moon.mod.json"),
-    content: mod_json(mod_, [
-      ("moonbitstack/moonapi", "0.6.0"),
-      ("moonbitstack/moonasgi", "0.1.0"),
-    ]),
+    path: at(dir, "moon.mod"),
+    content: mod_file(mod_, ["moonbitstack/moonapi", "moonbitstack/moonasgi"]),
     regen: Once,
   })
   out.push({
-    path: at(dir, "moon.pkg.json"),
-    content: pkg_manifest(
+    path: at(dir, "moon.pkg"),
+    content: pkg_file(
       [api, (config_pkg, ""), (svc_pkg, ""), (handler_pkg, "")],
       main_=true,
     ),
@@ -165,14 +132,18 @@ pub fn generate_tree(
   // etc/<service>.yaml — the configuration the entry point reads.
   out.push({
     path: at(dir, "etc/" + svc_file + ".yaml"),
-    content: "name: " + spec.service + "\nhost: 0.0.0.0\nport: 8888\n",
+    content: "name: " +
+    spec.service +
+    "\nhost: 0.0.0.0\nport: " +
+    port.to_string() +
+    "\n",
     regen: Once,
   })
 
   // internal/config
   out.push({
-    path: at(dir, "internal/config/moon.pkg.json"),
-    content: pkg_manifest([]),
+    path: at(dir, "internal/config/moon.pkg"),
+    content: pkg_file([]),
     regen: Once,
   })
   out.push({
@@ -183,14 +154,16 @@ pub fn generate_tree(
     svc_file +
     ".yaml`.\npub(all) struct Config {\n  host : String\n  port : Int\n}\n\n///|\n/// The configuration `etc/" +
     svc_file +
-    ".yaml` ships with.\npub fn Config::new(host~ : String = \"0.0.0.0\", port~ : Int = 8888) -> Config {\n  { host, port }\n}\n",
+    ".yaml` ships with.\npub fn Config::new(host? : String = \"0.0.0.0\", port? : Int = " +
+    port.to_string() +
+    ") -> Config {\n  { host, port }\n}\n",
     regen: Once,
   })
 
   // internal/svc
   out.push({
-    path: at(dir, "internal/svc/moon.pkg.json"),
-    content: pkg_manifest([(config_pkg, "")]),
+    path: at(dir, "internal/svc/moon.pkg"),
+    content: pkg_file([(config_pkg, "")]),
     regen: Once,
   })
   out.push({
@@ -201,8 +174,8 @@ pub fn generate_tree(
 
   // internal/types — the spec's schemas, rewritten on every run.
   out.push({
-    path: at(dir, "internal/types/moon.pkg.json"),
-    content: pkg_manifest([]),
+    path: at(dir, "internal/types/moon.pkg"),
+    content: pkg_file([]),
     regen: Once,
   })
   out.push({
@@ -235,8 +208,8 @@ pub fn generate_tree(
     routes_imports.push((handler_pkg + "/" + d, d))
   }
   out.push({
-    path: at(dir, "internal/handler/moon.pkg.json"),
-    content: pkg_manifest(routes_imports),
+    path: at(dir, "internal/handler/moon.pkg"),
+    content: pkg_file(routes_imports),
     regen: Always,
   })
   out.push({
@@ -246,8 +219,8 @@ pub fn generate_tree(
   })
   for d in group_dirs {
     out.push({
-      path: at(dir, "internal/handler/" + d + "/moon.pkg.json"),
-      content: pkg_manifest([
+      path: at(dir, "internal/handler/" + d + "/moon.pkg"),
+      content: pkg_file([
         api,
         asgi,
         (svc_pkg, ""),
@@ -281,8 +254,8 @@ pub fn generate_tree(
   }
   for d in logic_dirs {
     out.push({
-      path: at(dir, at("internal/logic", at(d, "moon.pkg.json"))),
-      content: pkg_manifest([api, asgi, (svc_pkg, "")]),
+      path: at(dir, at("internal/logic", at(d, "moon.pkg"))),
+      content: pkg_file([api, asgi, (svc_pkg, "")]),
       regen: Once,
     })
   }
@@ -316,8 +289,8 @@ pub fn generate_tree(
   let middleware = uniq(names)
   if middleware.length() > 0 {
     out.push({
-      path: at(dir, "internal/middleware/moon.pkg.json"),
-      content: pkg_manifest([api, asgi]),
+      path: at(dir, "internal/middleware/moon.pkg"),
+      content: pkg_file([api, asgi]),
       regen: Once,
     })
   }

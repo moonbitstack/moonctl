@@ -45,60 +45,7 @@ fn sample_sql(name : String) -> String {
 }
 
 ///|
-/// A `moon.mod.json` for a scaffolded project with the given dependency map (each
-/// entry a `"pkg": "version"` line).
-fn mod_json(name : String, deps : Array[(String, String)]) -> String {
-  let dep_lines : Array[String] = []
-  for d in deps {
-    dep_lines.push("    " + quote(d.0) + ": " + quote(d.1))
-  }
-  let deps_body = if dep_lines.length() == 0 {
-    "{}"
-  } else {
-    "{\n" + join_commas(dep_lines) + "\n  }"
-  }
-  "{\n  \"name\": " +
-  quote(name) +
-  ",\n  \"version\": \"0.1.0\",\n  \"deps\": " +
-  deps_body +
-  "\n}\n"
-}
-
-///|
-/// A `src/moon.pkg.json` importing the given packages, and marked native+executable
-/// when `executable` (a runnable service needs the async server, which is native).
-fn pkg_json(imports : Array[String], executable : Bool) -> String {
-  let import_lines : Array[String] = []
-  for im in imports {
-    import_lines.push("    " + quote(im))
-  }
-  let imports_body = if import_lines.length() == 0 {
-    "[]"
-  } else {
-    "[\n" + join_commas(import_lines) + "\n  ]"
-  }
-  let mut out = "{\n  \"import\": " + imports_body
-  if executable {
-    out = out + ",\n  \"is-main\": true,\n  \"supported-targets\": [\"native\"]"
-  }
-  out + "\n}\n"
-}
-
-///|
-/// Join lines with `,\n` — the JSON-array/object element separator.
-fn join_commas(parts : Array[String]) -> String {
-  let mut out = ""
-  for i = 0; i < parts.length(); i = i + 1 {
-    if i > 0 {
-      out = out + ",\n"
-    }
-    out = out + parts[i]
-  }
-  out
-}
-
-///|
-/// Scaffold a runnable moonapi service project under `<name>/`: a `moon.mod.json`
+/// Scaffold a runnable moonapi service project under `<name>/`: a `moon.mod`
 /// (depending on the published `moonapi` + `moonasgi`), a sample `<name>.api` spec,
 /// its generated routes+handlers in `src/app.mbt` (through the same `generate` the
 /// `gen api` command uses, so it compiles), and a README. This is goctl's
@@ -108,19 +55,16 @@ pub fn scaffold_api(name : String) -> Array[GenFile] {
   let app = generate_builtin(parse_lenient(api))
   [
     {
-      path: name + "/moon.mod.json",
-      content: mod_json(name, [
-        ("moonbitstack/moonapi", "0.6.0"),
-        ("moonbitstack/moonasgi", "0.1.0"),
-      ]),
+      path: name + "/moon.mod",
+      content: mod_file(name, ["moonbitstack/moonapi", "moonbitstack/moonasgi"]),
     },
     { path: name + "/" + name + ".api", content: api, },
     {
-      path: name + "/src/moon.pkg.json",
-      content: pkg_json(
-        ["moonbitstack/moonapi", "moonbitstack/moonasgi"],
-        false,
-      ),
+      path: name + "/src/moon.pkg",
+      content: pkg_file([
+        ("moonbitstack/moonapi", ""),
+        ("moonbitstack/moonasgi", ""),
+      ]),
     },
     { path: name + "/src/app.mbt", content: app, },
     {
@@ -137,7 +81,7 @@ pub fn scaffold_api(name : String) -> Array[GenFile] {
 }
 
 ///|
-/// Scaffold a moonrpc service project under `<name>/`: a `moon.mod.json` (depending
+/// Scaffold a moonrpc service project under `<name>/`: a `moon.mod` (depending
 /// on the published `moonrpc`), a sample `<name>.proto`, its generated service stub
 /// in `src/service.mbt` (through the same `generate_grpc` as `gen proto`), and a
 /// README. goctl's `goctl rpc new`.
@@ -146,13 +90,13 @@ pub fn scaffold_rpc(name : String) -> Array[GenFile] {
   let stub = generate_grpc(parse_proto(proto))
   [
     {
-      path: name + "/moon.mod.json",
-      content: mod_json(name, [("moonbitstack/moonrpc", "0.6.0")]),
+      path: name + "/moon.mod",
+      content: mod_file(name, ["moonbitstack/moonrpc"]),
     },
     { path: name + "/" + name + ".proto", content: proto, },
     {
-      path: name + "/src/moon.pkg.json",
-      content: pkg_json(["moonbitstack/moonrpc"], false),
+      path: name + "/src/moon.pkg",
+      content: pkg_file([("moonbitstack/moonrpc", "")]),
     },
     { path: name + "/src/service.mbt", content: stub, },
     {
@@ -169,7 +113,7 @@ pub fn scaffold_rpc(name : String) -> Array[GenFile] {
 }
 
 ///|
-/// Scaffold a moonorm data-layer project under `<name>/`: a `moon.mod.json`
+/// Scaffold a moonorm data-layer project under `<name>/`: a `moon.mod`
 /// (depending on the published `moonorm` + `moondb`), a sample `schema.sql`, its
 /// generated models + CRUD in `src/model.mbt` (through the same
 /// `generate_crud_from_ddl` as `gen crud`), and a README. goctl's `goctl model … new`.
@@ -178,16 +122,16 @@ pub fn scaffold_model(name : String) -> Array[GenFile] {
   let model = generate_crud_from_ddl(sql)
   [
     {
-      path: name + "/moon.mod.json",
-      content: mod_json(name, [
-        ("moonbitstack/moonorm", "0.6.1"),
-        ("moonbitstack/moondb", "0.1.3"),
-      ]),
+      path: name + "/moon.mod",
+      content: mod_file(name, ["moonbitstack/moonorm", "moonbitstack/moondb"]),
     },
     { path: name + "/schema.sql", content: sql, },
     {
-      path: name + "/src/moon.pkg.json",
-      content: pkg_json(["moonbitstack/moonorm", "moonbitstack/moondb"], false),
+      path: name + "/src/moon.pkg",
+      content: pkg_file([
+        ("moonbitstack/moonorm", ""),
+        ("moonbitstack/moondb", ""),
+      ]),
     },
     { path: name + "/src/model.mbt", content: model, },
     {

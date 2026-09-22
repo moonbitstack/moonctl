@@ -1,5 +1,5 @@
 ///|
-/// The `agent` generator — the moon-heke suite's extension past goctl. Where
+/// The `agent` generator — the moonbitstack suite's extension past goctl. Where
 /// `generate` scaffolds a moonapi web tier and `generate_grpc` a moonrpc service,
 /// `generate_agent` turns each `.api` route into a moonkoog `Tool` (its descriptor
 /// advertises the operation, its `execute_raw` a stub) and assembles them into a
