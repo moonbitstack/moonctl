@@ -253,7 +253,7 @@ pub let port : Int = 12000
 /// liveness probe on `/ping`) and a `Service` exposing it. goctl's
 /// `goctl kube deploy`.
 ///
-/// The manifests are built as values and written by `moonjson/yaml`, not joined
+/// The manifests are built as values and written by `moonyaml`, not joined
 /// out of string fragments. A generator that joins fragments has the indentation
 /// in its string literals, where a missed space is invisible, and quotes nothing
 /// — so the first service name with a colon in it emits a file Kubernetes reads
@@ -312,7 +312,7 @@ pub fn scaffold_kube(
     }),
   })
   [
-    { path: "deploy/deployment.yaml", content: @yaml.dumps(deployment), },
-    { path: "deploy/service.yaml", content: @yaml.dumps(service), },
+    { path: "deploy/deployment.yaml", content: @moonyaml.dumps(deployment), },
+    { path: "deploy/service.yaml", content: @moonyaml.dumps(service), },
   ]
 }

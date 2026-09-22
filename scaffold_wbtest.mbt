@@ -96,7 +96,7 @@ test "a name that would have broken a string-joining generator" {
   // The name is quoted, so it stays one value.
   assert_eq(contains(dep, "\"a: b\""), true)
   // And the document still reads back as the document that was built.
-  let back = @yaml.loads(dep[:])
+  let back = @moonyaml.loads(dep[:])
   let meta = match back {
     Object(members) => members.get("metadata")
     _ => None
@@ -140,7 +140,7 @@ fn down(doc : Json, path : ArrayView[String]) -> Json? {
 /// hand-joined string was never checked against.
 test "the generated manifests are documents" {
   let files = scaffold_kube("greet")
-  let dep = @yaml.loads(file_at(files, "deploy/deployment.yaml")[:])
+  let dep = @moonyaml.loads(file_at(files, "deploy/deployment.yaml")[:])
   assert_eq(down(dep, ["spec", "replicas"][:]), Some(Json::number(2)))
   assert_eq(
     down(
@@ -151,7 +151,7 @@ test "the generated manifests are documents" {
     ),
     Some(Json::number(port.to_double())),
   )
-  let svc = @yaml.loads(file_at(files, "deploy/service.yaml")[:])
+  let svc = @moonyaml.loads(file_at(files, "deploy/service.yaml")[:])
   assert_eq(
     down(svc, ["spec", "ports", "0", "targetPort"][:]),
     Some(Json::number(port.to_double())),

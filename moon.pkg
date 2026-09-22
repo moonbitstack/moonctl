@@ -2,7 +2,7 @@
 // a .api spec and emits moonapi / moonorm / moonrpc scaffolding (and an OpenAPI
 // document) as text, so it has no runtime deps and runs on every backend.
 import {
-  "moonbitstack/moonjson/yaml",
+  "moonbitstack/moonyaml",
   "moonbitstack/moonjson/json",
   "moonbitlang/core/string",
 }
