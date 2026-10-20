@@ -148,7 +148,7 @@ pub fn scaffold_model(name : String) -> Array[GenFile] {
 /// (a MoonBit build stage that produces the native binary, then a slim runtime
 /// stage that runs it) and a `.dockerignore`. `name` is the binary/image name,
 /// `port` the port the service listens on. goctl's `goctl docker`.
-pub fn scaffold_docker(name : String, port? : Int = port) -> Array[GenFile] {
+pub fn scaffold_docker(name : String, port~ : Int32 = port) -> Array[GenFile] {
   let p = port.to_string()
   let dockerfile = "# syntax=docker/dockerfile:1\n" +
     "# Build stage: compile the native mctl-generated service.\n" +
@@ -189,7 +189,7 @@ pub fn scaffold_docker(name : String, port? : Int = port) -> Array[GenFile] {
 /// h2c share it because one listener tells them apart, so a generated manifest
 /// and a generated configuration name the same number without anyone saying
 /// which they meant.
-pub let port : Int = 12000
+pub let port : Int32 = 12000
 
 ///|
 /// Scaffold a Kubernetes deployment for the service under `deploy/`: a
@@ -204,8 +204,8 @@ pub let port : Int = 12000
 /// as something else.
 pub fn scaffold_kube(
   name : String,
-  port? : Int = port,
-  replicas? : Int = 2,
+  port~ : Int32 = port,
+  replicas~ : Int32 = 2,
 ) -> Array[GenFile] {
   let labels = Json::object({ "app": Json::string(name) })
   let deployment = Json::object({

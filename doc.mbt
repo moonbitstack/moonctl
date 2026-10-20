@@ -63,7 +63,7 @@ fn openapi_path(path : String) -> String {
 /// The top-level `", "` in a `Map[K, V]` type spelling, tracking `[` `]` depth so a
 /// nested `Map[Int, Array[String]]` splits on its own comma, not an inner one.
 /// Returns the index of the comma, or `-1` if there is none at depth 0.
-fn top_comma(s : String) -> Int {
+fn top_comma(s : String) -> Int32 {
   let n = s.length()
   let mut depth = 0
   for i = 0; i < n; i = i + 1 {
@@ -99,10 +99,10 @@ fn type_schema(type_ : String, v : DocVersion) -> Json {
   if starts_with(t, "Array[") && t[t.length() - 1] == ']' {
     let inner = t[6:t.length() - 1].to_owned()
     let schema : Map[String, Json] = Map([
-      ("type", "array".to_json()),
+      ("type", Json("array")),
       ("items", type_schema(inner, v)),
     ])
-    return schema.to_json()
+    return Json(schema)
   }
   if starts_with(t, "Map[") && t[t.length() - 1] == ']' {
     let body = t[4:t.length() - 1].to_owned()
@@ -113,36 +113,41 @@ fn type_schema(type_ : String, v : DocVersion) -> Json {
       "String"
     }
     let schema : Map[String, Json] = Map([
-      ("type", "object".to_json()),
+      ("type", Json("object")),
       ("additionalProperties", type_schema(value, v)),
     ])
-    return schema.to_json()
+    return Json(schema)
   }
   match t {
-    "String" =>
-      (Map([("type", "string".to_json())]) : Map[String, Json]).to_json()
-    "Bool" =>
-      (Map([("type", "boolean".to_json())]) : Map[String, Json]).to_json()
+    "String" => Json((Map([("type", Json("string"))]) : Map[String, Json]))
+    "Bool" => Json((Map([("type", Json("boolean"))]) : Map[String, Json]))
     "Int" | "UInt" =>
-      (
-        Map([("type", "integer".to_json()), ("format", "int32".to_json())]) :
-        Map[String, Json]).to_json()
+      Json(
+        (
+          Map([("type", Json("integer")), ("format", Json("int32"))]) :
+          Map[String, Json]),
+      )
     "Int64" | "UInt64" =>
-      (
-        Map([("type", "integer".to_json()), ("format", "int64".to_json())]) :
-        Map[String, Json]).to_json()
+      Json(
+        (
+          Map([("type", Json("integer")), ("format", Json("int64"))]) :
+          Map[String, Json]),
+      )
     "Double" =>
-      (
-        Map([("type", "number".to_json()), ("format", "double".to_json())]) :
-        Map[String, Json]).to_json()
+      Json(
+        (
+          Map([("type", Json("number")), ("format", Json("double"))]) :
+          Map[String, Json]),
+      )
     "Float" =>
-      (
-        Map([("type", "number".to_json()), ("format", "float".to_json())]) :
-        Map[String, Json]).to_json()
+      Json(
+        (
+          Map([("type", Json("number")), ("format", Json("float"))]) :
+          Map[String, Json]),
+      )
     "Byte" | "Bytes" =>
-      (Map([("type", "string".to_json())]) : Map[String, Json]).to_json()
-    _ =>
-      (Map([("$ref", (ref_prefix(v) + t).to_json())]) : Map[String, Json]).to_json()
+      Json((Map([("type", Json("string"))]) : Map[String, Json]))
+    _ => Json((Map([("$ref", Json(ref_prefix(v) + t))]) : Map[String, Json]))
   }
 }
 
@@ -157,9 +162,9 @@ fn param_object(
   v : DocVersion,
 ) -> Json {
   let param : Map[String, Json] = Map([
-    ("name", name.to_json()),
-    ("in", in_.to_json()),
-    ("required", required.to_json()),
+    ("name", Json(name)),
+    ("in", Json(in_)),
+    ("required", Json(required)),
   ])
   match v {
     Swagger20 =>
@@ -168,11 +173,11 @@ fn param_object(
           for kv in m {
             param[kv.0] = kv.1
           }
-        _ => param["type"] = "string".to_json()
+        _ => param["type"] = Json("string")
       }
     _ => param["schema"] = schema
   }
-  param.to_json()
+  Json(param)
 }
 
 ///|
@@ -182,7 +187,7 @@ fn path_param(name : String, v : DocVersion) -> Json {
     name,
     "path",
     true,
-    (Map([("type", "string".to_json())]) : Map[String, Json]).to_json(),
+    Json((Map([("type", Json("string"))]) : Map[String, Json])),
     v,
   )
 }
@@ -267,9 +272,9 @@ fn route_params(
 /// otherwise.
 fn literal_json(type_ : String, raw : String) -> Json {
   match type_ {
-    "Bool" => if raw == "true" { true.to_json() } else { false.to_json() }
+    "Bool" => if raw == "true" { Json(true) } else { Json(false) }
     "Int" | "Int64" | "UInt" | "UInt64" | "Double" | "Float" => number_json(raw)
-    _ => raw.to_json()
+    _ => Json(raw)
   }
 }
 
@@ -285,7 +290,7 @@ fn field_schema(f : Field, v : DocVersion) -> Json {
   }
   // A `$ref` may not be qualified by siblings, so a nested message carries nothing.
   if m.contains("$ref") {
-    return m.to_json()
+    return Json(m)
   }
   match f.default_() {
     Some(d) => m["default"] = literal_json(f.type_, d)
@@ -297,7 +302,7 @@ fn field_schema(f : Field, v : DocVersion) -> Json {
     for one in allowed {
       vals.push(literal_json(f.type_, one))
     }
-    m["enum"] = vals.to_json()
+    m["enum"] = Json(vals)
   }
   match f.range() {
     Some(r) => {
@@ -310,7 +315,7 @@ fn field_schema(f : Field, v : DocVersion) -> Json {
             OpenApi31 => m["exclusiveMinimum"] = lo
             _ => {
               m["minimum"] = lo
-              m["exclusiveMinimum"] = true.to_json()
+              m["exclusiveMinimum"] = Json(true)
             }
           }
         }
@@ -324,7 +329,7 @@ fn field_schema(f : Field, v : DocVersion) -> Json {
             OpenApi31 => m["exclusiveMaximum"] = hi
             _ => {
               m["maximum"] = hi
-              m["exclusiveMaximum"] = true.to_json()
+              m["exclusiveMaximum"] = Json(true)
             }
           }
         }
@@ -332,7 +337,7 @@ fn field_schema(f : Field, v : DocVersion) -> Json {
     }
     None => ()
   }
-  m.to_json()
+  Json(m)
 }
 
 ///|
@@ -368,29 +373,29 @@ fn component_schema(t : TypeDef, v : DocVersion) -> Json {
     }
     props[f.json_name()] = field_schema(f, v)
     if f.optional() == false {
-      required.push(f.json_name().to_json())
+      required.push(Json(f.json_name()))
     }
   }
   let own : Map[String, Json] = Map([
-    ("type", "object".to_json()),
-    ("properties", props.to_json()),
+    ("type", Json("object")),
+    ("properties", Json(props)),
   ])
   if required.length() > 0 {
-    own["required"] = required.to_json()
+    own["required"] = Json(required)
   }
   if t.embeds.length() == 0 {
-    return own.to_json()
+    return Json(own)
   }
   let all : Array[Json] = []
   for name in t.embeds {
     all.push(
-      (Map([("$ref", (ref_prefix(v) + name).to_json())]) : Map[String, Json]).to_json(),
+      Json((Map([("$ref", Json(ref_prefix(v) + name))]) : Map[String, Json])),
     )
   }
   if props.length() > 0 {
-    all.push(own.to_json())
+    all.push(Json(own))
   }
-  (Map([("allOf", all.to_json())]) : Map[String, Json]).to_json()
+  Json((Map([("allOf", Json(all))]) : Map[String, Json]))
 }
 
 ///|
@@ -413,9 +418,9 @@ fn info_get(spec : Spec, key : String) -> String? {
 /// document dialect; `title`/`api_version` fill the `info` block.
 pub fn openapi_document(
   spec : Spec,
-  version? : DocVersion = OpenApi31,
-  title? : String = "",
-  api_version? : String = "0.1.0",
+  version~ : DocVersion = OpenApi31,
+  title~ : String = "",
+  api_version~ : String = "0.1.0",
 ) -> Json {
   let doc_title = if title != "" {
     title
@@ -427,14 +432,14 @@ pub fn openapi_document(
   }
   let paths : Map[String, Json] = Map([])
   for r in spec.routes {
-    let op : Map[String, Json] = Map([("operationId", r.handler.to_json())])
+    let op : Map[String, Json] = Map([("operationId", Json(r.handler))])
     if r.summary != "" {
-      op["summary"] = r.summary.to_json()
+      op["summary"] = Json(r.summary)
     }
     // A route's `@server` group is its OpenAPI tag — the same grouping goctl gives
     // handlers, and what a doc UI sections the operations by.
     match r.group {
-      Some(g) => if g.name != "" { op["tags"] = [g.name.to_json()].to_json() }
+      Some(g) => if g.name != "" { op["tags"] = Json([Json(g.name)]) }
       None => ()
     }
     let params = route_params(r, spec.types, version)
@@ -444,59 +449,66 @@ pub fn openapi_document(
     // has no body to document.
     if r.req != "" && has_body(find_type(spec.types, r.req), spec.types) {
       let schema : Map[String, Json] = Map([
-        ("$ref", (ref_prefix(version) + r.req).to_json()),
+        ("$ref", Json(ref_prefix(version) + r.req)),
       ])
       match version {
         Swagger20 =>
           params.push(
-            (
-              Map([
-                ("in", "body".to_json()),
-                ("name", "body".to_json()),
-                ("required", true.to_json()),
-                ("schema", schema.to_json()),
-              ]) : Map[String, Json]).to_json(),
+            Json(
+              (
+                Map([
+                  ("in", Json("body")),
+                  ("name", Json("body")),
+                  ("required", Json(true)),
+                  ("schema", Json(schema)),
+                ]) : Map[String, Json]),
+            ),
           )
         _ => {
-          let media : Map[String, Json] = Map([("schema", schema.to_json())])
-          op["requestBody"] = (
-            Map([
-              ("required", true.to_json()),
-              (
-                "content",
+          let media : Map[String, Json] = Map([("schema", Json(schema))])
+          op["requestBody"] = Json(
+            (
+              Map([
+                ("required", Json(true)),
                 (
-                  Map([("application/json", media.to_json())]) :
-                  Map[String, Json]).to_json(),
-              ),
-            ]) : Map[String, Json]).to_json()
+                  "content",
+                  Json(
+                    (
+                      Map([("application/json", Json(media))]) :
+                      Map[String, Json]),
+                  ),
+                ),
+              ]) : Map[String, Json]),
+          )
         }
       }
     }
     if params.length() > 0 {
-      op["parameters"] = params.to_json()
+      op["parameters"] = Json(params)
     }
-    let ok : Map[String, Json] = Map([("description", "OK".to_json())])
+    let ok : Map[String, Json] = Map([("description", Json("OK"))])
     if r.resp != "" {
       let schema : Map[String, Json] = Map([
-        ("$ref", (ref_prefix(version) + r.resp).to_json()),
+        ("$ref", Json(ref_prefix(version) + r.resp)),
       ])
       match version {
-        Swagger20 => ok["schema"] = schema.to_json()
+        Swagger20 => ok["schema"] = Json(schema)
         _ => {
-          let media : Map[String, Json] = Map([("schema", schema.to_json())])
-          ok["content"] = (
-            Map([("application/json", media.to_json())]) : Map[String, Json]).to_json()
+          let media : Map[String, Json] = Map([("schema", Json(schema))])
+          ok["content"] = Json(
+            (Map([("application/json", Json(media))]) : Map[String, Json]),
+          )
         }
       }
     }
-    op["responses"] = (Map([("200", ok.to_json())]) : Map[String, Json]).to_json()
+    op["responses"] = Json((Map([("200", Json(ok))]) : Map[String, Json]))
     let key = openapi_path(r.path)
     let item = match paths.get(key) {
       Some(Object(m)) => m
       _ => Map([])
     }
-    item[r.verb.to_lower()] = op.to_json()
-    paths[key] = item.to_json()
+    item[r.verb.to_lower()] = Json(op)
+    paths[key] = Json(item)
   }
   let defs : Map[String, Json] = Map([])
   for t in spec.types {
@@ -507,43 +519,42 @@ pub fn openapi_document(
     None => api_version
   }
   let info : Map[String, Json] = Map([
-    ("title", doc_title.to_json()),
-    ("version", doc_version.to_json()),
+    ("title", Json(doc_title)),
+    ("version", Json(doc_version)),
   ])
   match info_get(spec, "desc") {
-    Some(d) => info["description"] = d.to_json()
+    Some(d) => info["description"] = Json(d)
     None =>
       match info_get(spec, "description") {
-        Some(d) => info["description"] = d.to_json()
+        Some(d) => info["description"] = Json(d)
         None => ()
       }
   }
   let (root_key, version_str) = doc_version_field(version)
   let doc : Map[String, Json] = Map([
-    (root_key, version_str.to_json()),
-    ("info", info.to_json()),
-    ("paths", paths.to_json()),
+    (root_key, Json(version_str)),
+    ("info", Json(info)),
+    ("paths", Json(paths)),
   ])
   let tags : Array[Json] = []
   for g in spec.groups {
     if g.name != "" {
-      tags.push(
-        (Map([("name", g.name.to_json())]) : Map[String, Json]).to_json(),
-      )
+      tags.push(Json((Map([("name", Json(g.name))]) : Map[String, Json])))
     }
   }
   if tags.length() > 0 {
-    doc["tags"] = tags.to_json()
+    doc["tags"] = Json(tags)
   }
   if not_empty(defs) {
     match version {
-      Swagger20 => doc["definitions"] = defs.to_json()
+      Swagger20 => doc["definitions"] = Json(defs)
       _ =>
-        doc["components"] = (
-          Map([("schemas", defs.to_json())]) : Map[String, Json]).to_json()
+        doc["components"] = Json(
+          (Map([("schemas", Json(defs))]) : Map[String, Json]),
+        )
     }
   }
-  doc.to_json()
+  Json(doc)
 }
 
 ///|
@@ -558,9 +569,9 @@ fn not_empty(m : Map[String, Json]) -> Bool {
 /// indentation. `version` picks the dialect (Swagger 2.0 / OpenAPI 3.0 / 3.1).
 pub fn generate_doc(
   spec : Spec,
-  version? : DocVersion = OpenApi31,
-  title? : String = "",
-  api_version? : String = "0.1.0",
+  version~ : DocVersion = OpenApi31,
+  title~ : String = "",
+  api_version~ : String = "0.1.0",
 ) -> String {
   @json.dumps(openapi_document(spec, version~, title~, api_version~), indent=2)
 }
@@ -569,8 +580,8 @@ pub fn generate_doc(
 /// A self-contained Swagger UI page for the document served at `spec_url`. The
 /// same stub moonapi ships, so a generated service and a live app render alike.
 pub fn swagger_ui_stub(
-  spec_url? : String = "/openapi.json",
-  title? : String = "API Docs",
+  spec_url~ : String = "/openapi.json",
+  title~ : String = "API Docs",
 ) -> String {
   "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>" +
   title +

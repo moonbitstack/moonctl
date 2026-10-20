@@ -84,7 +84,7 @@ priv enum Piece {
 /// Index of the `}}` that closes an action started at `from`, skipping `"…"` and
 /// `` `…` `` string literals so a `}}` inside a string is not mistaken for the
 /// delimiter. Returns `-1` if unterminated.
-fn find_close(src : String, from : Int) -> Int {
+fn find_close(src : String, from : Int32) -> Int32 {
   let n = src.length()
   let mut i = from
   while i < n {
@@ -513,7 +513,7 @@ fn classify_value(w : String) -> Arg raise TemplateError {
 ///|
 priv struct TokCursor {
   toks : Array[Tok]
-  mut pos : Int
+  mut pos : Int32
 }
 
 ///|
@@ -608,7 +608,7 @@ fn TokCursor::parse_pipeline(
 /// consumed.
 fn pipeline_from(
   toks : Array[Tok],
-  start : Int,
+  start : Int32,
 ) -> Array[Command] raise TemplateError {
   let tc = { toks, pos: start, }
   let cmds = tc.parse_pipeline()
@@ -623,7 +623,7 @@ fn pipeline_from(
 ///|
 priv struct Parser {
   pieces : Array[Piece]
-  mut pos : Int
+  mut pos : Int32
 }
 
 ///|
@@ -646,7 +646,7 @@ fn is_word(t : Tok, s : String) -> Bool {
 }
 
 ///|
-fn find_tassign(toks : Array[Tok]) -> Int {
+fn find_tassign(toks : Array[Tok]) -> Int32 {
   for i = 0; i < toks.length(); i = i + 1 {
     match toks[i] {
       TAssign => return i
@@ -858,7 +858,7 @@ fn truthy(v : Value) -> Bool {
 }
 
 ///|
-fn str_cmp(a : String, b : String) -> Int {
+fn str_cmp(a : String, b : String) -> Int32 {
   let la = a.length()
   let lb = b.length()
   let mut i = 0
@@ -1125,7 +1125,7 @@ fn render_nodes(
 ///|
 fn arg_at(
   xs : Array[Value],
-  i : Int,
+  i : Int32,
   name : String,
 ) -> Value raise TemplateError {
   if i >= xs.length() {
@@ -1251,7 +1251,7 @@ fn val_eq(a : Value, b : Value) -> Bool {
 }
 
 ///|
-fn val_cmp(a : Value, b : Value) -> Int raise TemplateError {
+fn val_cmp(a : Value, b : Value) -> Int32 raise TemplateError {
   match (a, b) {
     (Str(x), Str(y)) => str_cmp(x, y)
     _ =>
@@ -1266,7 +1266,7 @@ fn val_cmp(a : Value, b : Value) -> Int raise TemplateError {
 }
 
 ///|
-fn sprintf(fmt : String, args : Array[Value], start : Int) -> String {
+fn sprintf(fmt : String, args : Array[Value], start : Int32) -> String {
   let sb = StringBuilder()
   let mut ai = start
   let n = fmt.length()

@@ -52,7 +52,7 @@ pub fn plugin_from_json(Json) -> Plugin
 
 pub fn plugin_request(Spec, api_file_path? : String, style? : String, dir? : String) -> String
 
-pub let port : Int
+pub let port : Int32
 
 pub fn proto_reserved_conflicts(ProtoMessage) -> Array[String]
 
@@ -62,9 +62,9 @@ pub fn resolve_import(String, String) -> String
 
 pub fn scaffold_api(String) -> Array[GenFile]
 
-pub fn scaffold_docker(String, port? : Int) -> Array[GenFile]
+pub fn scaffold_docker(String, port? : Int32) -> Array[GenFile]
 
-pub fn scaffold_kube(String, port? : Int, replicas? : Int) -> Array[GenFile]
+pub fn scaffold_kube(String, port? : Int32, replicas? : Int32) -> Array[GenFile]
 
 pub fn scaffold_model(String) -> Array[GenFile]
 
@@ -88,7 +88,7 @@ pub suberror DataSourceError {
 }
 
 pub suberror SpecError {
-  Syntax(line~ : Int, msg~ : String)
+  Syntax(line~ : Int32, msg~ : String)
   Missing(file~ : String, path~ : String)
 }
 
@@ -170,7 +170,7 @@ pub(all) struct Group {
 
 pub(all) struct PgTarget {
   host : String
-  port : Int
+  port : Int32
   user : String
   password : String
   database : String
@@ -197,20 +197,20 @@ pub(all) struct ProtoEnum {
 
 pub(all) struct ProtoEnumValue {
   name : String
-  number : Int
+  number : Int32
 }
 
 pub(all) struct ProtoField {
   name : String
   type_ : String
-  number : Int
+  number : Int32
 }
 
 pub(all) struct ProtoMessage {
   name : String
   fields : Array[ProtoField]
   oneofs : Array[ProtoOneof]
-  reserved_numbers : Array[Int]
+  reserved_numbers : Array[Int32]
   reserved_names : Array[String]
 }
 

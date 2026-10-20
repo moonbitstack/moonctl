@@ -49,22 +49,22 @@ fn group_to_json(g : Group) -> Json {
   let extra : Array[Json] = []
   for kv in g.extra {
     let m : Map[String, Json] = Map([
-      ("name", kv.0.to_json()),
-      ("value", kv.1.to_json()),
+      ("name", Json(kv.0)),
+      ("value", Json(kv.1)),
     ])
-    extra.push(m.to_json())
+    extra.push(Json(m))
   }
   let m : Map[String, Json] = Map([
-    ("name", g.name.to_json()),
-    ("prefix", g.prefix.to_json()),
-    ("jwt", g.jwt.to_json()),
-    ("middleware", g.middleware.to_json()),
-    ("maxBytes", g.max_bytes.to_double().to_json()),
-    ("timeout", g.timeout.to_json()),
-    ("signature", g.signature.to_json()),
-    ("extra", extra.to_json()),
+    ("name", Json(g.name)),
+    ("prefix", Json(g.prefix)),
+    ("jwt", Json(g.jwt)),
+    ("middleware", Json(g.middleware)),
+    ("maxBytes", Json(g.max_bytes.to_double())),
+    ("timeout", Json(g.timeout)),
+    ("signature", Json(g.signature)),
+    ("extra", Json(extra)),
   ])
-  m.to_json()
+  Json(m)
 }
 
 ///|
@@ -77,57 +77,57 @@ pub fn spec_to_json(spec : Spec) -> Json {
   let routes : Array[Json] = []
   for r in spec.routes {
     let m : Map[String, Json] = Map([
-      ("verb", r.verb.to_json()),
-      ("path", r.path.to_json()),
-      ("handler", r.handler.to_json()),
-      ("summary", r.summary.to_json()),
-      ("req", r.req.to_json()),
-      ("resp", r.resp.to_json()),
+      ("verb", Json(r.verb)),
+      ("path", Json(r.path)),
+      ("handler", Json(r.handler)),
+      ("summary", Json(r.summary)),
+      ("req", Json(r.req)),
+      ("resp", Json(r.resp)),
     ])
     match r.group {
       Some(g) => m["group"] = group_to_json(g)
       None => ()
     }
-    routes.push(m.to_json())
+    routes.push(Json(m))
   }
   let types : Array[Json] = []
   for t in spec.types {
     let fields : Array[Json] = []
     for f in t.fields {
       let fm : Map[String, Json] = Map([
-        ("name", f.name.to_json()),
-        ("type", f.type_.to_json()),
-        ("tag", f.tag.to_json()),
+        ("name", Json(f.name)),
+        ("type", Json(f.type_)),
+        ("tag", Json(f.tag)),
       ])
-      fields.push(fm.to_json())
+      fields.push(Json(fm))
     }
     let tm : Map[String, Json] = Map([
-      ("name", t.name.to_json()),
-      ("fields", fields.to_json()),
-      ("embeds", t.embeds.to_json()),
+      ("name", Json(t.name)),
+      ("fields", Json(fields)),
+      ("embeds", Json(t.embeds)),
     ])
-    types.push(tm.to_json())
+    types.push(Json(tm))
   }
   let info : Array[Json] = []
   for kv in spec.info {
     let m : Map[String, Json] = Map([
-      ("name", kv.0.to_json()),
-      ("value", kv.1.to_json()),
+      ("name", Json(kv.0)),
+      ("value", Json(kv.1)),
     ])
-    info.push(m.to_json())
+    info.push(Json(m))
   }
   let groups : Array[Json] = []
   for g in spec.groups {
     groups.push(group_to_json(g))
   }
   let doc : Map[String, Json] = Map([
-    ("service", spec.service.to_json()),
-    ("routes", routes.to_json()),
-    ("types", types.to_json()),
-    ("info", info.to_json()),
-    ("groups", groups.to_json()),
+    ("service", Json(spec.service)),
+    ("routes", Json(routes)),
+    ("types", Json(types)),
+    ("info", Json(info)),
+    ("groups", Json(groups)),
   ])
-  doc.to_json()
+  Json(doc)
 }
 
 ///|
@@ -137,17 +137,17 @@ pub fn spec_to_json(spec : Spec) -> Json {
 /// a plugin needs to decide where its output goes and what to call it.
 pub fn plugin_request(
   spec : Spec,
-  api_file_path? : String = "",
-  style? : String = "gozero",
-  dir? : String = "",
+  api_file_path~ : String = "",
+  style~ : String = "gozero",
+  dir~ : String = "",
 ) -> String {
   let doc : Map[String, Json] = Map([
     ("Api", spec_to_json(spec)),
-    ("ApiFilePath", api_file_path.to_json()),
-    ("Style", style.to_json()),
-    ("Dir", dir.to_json()),
+    ("ApiFilePath", Json(api_file_path)),
+    ("Style", Json(style)),
+    ("Dir", Json(dir)),
   ])
-  doc.to_json().stringify(indent=2)
+  Json(doc).stringify(indent=2)
 }
 
 ///|
@@ -388,11 +388,11 @@ pub fn gen_files_to_json(files : Array[GenFile]) -> Json {
   let arr : Array[Json] = []
   for f in files {
     let m : Map[String, Json] = Map([
-      ("path", f.path.to_json()),
-      ("content", f.content.to_json()),
+      ("path", Json(f.path)),
+      ("content", Json(f.content)),
     ])
-    arr.push(m.to_json())
+    arr.push(Json(m))
   }
-  let doc : Map[String, Json] = Map([("files", arr.to_json())])
-  doc.to_json()
+  let doc : Map[String, Json] = Map([("files", Json(arr))])
+  Json(doc)
 }

@@ -40,7 +40,7 @@ fn mod_file(name : String, deps : Array[String]) -> String {
 /// A `moon.pkg` importing `entries`, each a `(path, alias)` pair where an empty
 /// alias leaves the path's last segment as the name, and marked as the module's
 /// native executable when `main_`.
-fn pkg_file(entries : Array[(String, String)], main_? : Bool = false) -> String {
+fn pkg_file(entries : Array[(String, String)], main_~ : Bool = false) -> String {
   let out = StringBuilder()
   if entries.length() > 0 {
     out.write_string("import {\n")

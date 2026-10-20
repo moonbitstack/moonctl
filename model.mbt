@@ -20,7 +20,7 @@ fn storage_class(type_ : String) -> String? {
 /// The typed `@moondb.Row` accessor that reads column `idx` as `type_`. The
 /// accessors raise `@moondb.DbError` on a type or index mismatch, so a decode bug
 /// surfaces at the call site rather than reading a silent zero.
-fn row_read(type_ : String, idx : Int) -> String {
+fn row_read(type_ : String, idx : Int32) -> String {
   let i = idx.to_string()
   match type_ {
     "Int" => "row.int(" + i + ")"

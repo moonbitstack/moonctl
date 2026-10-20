@@ -59,7 +59,7 @@ fn jnum(obj : Map[String, Json], key : String) -> Double? {
 
 ///|
 /// The `i`th element of `arr` as an object, or an empty map.
-fn jat(arr : Array[Json], i : Int) -> Map[String, Json] {
+fn jat(arr : Array[Json], i : Int32) -> Map[String, Json] {
   match arr[i] {
     Object(m) => m
     _ => Map([])
@@ -371,7 +371,7 @@ test "a Bool constraint is documented as a boolean, not as its spelling" {
     "ok",
   )
   assert_eq(jbool(ok, "default"), Some(true))
-  assert_eq(jarr(ok, "enum"), [true.to_json(), false.to_json()])
+  assert_eq(jarr(ok, "enum"), [Json(true), Json(false)])
   // a numeric field's option that does not read as a number stays the text it was
   let n = jobj(
     jobj(

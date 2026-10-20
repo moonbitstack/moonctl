@@ -85,7 +85,7 @@ fn last_segment(s : String) -> String {
 pub(all) struct ProtoField {
   name : String
   type_ : String
-  number : Int
+  number : Int32
 }
 
 ///|
@@ -105,7 +105,7 @@ pub(all) struct ProtoMessage {
   name : String
   fields : Array[ProtoField]
   oneofs : Array[ProtoOneof]
-  reserved_numbers : Array[Int]
+  reserved_numbers : Array[Int32]
   reserved_names : Array[String]
 }
 
@@ -128,7 +128,7 @@ fn cap_first(s : String) -> String {
 /// One value of a protobuf `enum`: its name and its integer number.
 pub(all) struct ProtoEnumValue {
   name : String
-  number : Int
+  number : Int32
 }
 
 ///|
@@ -244,7 +244,7 @@ fn proto_tokens(src : String) -> Array[String] {
 
 ///|
 /// Index just past the next `;` at or after `i` (used to skip a statement).
-fn skip_to_semi(toks : Array[String], i : Int) -> Int {
+fn skip_to_semi(toks : Array[String], i : Int32) -> Int32 {
   let n = toks.length()
   let mut j = i
   while j < n && toks[j] != ";" {
@@ -255,7 +255,7 @@ fn skip_to_semi(toks : Array[String], i : Int) -> Int {
 
 ///|
 /// Given `toks[i] == "{"`, index just past its matching `}` (brace-balanced).
-fn skip_braced(toks : Array[String], i : Int) -> Int {
+fn skip_braced(toks : Array[String], i : Int32) -> Int32 {
   let n = toks.length()
   let mut depth = 0
   let mut j = i
@@ -282,15 +282,15 @@ fn skip_braced(toks : Array[String], i : Int) -> Int {
 /// names; `reserved` and `option` lines are skipped.
 fn parse_message(
   toks : Array[String],
-  start : Int,
+  start : Int32,
   out_messages : Array[ProtoMessage],
   out_enums : Array[ProtoEnum],
-) -> (ProtoMessage, Int) {
+) -> (ProtoMessage, Int32) {
   let n = toks.length()
   let name = if start + 1 < n { toks[start + 1] } else { "Unnamed" }
   let fields : Array[ProtoField] = []
   let oneofs : Array[ProtoOneof] = []
-  let reserved_numbers : Array[Int] = []
+  let reserved_numbers : Array[Int32] = []
   let reserved_names : Array[String] = []
   let mut i = start + 2
   if i < n && toks[i] == "{" {
@@ -383,7 +383,7 @@ pub fn proto_reserved_conflicts(m : ProtoMessage) -> Array[String] {
 /// Parse a single message field statement (`[repeated] Type name = N ;` or
 /// `map<K, V> name = N ;`) starting at `i`; returns the field (or `None` if the
 /// line is not a field) and the index just past its `;`.
-fn parse_field(toks : Array[String], i : Int) -> (ProtoField?, Int) {
+fn parse_field(toks : Array[String], i : Int32) -> (ProtoField?, Int32) {
   let n = toks.length()
   if i >= n {
     return (None, n)
@@ -440,7 +440,7 @@ fn parse_field(toks : Array[String], i : Int) -> (ProtoField?, Int) {
 ///|
 /// Parse a `service` block starting at `toks[start] == "service"`. Returns the
 /// service and the index just past its closing `}`.
-fn parse_service(toks : Array[String], start : Int) -> (ProtoService, Int) {
+fn parse_service(toks : Array[String], start : Int32) -> (ProtoService, Int32) {
   let n = toks.length()
   let name = if start + 1 < n { toks[start + 1] } else { "Unnamed" }
   let rpcs : Array[Rpc] = []
@@ -506,7 +506,7 @@ fn parse_service(toks : Array[String], start : Int) -> (ProtoService, Int) {
 ///|
 /// Parse a leading-digit integer token (an enum value's number), stopping at the
 /// first non-digit; `0` when there are no digits. Handles a leading `-`.
-fn proto_int(s : String) -> Int {
+fn proto_int(s : String) -> Int32 {
   let mut acc = 0
   let mut neg = false
   let mut k = 0
@@ -533,7 +533,7 @@ fn proto_int(s : String) -> Int {
 /// Parse an `enum` block starting at `toks[start] == "enum"`. Returns the enum and
 /// the index just past its closing `}`. Each `NAME = NUMBER ;` becomes a value;
 /// `option` and `reserved` lines inside the block are skipped.
-fn parse_enum(toks : Array[String], start : Int) -> (ProtoEnum, Int) {
+fn parse_enum(toks : Array[String], start : Int32) -> (ProtoEnum, Int32) {
   let n = toks.length()
   let name = if start + 1 < n { toks[start + 1] } else { "Unnamed" }
   let values : Array[ProtoEnumValue] = []
@@ -565,10 +565,10 @@ fn parse_enum(toks : Array[String], start : Int) -> (ProtoEnum, Int) {
 /// reserved numbers, the reserved names, and the index just past the `;`.
 fn parse_reserved(
   toks : Array[String],
-  start : Int,
-) -> (Array[Int], Array[String], Int) {
+  start : Int32,
+) -> (Array[Int32], Array[String], Int32) {
   let n = toks.length()
-  let nums : Array[Int] = []
+  let nums : Array[Int32] = []
   let names : Array[String] = []
   let mut i = start + 1
   while i < n && toks[i] != ";" {

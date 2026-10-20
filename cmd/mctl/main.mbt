@@ -172,7 +172,7 @@ async fn gen_crud(input : String) -> Unit {
 
 ///|
 /// Index of the last `ch` in `s`, or `-1` if absent.
-fn last_index_of(s : String, ch : UInt16) -> Int {
+fn last_index_of(s : String, ch : UInt16) -> Int32 {
   let mut idx = -1
   for i = 0; i < s.length(); i = i + 1 {
     if s[i] == ch {

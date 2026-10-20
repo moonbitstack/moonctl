@@ -12,7 +12,7 @@
 /// A PostgreSQL connection target parsed from a `postgres://` DSN.
 pub(all) struct PgTarget {
   host : String
-  port : Int
+  port : Int32
   user : String
   password : String
   database : String
@@ -40,7 +40,7 @@ impl Show for DataSourceError with fn output(self, logger) {
 
 ///|
 /// Index of the last `ch` in `s`, or `-1` if absent.
-fn rindex_of(s : String, ch : UInt16) -> Int {
+fn rindex_of(s : String, ch : UInt16) -> Int32 {
   let mut idx = -1
   for i = 0; i < s.length(); i = i + 1 {
     if s[i] == ch {
@@ -67,7 +67,7 @@ fn type_head(s : String) -> String {
 /// Parse a run of ASCII digits into an `Int`, or fall back to `dflt` when the text
 /// is empty or non-numeric (a malformed port keeps the default rather than failing
 /// the whole DSN).
-fn parse_uint(s : String, dflt : Int) -> Int {
+fn parse_uint(s : String, dflt : Int32) -> Int32 {
   let n = s.length()
   if n == 0 {
     return dflt

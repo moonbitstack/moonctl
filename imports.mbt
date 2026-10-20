@@ -85,7 +85,7 @@ pub fn resolve_import(from : String, path : String) -> String {
 /// itself was read from. A caller that can read files walks a multi-file spec with
 /// this: read a file, follow its `deps`, and hand everything it collected to
 /// `parse_all`.
-pub fn deps(source : String, from? : String = "") -> Array[String] {
+pub fn deps(source : String, from~ : String = "") -> Array[String] {
   let out : Array[String] = []
   for raw in parse_lenient(source).imports {
     out.push(resolve_import(from, raw))
@@ -98,7 +98,7 @@ pub fn deps(source : String, from? : String = "") -> Array[String] {
 priv struct Scan {
   path : String
   spec : Spec
-  issues : Array[(Int, String)]
+  issues : Array[(Int32, String)]
 }
 
 ///|
@@ -144,7 +144,7 @@ fn walk(
 pub fn parse_all(
   source : String,
   files : Map[String, String],
-  from? : String = "",
+  from~ : String = "",
 ) -> Spec raise SpecError {
   let units : Array[Scan] = []
   walk(from, source, files, Map([]), units)

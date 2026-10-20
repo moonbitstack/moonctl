@@ -89,7 +89,7 @@ fn route_dir(r : Route, style : Style) -> String {
 pub fn generate_tree(
   spec : Spec,
   style? : Style,
-  dir? : String = "",
+  dir~ : String = "",
 ) -> Array[TreeFile] {
   let st = match style {
     Some(s) => s

@@ -47,7 +47,7 @@ fn starts_with(s : String, prefix : String) -> Bool {
 
 ///|
 /// Index of the first `ch` in `s` at or after `from`, or `-1` if absent.
-fn index_of(s : String, ch : UInt16, from : Int) -> Int {
+fn index_of(s : String, ch : UInt16, from : Int32) -> Int32 {
   let n = s.length()
   for i = from; i < n; i = i + 1 {
     if s[i] == ch {
@@ -222,7 +222,7 @@ fn tokens(s : String) -> Array[String] {
 /// wrong there, `Missing` an `import` whose `path` was not among the files handed to
 /// `parse_all`.
 pub suberror SpecError {
-  Syntax(line~ : Int, msg~ : String)
+  Syntax(line~ : Int32, msg~ : String)
   Missing(file~ : String, path~ : String)
 }
 
@@ -329,7 +329,7 @@ fn is_http_verb(t : String) -> Bool {
 
 ///|
 /// What is left of `s` after its first `n` whitespace-separated tokens.
-fn rest_after(s : String, n : Int) -> String {
+fn rest_after(s : String, n : Int32) -> String {
   let len = s.length()
   let mut i = 0
   let mut seen = 0
@@ -360,7 +360,7 @@ fn paren_body(s : String) -> String {
 }
 
 ///|
-fn index_of_str(hay : String, needle : String) -> Int {
+fn index_of_str(hay : String, needle : String) -> Int32 {
   let hn = hay.length()
   let nn = needle.length()
   if nn == 0 {
@@ -480,10 +480,10 @@ fn split_commas(s : String) -> Array[String] {
 /// /api/v1)` form parse. A comma-separated fragment carrying no `key:` continues the
 /// previous entry — that is how `middleware: Log,Trace` reads on a single line.
 fn read_group(
-  body : Array[(Int, String)],
-  issues : Array[(Int, String)],
+  body : Array[(Int32, String)],
+  issues : Array[(Int32, String)],
 ) -> Group {
-  let entries : Array[(Int, String, String)] = []
+  let entries : Array[(Int32, String, String)] = []
   for chunk in body {
     for piece in split_commas(chunk.1) {
       let frag = trim(piece)
@@ -560,7 +560,10 @@ fn read_group(
 /// Close every `type` block still open, innermost first, complaining about each at
 /// the line it opened on. The blocks are already in `Spec.types`, so what they did
 /// declare survives a missing brace.
-fn unwind(open : Array[(TypeDef, Int)], issues : Array[(Int, String)]) -> Unit {
+fn unwind(
+  open : Array[(TypeDef, Int32)],
+  issues : Array[(Int32, String)],
+) -> Unit {
   while open.length() > 0 {
     match open.pop() {
       Some(f) =>
@@ -576,8 +579,8 @@ fn unwind(open : Array[(TypeDef, Int)], issues : Array[(Int, String)]) -> Unit {
 /// any other key is a typo worth naming, since a silently dropped one would leave
 /// the route undocumented.
 fn read_doc(
-  body : Array[(Int, String)],
-  issues : Array[(Int, String)],
+  body : Array[(Int32, String)],
+  issues : Array[(Int32, String)],
 ) -> String {
   let mut summary = ""
   let mut description = ""
@@ -671,8 +674,8 @@ fn quoted_paths(s : String) -> Array[String] {
 ///|
 /// Scan a `.api` source into a `Spec` plus every line the parser could not read.
 /// Scanning always runs to the end, so one typo does not hide the rest.
-fn read(source : String) -> (Spec, Array[(Int, String)]) {
-  let issues : Array[(Int, String)] = []
+fn read(source : String) -> (Spec, Array[(Int32, String)]) {
+  let issues : Array[(Int32, String)] = []
   let mut service = "app"
   let routes : Array[Route] = []
   let types : Array[TypeDef] = []
@@ -683,14 +686,14 @@ fn read(source : String) -> (Spec, Array[(Int, String)]) {
   let mut import_line = 0
   // The `type` blocks still open, outermost first: a nested block pushes onto it, a
   // `}` pops one, and whatever is left at the end was never closed.
-  let open : Array[(TypeDef, Int)] = []
+  let open : Array[(TypeDef, Int32)] = []
   let mut in_info = false
   let mut info_line = 0
   let mut in_type_group = false
   let mut type_group_line = 0
   let mut in_server = false
   let mut server_line = 0
-  let server_body : Array[(Int, String)] = []
+  let server_body : Array[(Int32, String)] = []
   let mut in_service = false
   let mut service_line = 0
   let mut group : Group? = None
@@ -698,7 +701,7 @@ fn read(source : String) -> (Spec, Array[(Int, String)]) {
   let mut pending_doc = ""
   let mut in_doc = false
   let mut doc_line = 0
-  let doc_body : Array[(Int, String)] = []
+  let doc_body : Array[(Int32, String)] = []
   let src = lines(source)
   for i = 0; i < src.length(); i = i + 1 {
     let no = i + 1

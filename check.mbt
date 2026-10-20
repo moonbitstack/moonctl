@@ -33,8 +33,8 @@ fn lit(type_ : String, raw : String) -> String? {
 /// `raw` as a JSON number, or as a string when it does not read as one — a tag
 /// option is text until something asks it to be a number.
 fn number_json(raw : String) -> Json {
-  let d = @string.parse_double(raw) catch { _ => return raw.to_json() }
-  d.to_json()
+  let d = @string.parse_double(raw) catch { _ => return Json(raw) }
+  Json(d)
 }
 
 ///|
