@@ -11,20 +11,20 @@
 ///     moon run examples/09-template
 #coverage.skip
 fn dict(entries : Array[(String, @moonctl.Value)]) -> @moonctl.Value {
-  @moonctl.Dict(Map(entries))
+  Dict(Map(entries))
 }
 
 ///|
 #coverage.skip
 fn main {
   let data = dict([
-    ("service", @moonctl.Str("greet")),
-    ("count", @moonctl.Int(233L)),
+    ("service", Str("greet")),
+    ("count", Int(233L)),
     (
       "routes",
-      @moonctl.List([
-        dict([("verb", @moonctl.Str("get")), ("path", @moonctl.Str("/ping"))]),
-        dict([("verb", @moonctl.Str("post")), ("path", @moonctl.Str("/users"))]),
+      List([
+        dict([("verb", Str("get")), ("path", Str("/ping"))]),
+        dict([("verb", Str("post")), ("path", Str("/users"))]),
       ]),
     ),
   ])
@@ -42,7 +42,7 @@ fn main {
     // value arrives as the last argument, so `bang` chains under `|`.
     let bang = @moonctl.Template::new().func("bang", xs => {
       match xs[xs.length() - 1] {
-        @moonctl.Str(s) => @moonctl.Str(s + "!")
+        Str(s) => Str(s + "!")
         other => other
       }
     })

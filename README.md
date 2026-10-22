@@ -186,6 +186,24 @@ let spec = @moonctl.parse_all(source, files, from="spec/greet.api")
 
 Without that, a one-character typo generates a program that is quietly missing a route. `parse_lenient` skips those lines instead and returns whatever the spec does describe, for a spec that is still being written.
 
+## Packages
+
+The layout follows goctl's: the spec language on its own, then one package per thing generated from it. The root re-exports the lot, so `@moonctl.parse` works as well as `@api.parse`.
+
+| Package | What | goctl |
+|:--:|:--|:--|
+| `api` | the `.api` language: types, routes, tags, imports | `api/parser`, `api/spec` |
+| `gen` | the moonapi service a spec describes, and the validation its tags ask for | `api/gogen` |
+| `template` | the template engine, Go `text/template` syntax and semantics | `text/template` |
+| `style` | `--style` naming templates | `config` |
+| `proto` | moonrpc services from `.proto` | `rpc` |
+| `doc` | OpenAPI and Swagger documents | `api/docgen` |
+| `gql` | a moongql schema | — |
+| `model` | moonorm models from a spec, from DDL, or from a live database | `model` |
+| `agent` | a moonkoog agent | — |
+| `plugin` | the plugin protocol | `plugin` |
+| `scaffold` | project skeletons and the layered tree | `api new`, `rpc new`, `docker`, `kube` |
+
 ## Usage
 
 As a library:

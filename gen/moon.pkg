@@ -1,0 +1,8 @@
+// The moonapi service a spec describes (goctl's api/gogen): handlers, routes,
+// types and the validation their tags ask for, from built-in or custom templates.
+import {
+  "moonbitstack/moonctl/internal/text",
+  "moonbitstack/moonctl/template",
+  "moonbitstack/moonctl/api",
+  "moonbitlang/core/string",
+}

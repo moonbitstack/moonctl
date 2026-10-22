@@ -33,11 +33,9 @@ fn main raise {
   } catch {
     _ => println("mctl: codegen failed")
   }
-  let doc = @moonctl.openapi_document(
-    spec,
-    version=@moonctl.OpenApi31,
-    title="greet",
-  ).stringify(indent=2)
+  let doc = @moonctl.openapi_document(spec, version=OpenApi31, title="greet").stringify(
+    indent=2,
+  )
   println(
     "==== openapi_document(spec, version=OpenApi31) -> OpenAPI 3.1 ====\n",
   )

@@ -1,0 +1,65 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonctl/model"
+
+import {
+  "moonbitstack/moonctl/api",
+}
+
+// Values
+pub fn generate_crud(Array[DdlTable]) -> String
+
+pub fn generate_crud_from_ddl(String) -> String
+
+pub fn generate_crud_from_reflection(Array[ReflectedColumn]) -> String
+
+pub fn generate_model(@api.Spec) -> String
+
+pub fn parse_ddl(String) -> Array[DdlTable]
+
+pub fn parse_dsn(String) -> DataSource raise DataSourceError
+
+pub fn tables_from_reflection(Array[ReflectedColumn]) -> Array[DdlTable]
+
+// Errors
+pub suberror DataSourceError {
+  BadDsn(String)
+}
+
+// Types and methods
+pub(all) enum DataSource {
+  Sqlite(String)
+  Postgres(PgTarget)
+}
+
+pub(all) struct DdlColumn {
+  name : String
+  type_ : String
+  mut primary_key : Bool
+  nullable : Bool
+  default_ : String?
+}
+
+pub(all) struct DdlTable {
+  name : String
+  columns : Array[DdlColumn]
+}
+
+pub(all) struct PgTarget {
+  host : String
+  port : Int32
+  user : String
+  password : String
+  database : String
+}
+
+pub(all) struct ReflectedColumn {
+  table : String
+  name : String
+  sql_type : String
+  primary_key : Bool
+  nullable : Bool
+}
+
+// Type aliases
+
+// Traits

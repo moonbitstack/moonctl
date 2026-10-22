@@ -1,0 +1,37 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonctl/internal/text"
+
+// Values
+pub fn ends_with(String, String) -> Bool
+
+pub fn index_of_str(String, String) -> Int32
+
+pub fn is_digit(UInt16) -> Bool
+
+pub fn is_ws(UInt16) -> Bool
+
+pub fn join_lines(Array[String]) -> String
+
+pub fn path_segments(String) -> Array[String]
+
+pub fn quote(String) -> String
+
+pub fn split_char(String, UInt16) -> Array[String]
+
+pub fn starts_with(String, String) -> Bool
+
+pub fn to_pascal(String) -> String
+
+pub fn to_snake(String) -> String
+
+pub fn trim(String) -> String
+
+pub fn upper_first(String) -> String
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits

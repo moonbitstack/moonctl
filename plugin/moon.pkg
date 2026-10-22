@@ -1,0 +1,9 @@
+// goctl's plugin protocol: the spec handed to a plugin and the files it
+// hands back.
+import {
+  "moonbitstack/moonctl/api",
+}
+
+import {
+  "moonbitstack/moonjson/json",
+} for "wbtest"

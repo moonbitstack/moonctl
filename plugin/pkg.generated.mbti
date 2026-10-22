@@ -1,0 +1,40 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonctl/plugin"
+
+import {
+  "moonbitstack/moonctl/api",
+}
+
+// Values
+pub fn gen_files_to_json(Array[GenFile]) -> Json
+
+pub fn parse_gen_files(Json) -> Array[GenFile]
+
+pub fn plugin_argv(String) -> (String, Array[String])
+
+pub fn plugin_from_json(Json) -> Plugin
+
+pub fn plugin_request(@api.Spec, api_file_path? : String, style? : String, dir? : String) -> String
+
+pub fn spec_from_json(Json) -> @api.Spec
+
+pub fn spec_to_json(@api.Spec) -> Json
+
+// Errors
+
+// Types and methods
+pub(all) struct GenFile {
+  path : String
+  content : String
+}
+
+pub(all) struct Plugin {
+  api : @api.Spec
+  api_file_path : String
+  style : String
+  dir : String
+}
+
+// Type aliases
+
+// Traits

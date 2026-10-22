@@ -1,0 +1,5 @@
+// The .api spec language: types, routes, struct tags and multi-file
+// imports, read into a Spec, and the queries generators ask of one.
+import {
+  "moonbitstack/moonctl/internal/text",
+}

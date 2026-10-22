@@ -289,11 +289,11 @@ async fn gen_doc(input : String) -> Unit {
 async fn gen_datasource(dsn : String, out : String) -> Unit {
   try {
     let code = match @moonctl.parse_dsn(dsn) {
-      @moonctl.Sqlite(path) => {
+      Sqlite(path) => {
         let db = @sqlite.SqliteDriver::open(path)
         @moonctl.generate_crud_from_reflection(@reflect.reflect_sqlite(db))
       }
-      @moonctl.Postgres(t) => {
+      Postgres(t) => {
         let conn = @pg.PgConn::connect(
           t.host,
           t.port,

@@ -1,0 +1,4 @@
+// goctl's --style: a naming template that spells a file name in a case.
+import {
+  "moonbitstack/moonctl/internal/text",
+}

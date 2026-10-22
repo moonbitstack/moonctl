@@ -1,0 +1,36 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonctl/template"
+
+// Values
+pub fn render(String, Value) -> String raise TemplateError
+
+// Errors
+pub suberror TemplateError {
+  ParseError(String)
+  ExecError(String)
+}
+
+// Types and methods
+pub struct Template {
+  mut renderer : (Value) -> String raise TemplateError
+  funcs : Map[String, (Array[Value]) -> Value raise TemplateError]
+}
+pub fn Template::func(Self, String, (Array[Value]) -> Value raise TemplateError) -> Self
+pub fn Template::new() -> Self
+pub fn Template::parse(Self, String) -> Self raise TemplateError
+pub fn Template::render(Self, Value) -> String raise TemplateError
+
+pub(all) enum Value {
+  Null
+  Bool(Bool)
+  Int(Int64)
+  Float(Double)
+  Str(String)
+  List(Array[Value])
+  Dict(Map[String, Value])
+}
+
+// Type aliases
+pub type FuncFn = (Array[Value]) -> Value raise TemplateError
+
+// Traits

@@ -6,81 +6,81 @@ import re, html, pathlib
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SECTIONS = [
-    ("codegen", "spec.mbt", "Codegen",
+    ("codegen", "api/spec.mbt", "Codegen",
      "The .api spec parser and the moonapi scaffold generator - parse turns "
      "source into a Spec; generate emits compilable build_app + handler stubs."),
-    ("imports", "imports.mbt", "Multi-file specs",
+    ("imports", "api/imports.mbt", "Multi-file specs",
      "import resolution - deps names the files a spec pulls in, resolved against "
      "the file that wrote them, and parse_all merges an entry spec and everything "
      "it imports into one Spec (imported types, routes and @server groups first)."),
-    ("style", "style.mbt", "Naming style",
+    ("style", "style/style.mbt", "Naming style",
      "goctl's --style template - Style::parse reads <before>GO<through>ZERO<after> "
      "and Style::format spells a name through it, so gozero, goZero, go_zero and "
      "Go#zero each name the same thing their own way."),
-    ("tree", "tree.mbt", "Project tree",
+    ("tree", "scaffold/tree.mbt", "Project tree",
      "The layered output - generate_tree emits the etc/ + internal/config + svc + "
      "types + handler + logic + middleware tree goctl writes, each file marked with "
      "whether a regeneration may overwrite it, and tree_plan applies that so a "
      "second run refreshes the routes and types and keeps every handler you wrote."),
-    ("template", "template.mbt", "Template engine",
+    ("template", "template/template.mbt", "Template engine",
      "A runtime template engine (goctl's text/template equivalent): Value data, "
      "{{.Field}} interpolation, if/range/with, $variables, | pipelines and a "
      "function library. generate_with drives codegen from a custom template."),
-    ("grpc", "proto.mbt", "gRPC codegen",
+    ("grpc", "proto/proto.mbt", "gRPC codegen",
      "A minimal .proto (proto3) parser and the moonrpc service-stub generator - "
      "parse_proto turns source into a Proto; generate_grpc emits message structs, "
      "@moonrpc.Method descriptors and a <Service>Server handler skeleton that "
      "compiles against moonbitstack/moonrpc."),
-    ("model", "model.mbt", "ORM model codegen",
+    ("model", "model/model.mbt", "ORM model codegen",
      "The moonorm model generator - generate_model turns a Spec's .api type "
      "blocks into a model struct, a @moonorm.Model with declared columns plus "
      "from_row / to_columns closures, a @moonorm.Table descriptor and an "
      "up/down migration pair, all compiling against moonbitstack/moonorm + moondb."),
-    ("ddl", "ddl.mbt", "DDL to CRUD codegen",
+    ("ddl", "model/ddl.mbt", "DDL to CRUD codegen",
      "The SQL DDL front end - parse_ddl reads CREATE TABLE statements (types, "
      "primary keys, NOT NULL, defaults) and generate_crud emits a moonorm model "
      "plus typed CRUD (find_by_id / insert / update / delete_by_id / all) with "
      "parameterised SQL, compiling against moonbitstack/moonorm + moondb."),
-    ("tag", "tag.mbt", "Struct tags",
+    ("tag", "api/tag.mbt", "Struct tags",
      "What a field's back-tick tag says - Field::bind reads whether the value "
      "comes from the body, the query string, a URL segment or a header, "
      "Field::json_name the wire name it arrives under, Field::mbt_name the "
      "MoonBit spelling, and optional / default_ / options / range the "
      "constraints that follow the name."),
-    ("check", "check.mbt", "Tag constraints",
+    ("check", "gen/check.mbt", "Tag constraints",
      "What those constraints turn into - render_checks emits with_defaults, "
      "which fills in every default= the spec declared, and check, which refuses "
      "a required field left empty, a value outside its range= and one the "
      "options= list does not allow."),
-    ("plugin", "plugin.mbt", "Plugin protocol",
+    ("plugin", "plugin/plugin.mbt", "Plugin protocol",
      "The external-plugin contract, spoken the way goctl speaks it - "
      "plugin_argv splits the invocation, plugin_request writes {Api, "
      "ApiFilePath, Style, Dir} to the plugin's stdin, and parse_gen_files reads "
      "the {path, content} files a plugin returns on stdout; plugin_from_json / "
      "spec_from_json and gen_files_to_json are the matching reader/writer a "
      "MoonBit plugin uses."),
-    ("doc", "doc.mbt", "OpenAPI codegen",
+    ("doc", "doc/doc.mbt", "OpenAPI codegen",
      "The OpenAPI / Swagger generator - generate_doc emits a Swagger 2.0, "
      "OpenAPI 3.0 or 3.1 document from a Spec (paths from the routes, component "
      "schemas from the type blocks), and swagger_ui_stub renders it."),
-    ("datasource", "datasource.mbt", "Live datasource reflection",
+    ("datasource", "model/datasource.mbt", "Live datasource reflection",
      "The model datasource front end - parse_dsn reads a sqlite: / postgres:// "
      "DSN, and tables_from_reflection / generate_crud_from_reflection fold a live "
      "schema's ReflectedColumns into the same moonorm model + CRUD the .sql path "
      "produces. The schema reading itself lives in the native reflect sub-package."),
-    ("scaffold", "scaffold.mbt", "Project scaffolds",
+    ("scaffold", "scaffold/scaffold.mbt", "Project scaffolds",
      "The nested project generators - scaffold_api / scaffold_rpc / scaffold_model "
      "emit a whole runnable project tree (moon.mod, a sample spec, generated "
      "source, README), and scaffold_docker / scaffold_kube emit a Dockerfile and a "
      "Kubernetes deployment, as goctl's api new / rpc new / docker / kube do."),
-    ("manifest", "manifest.mbt", "Generated manifests",
+    ("manifest", "scaffold/manifest.mbt", "Generated manifests",
      "The moon.mod and moon.pkg every generated project is written with, and pins - "
      "the version of each library they import, which CI builds every kind of "
      "scaffold against."),
-    ("gql", "gql.mbt", "GraphQL generator",
+    ("gql", "gql/gql.mbt", "GraphQL generator",
      "A moongql schema and its resolver skeletons from the same .api spec the REST "
      "routes come from, so one description feeds both surfaces."),
-    ("agentgen", "agentgen.mbt", "Agent scaffolding",
+    ("agentgen", "agent/agent.mbt", "Agent scaffolding",
      "Generating a moonkoog tool registry from the spec's types, so an .api "
      "description becomes tools an agent can call."),
     ("reflect", "reflect/reflect.mbt", "Reflection helper",

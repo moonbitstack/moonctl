@@ -1,0 +1,4 @@
+// gRPC from a .proto file: moonrpc services, stubs and messages (goctl's rpc).
+import {
+  "moonbitstack/moonctl/internal/text",
+}

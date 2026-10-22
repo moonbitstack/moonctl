@@ -1,0 +1,12 @@
+// moonorm models from a spec, from CREATE TABLE DDL, or from a live database
+// (goctl's model).
+import {
+  "moonbitstack/moonctl/internal/text",
+  "moonbitstack/moonctl/api",
+  "moonbitstack/moonctl/proto",
+}
+
+import {
+  "moonbitstack/moonctl/doc",
+  "moonbitstack/moonctl/gen",
+} for "wbtest"

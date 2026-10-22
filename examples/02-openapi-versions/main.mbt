@@ -42,12 +42,12 @@ fn main raise {
     #|  post /products (CreateProductReq) returns (Product)
     #|}
   let spec = @moonctl.parse(source)
-  for
-    v in [
-      ("Swagger20", @moonctl.Swagger20),
-      ("OpenApi30", @moonctl.OpenApi30),
-      ("OpenApi31", @moonctl.OpenApi31),
-    ] {
+  let versions : Array[(String, @moonctl.DocVersion)] = [
+    ("Swagger20", Swagger20),
+    ("OpenApi30", OpenApi30),
+    ("OpenApi31", OpenApi31),
+  ]
+  for v in versions {
     println("==== generate_doc(spec, version=\{v.0}) ====\n")
     println(@moonctl.generate_doc(spec, version=v.1))
     println("")

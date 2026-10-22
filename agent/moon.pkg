@@ -1,0 +1,5 @@
+// A moonkoog agent scaffolded from a spec.
+import {
+  "moonbitstack/moonctl/internal/text",
+  "moonbitstack/moonctl/api",
+}

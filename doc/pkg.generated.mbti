@@ -1,0 +1,28 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonctl/doc"
+
+import {
+  "moonbitstack/moonctl/api",
+}
+
+// Values
+pub fn generate_doc(@api.Spec, version? : DocVersion, title? : String, api_version? : String) -> String
+
+pub fn openapi_document(@api.Spec, version? : DocVersion, title? : String, api_version? : String) -> Json
+
+pub fn swagger_ui_stub(spec_url? : String, title? : String) -> String
+
+// Errors
+
+// Types and methods
+pub(all) enum DocVersion {
+  Swagger20
+  OpenApi30
+  OpenApi31
+} derive(Eq)
+pub fn DocVersion::equal(Self, Self) -> Bool
+pub fn DocVersion::not_equal(Self, Self) -> Bool
+
+// Type aliases
+
+// Traits

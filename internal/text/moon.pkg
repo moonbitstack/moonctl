@@ -1,0 +1,4 @@
+// The string helpers every generator shares: case conversion, quoting and
+// splitting. Internal: they are moonctl's plumbing, not its surface.
+import {
+}

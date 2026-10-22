@@ -1,8 +1,15 @@
-// moonctl (mctl): a spec-driven code generator (← goctl). Pure logic — it parses
-// a .api spec and emits moonapi / moonorm / moonrpc scaffolding (and an OpenAPI
-// document) as text, so it has no runtime deps and runs on every backend.
+// moonctl (mctl): a spec-driven code generator (← goctl). The work is done in the
+// subpackages; the root re-exports their surface.
 import {
-  "moonbitstack/moonyaml",
-  "moonbitstack/moonjson/json",
-  "moonbitlang/core/string",
+  "moonbitstack/moonctl/template",
+  "moonbitstack/moonctl/style",
+  "moonbitstack/moonctl/api",
+  "moonbitstack/moonctl/gen",
+  "moonbitstack/moonctl/proto",
+  "moonbitstack/moonctl/doc",
+  "moonbitstack/moonctl/gql",
+  "moonbitstack/moonctl/model",
+  "moonbitstack/moonctl/plugin",
+  "moonbitstack/moonctl/agent",
+  "moonbitstack/moonctl/scaffold",
 }

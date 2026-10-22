@@ -1,323 +1,167 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "moonbitstack/moonctl"
 
+import {
+  "moonbitstack/moonctl/api",
+  "moonbitstack/moonctl/doc",
+  "moonbitstack/moonctl/model",
+  "moonbitstack/moonctl/plugin",
+  "moonbitstack/moonctl/proto",
+  "moonbitstack/moonctl/scaffold",
+  "moonbitstack/moonctl/style",
+  "moonbitstack/moonctl/template",
+}
+
 // Values
 pub fn deps(String, from? : String) -> Array[String]
 
-pub fn gen_files_to_json(Array[GenFile]) -> Json
+pub fn gen_files_to_json(Array[@plugin.GenFile]) -> Json
 
-pub fn generate(Spec, template? : String) -> String raise TemplateError
+pub fn generate(@api.Spec, template? : String) -> String raise @template.TemplateError
 
-pub fn generate_agent(Spec) -> String
+pub fn generate_agent(@api.Spec) -> String
 
-pub fn generate_crud(Array[DdlTable]) -> String
+pub fn generate_crud(Array[@model.DdlTable]) -> String
 
 pub fn generate_crud_from_ddl(String) -> String
 
-pub fn generate_crud_from_reflection(Array[ReflectedColumn]) -> String
+pub fn generate_crud_from_reflection(Array[@model.ReflectedColumn]) -> String
 
-pub fn generate_doc(Spec, version? : DocVersion, title? : String, api_version? : String) -> String
+pub fn generate_doc(@api.Spec, version? : @doc.DocVersion, title? : String, api_version? : String) -> String
 
-pub fn generate_gql(Spec) -> String
+pub fn generate_gql(@api.Spec) -> String
 
-pub fn generate_grpc(Proto) -> String
+pub fn generate_grpc(@proto.Proto) -> String
 
-pub fn generate_model(Spec) -> String
+pub fn generate_model(@api.Spec) -> String
 
-pub fn generate_tree(Spec, style? : Style, dir? : String) -> Array[TreeFile]
+pub fn generate_tree(@api.Spec, style? : @style.Style, dir? : String) -> Array[@scaffold.TreeFile]
 
-pub fn generate_with(Spec, String) -> String raise TemplateError
+pub fn generate_with(@api.Spec, String) -> String raise @template.TemplateError
 
-pub fn openapi_document(Spec, version? : DocVersion, title? : String, api_version? : String) -> Json
+pub fn openapi_document(@api.Spec, version? : @doc.DocVersion, title? : String, api_version? : String) -> Json
 
-pub fn parse(String) -> Spec raise SpecError
+pub fn parse(String) -> @api.Spec raise @api.SpecError
 
-pub fn parse_all(String, Map[String, String], from? : String) -> Spec raise SpecError
+pub fn parse_all(String, Map[String, String], from? : String) -> @api.Spec raise @api.SpecError
 
-pub fn parse_ddl(String) -> Array[DdlTable]
+pub fn parse_ddl(String) -> Array[@model.DdlTable]
 
-pub fn parse_dsn(String) -> DataSource raise DataSourceError
+pub fn parse_dsn(String) -> @model.DataSource raise @model.DataSourceError
 
-pub fn parse_gen_files(Json) -> Array[GenFile]
+pub fn parse_gen_files(Json) -> Array[@plugin.GenFile]
 
-pub fn parse_lenient(String) -> Spec
+pub fn parse_lenient(String) -> @api.Spec
 
-pub fn parse_proto(String) -> Proto
+pub fn parse_proto(String) -> @proto.Proto
 
 pub let pins : Map[String, String]
 
 pub fn plugin_argv(String) -> (String, Array[String])
 
-pub fn plugin_from_json(Json) -> Plugin
+pub fn plugin_from_json(Json) -> @plugin.Plugin
 
-pub fn plugin_request(Spec, api_file_path? : String, style? : String, dir? : String) -> String
+pub fn plugin_request(@api.Spec, api_file_path? : String, style? : String, dir? : String) -> String
 
 pub let port : Int32
 
-pub fn proto_reserved_conflicts(ProtoMessage) -> Array[String]
+pub fn proto_reserved_conflicts(@proto.ProtoMessage) -> Array[String]
 
-pub fn render(String, Value) -> String raise TemplateError
+pub fn render(String, @template.Value) -> String raise @template.TemplateError
 
 pub fn resolve_import(String, String) -> String
 
-pub fn scaffold_api(String) -> Array[GenFile]
+pub fn scaffold_api(String) -> Array[@plugin.GenFile]
 
-pub fn scaffold_docker(String, port? : Int32) -> Array[GenFile]
+pub fn scaffold_docker(String, port? : Int32) -> Array[@plugin.GenFile]
 
-pub fn scaffold_kube(String, port? : Int32, replicas? : Int32) -> Array[GenFile]
+pub fn scaffold_kube(String, port? : Int32, replicas? : Int32) -> Array[@plugin.GenFile]
 
-pub fn scaffold_model(String) -> Array[GenFile]
+pub fn scaffold_model(String) -> Array[@plugin.GenFile]
 
-pub fn scaffold_rpc(String) -> Array[GenFile]
+pub fn scaffold_rpc(String) -> Array[@plugin.GenFile]
 
-pub fn spec_from_json(Json) -> Spec
+pub fn spec_from_json(Json) -> @api.Spec
 
-pub fn spec_to_json(Spec) -> Json
+pub fn spec_to_json(@api.Spec) -> Json
 
-pub fn spec_to_value(Spec) -> Value
+pub fn spec_to_value(@api.Spec) -> @template.Value
 
 pub fn swagger_ui_stub(spec_url? : String, title? : String) -> String
 
-pub fn tables_from_reflection(Array[ReflectedColumn]) -> Array[DdlTable]
+pub fn tables_from_reflection(Array[@model.ReflectedColumn]) -> Array[@model.DdlTable]
 
-pub fn tree_plan(Array[TreeFile], (String) -> Bool) -> Array[GenFile]
+pub fn tree_plan(Array[@scaffold.TreeFile], (String) -> Bool) -> Array[@plugin.GenFile]
 
 // Errors
-pub suberror DataSourceError {
-  BadDsn(String)
-}
-
-pub suberror SpecError {
-  Syntax(line~ : Int32, msg~ : String)
-  Missing(file~ : String, path~ : String)
-}
-
-pub suberror StyleError {
-  BadStyle(String)
-}
-
-pub suberror TemplateError {
-  ParseError(String)
-  ExecError(String)
-}
 
 // Types and methods
-pub(all) enum Bind {
-  Body
-  Query
-  Path
-  Header
-} derive(Eq)
-pub fn Bind::equal(Self, Self) -> Bool
-pub fn Bind::not_equal(Self, Self) -> Bool
-
-type Case
-
-pub(all) enum DataSource {
-  Sqlite(String)
-  Postgres(PgTarget)
-}
-
-pub(all) struct DdlColumn {
-  name : String
-  type_ : String
-  mut primary_key : Bool
-  nullable : Bool
-  default_ : String?
-}
-
-pub(all) struct DdlTable {
-  name : String
-  columns : Array[DdlColumn]
-}
-
-pub(all) enum DocVersion {
-  Swagger20
-  OpenApi30
-  OpenApi31
-} derive(Eq)
-pub fn DocVersion::equal(Self, Self) -> Bool
-pub fn DocVersion::not_equal(Self, Self) -> Bool
-
-pub(all) struct Field {
-  name : String
-  type_ : String
-  tag : String
-}
-pub fn Field::bind(Self) -> Bind
-pub fn Field::default_(Self) -> String?
-pub fn Field::json_name(Self) -> String
-pub fn Field::mbt_name(Self) -> String
-pub fn Field::optional(Self) -> Bool
-pub fn Field::options(Self) -> Array[String]
-pub fn Field::range(Self) -> Range?
-
-pub(all) struct GenFile {
-  path : String
-  content : String
-}
-
-pub(all) struct Group {
-  name : String
-  prefix : String
-  jwt : String
-  middleware : Array[String]
-  max_bytes : Int64
-  timeout : String
-  signature : Bool
-  extra : Array[(String, String)]
-}
-
-pub(all) struct PgTarget {
-  host : String
-  port : Int32
-  user : String
-  password : String
-  database : String
-}
-
-pub(all) struct Plugin {
-  api : Spec
-  api_file_path : String
-  style : String
-  dir : String
-}
-
-pub(all) struct Proto {
-  package_ : String
-  services : Array[ProtoService]
-  messages : Array[ProtoMessage]
-  enums : Array[ProtoEnum]
-}
-
-pub(all) struct ProtoEnum {
-  name : String
-  values : Array[ProtoEnumValue]
-}
-
-pub(all) struct ProtoEnumValue {
-  name : String
-  number : Int32
-}
-
-pub(all) struct ProtoField {
-  name : String
-  type_ : String
-  number : Int32
-}
-
-pub(all) struct ProtoMessage {
-  name : String
-  fields : Array[ProtoField]
-  oneofs : Array[ProtoOneof]
-  reserved_numbers : Array[Int32]
-  reserved_names : Array[String]
-}
-
-pub(all) struct ProtoOneof {
-  name : String
-  variants : Array[ProtoField]
-}
-
-pub(all) struct ProtoService {
-  name : String
-  rpcs : Array[Rpc]
-}
-
-pub(all) struct Range {
-  lo : String
-  hi : String
-  lo_inc : Bool
-  hi_inc : Bool
-} derive(Eq)
-pub fn Range::equal(Self, Self) -> Bool
-pub fn Range::not_equal(Self, Self) -> Bool
-
-pub(all) struct ReflectedColumn {
-  table : String
-  name : String
-  sql_type : String
-  primary_key : Bool
-  nullable : Bool
-}
-
-pub(all) enum Regen {
-  Always
-  Once
-} derive(Eq)
-pub fn Regen::equal(Self, Self) -> Bool
-pub fn Regen::not_equal(Self, Self) -> Bool
-
-pub(all) struct Route {
-  verb : String
-  path : String
-  handler : String
-  summary : String
-  req : String
-  resp : String
-  group : Group?
-}
-
-pub(all) struct Rpc {
-  name : String
-  request : String
-  response : String
-  client_streaming : Bool
-  server_streaming : Bool
-}
-
-pub(all) struct Spec {
-  service : String
-  routes : Array[Route]
-  types : Array[TypeDef]
-  info : Array[(String, String)]
-  groups : Array[Group]
-  imports : Array[String]
-}
-
-pub struct Style {
-  before : String
-  through : String
-  after : String
-  head : Case
-  tail : Case
-}
-pub fn Style::format(Self, String) -> String
-pub fn Style::gozero() -> Self
-pub fn Style::parse(String) -> Self raise StyleError
-
-pub struct Template {
-  mut renderer : (Value) -> String raise TemplateError
-  funcs : Map[String, (Array[Value]) -> Value raise TemplateError]
-}
-pub fn Template::func(Self, String, (Array[Value]) -> Value raise TemplateError) -> Self
-pub fn Template::new() -> Self
-pub fn Template::parse(Self, String) -> Self raise TemplateError
-pub fn Template::render(Self, Value) -> String raise TemplateError
-
-pub(all) struct TreeFile {
-  path : String
-  content : String
-  regen : Regen
-}
-
-pub(all) struct TypeDef {
-  name : String
-  fields : Array[Field]
-  embeds : Array[String]
-}
-
-pub(all) enum Value {
-  Null
-  Bool(Bool)
-  Int(Int64)
-  Float(Double)
-  Str(String)
-  List(Array[Value])
-  Dict(Map[String, Value])
-}
 
 // Type aliases
-pub type FuncFn = (Array[Value]) -> Value raise TemplateError
+pub using @api {type Bind}
+
+pub using @model {type DataSource}
+
+pub using @model {type DataSourceError}
+
+pub using @model {type DdlColumn}
+
+pub using @model {type DdlTable}
+
+pub using @doc {type DocVersion}
+
+pub using @api {type Field}
+
+pub type FuncFn = (Array[@template.Value]) -> @template.Value raise @template.TemplateError
+
+pub using @plugin {type GenFile}
+
+pub using @api {type Group}
+
+pub using @model {type PgTarget}
+
+pub using @plugin {type Plugin}
+
+pub using @proto {type Proto}
+
+pub using @proto {type ProtoEnum}
+
+pub using @proto {type ProtoEnumValue}
+
+pub using @proto {type ProtoField}
+
+pub using @proto {type ProtoMessage}
+
+pub using @proto {type ProtoOneof}
+
+pub using @proto {type ProtoService}
+
+pub using @api {type Range}
+
+pub using @model {type ReflectedColumn}
+
+pub using @scaffold {type Regen}
+
+pub using @api {type Route}
+
+pub using @proto {type Rpc}
+
+pub using @api {type Spec}
+
+pub using @api {type SpecError}
+
+pub using @style {type Style}
+
+pub using @style {type StyleError}
+
+pub using @template {type Template}
+
+pub using @template {type TemplateError}
+
+pub using @scaffold {type TreeFile}
+
+pub using @api {type TypeDef}
+
+pub using @template {type Value}
 
 // Traits

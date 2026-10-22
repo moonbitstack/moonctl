@@ -1,0 +1,17 @@
+// Project skeletons and the layered project tree, with what a second run is
+// allowed to touch.
+import {
+  "moonbitstack/moonctl/internal/text",
+  "moonbitstack/moonctl/style",
+  "moonbitstack/moonctl/api",
+  "moonbitstack/moonctl/gen",
+  "moonbitstack/moonctl/proto",
+  "moonbitstack/moonctl/model",
+  "moonbitstack/moonctl/plugin",
+  "moonbitstack/moonyaml",
+}
+
+import {
+  "moonbitstack/moonctl/doc",
+  "moonbitstack/moonjson/json",
+} for "wbtest"

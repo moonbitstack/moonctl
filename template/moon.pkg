@@ -1,0 +1,5 @@
+// A runtime template engine with Go text/template's syntax and semantics,
+// the way goctl's templates are written. It knows nothing about .api specs.
+import {
+  "moonbitstack/moonctl/internal/text",
+}

@@ -1,0 +1,7 @@
+// OpenAPI and Swagger documents from a spec (goctl's docgen).
+import {
+  "moonbitstack/moonctl/internal/text",
+  "moonbitstack/moonctl/api",
+  "moonbitstack/moonctl/gen",
+  "moonbitstack/moonjson/json",
+}

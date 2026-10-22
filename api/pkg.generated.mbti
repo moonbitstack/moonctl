@@ -1,0 +1,101 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonctl/api"
+
+// Values
+pub fn deps(String, from? : String) -> Array[String]
+
+pub fn find_type(Array[TypeDef], String) -> TypeDef?
+
+pub fn flat_fields(TypeDef, Array[TypeDef]) -> Array[Field]
+
+pub fn index_of(String, UInt16, Int32) -> Int32
+
+pub fn parse(String) -> Spec raise SpecError
+
+pub fn parse_all(String, Map[String, String], from? : String) -> Spec raise SpecError
+
+pub fn parse_lenient(String) -> Spec
+
+pub fn resolve_import(String, String) -> String
+
+pub fn to_i64(String) -> Int64?
+
+pub fn tokens(String) -> Array[String]
+
+// Errors
+pub suberror SpecError {
+  Syntax(line~ : Int32, msg~ : String)
+  Missing(file~ : String, path~ : String)
+}
+
+// Types and methods
+pub(all) enum Bind {
+  Body
+  Query
+  Path
+  Header
+} derive(Eq)
+pub fn Bind::equal(Self, Self) -> Bool
+pub fn Bind::not_equal(Self, Self) -> Bool
+
+pub(all) struct Field {
+  name : String
+  type_ : String
+  tag : String
+}
+pub fn Field::bind(Self) -> Bind
+pub fn Field::default_(Self) -> String?
+pub fn Field::json_name(Self) -> String
+pub fn Field::mbt_name(Self) -> String
+pub fn Field::optional(Self) -> Bool
+pub fn Field::options(Self) -> Array[String]
+pub fn Field::range(Self) -> Range?
+
+pub(all) struct Group {
+  name : String
+  prefix : String
+  jwt : String
+  middleware : Array[String]
+  max_bytes : Int64
+  timeout : String
+  signature : Bool
+  extra : Array[(String, String)]
+}
+
+pub(all) struct Range {
+  lo : String
+  hi : String
+  lo_inc : Bool
+  hi_inc : Bool
+} derive(Eq)
+pub fn Range::equal(Self, Self) -> Bool
+pub fn Range::not_equal(Self, Self) -> Bool
+
+pub(all) struct Route {
+  verb : String
+  path : String
+  handler : String
+  summary : String
+  req : String
+  resp : String
+  group : Group?
+}
+
+pub(all) struct Spec {
+  service : String
+  routes : Array[Route]
+  types : Array[TypeDef]
+  info : Array[(String, String)]
+  groups : Array[Group]
+  imports : Array[String]
+}
+
+pub(all) struct TypeDef {
+  name : String
+  fields : Array[Field]
+  embeds : Array[String]
+}
+
+// Type aliases
+
+// Traits

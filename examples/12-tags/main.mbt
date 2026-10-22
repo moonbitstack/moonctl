@@ -38,10 +38,10 @@ fn main raise {
     println("type \{t.name}:")
     for f in t.fields {
       let where_ = match f.bind() {
-        @moonctl.Body => "body"
-        @moonctl.Query => "query"
-        @moonctl.Path => "path"
-        @moonctl.Header => "header"
+        Body => "body"
+        Query => "query"
+        Path => "path"
+        Header => "header"
       }
       let extra = (if f.optional() { " optional" } else { "" }) +
         (match f.default_() {
@@ -57,8 +57,6 @@ fn main raise {
   println(@moonctl.generate(spec))
   println("\n==== openapi_document(spec) ====\n")
   println(
-    @moonctl.openapi_document(spec, version=@moonctl.OpenApi31).stringify(
-      indent=2,
-    ),
+    @moonctl.openapi_document(spec, version=OpenApi31).stringify(indent=2),
   )
 }

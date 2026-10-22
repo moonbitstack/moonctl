@@ -1,0 +1,27 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonctl/style"
+
+// Values
+
+// Errors
+pub suberror StyleError {
+  BadStyle(String)
+}
+
+// Types and methods
+type Case
+
+pub struct Style {
+  before : String
+  through : String
+  after : String
+  head : Case
+  tail : Case
+}
+pub fn Style::format(Self, String) -> String
+pub fn Style::gozero() -> Self
+pub fn Style::parse(String) -> Self raise StyleError
+
+// Type aliases
+
+// Traits

@@ -1,0 +1,67 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonctl/proto"
+
+// Values
+pub fn commas(Array[String]) -> String
+
+pub fn generate_grpc(Proto) -> String
+
+pub fn parse_proto(String) -> Proto
+
+pub fn proto_reserved_conflicts(ProtoMessage) -> Array[String]
+
+// Errors
+
+// Types and methods
+pub(all) struct Proto {
+  package_ : String
+  services : Array[ProtoService]
+  messages : Array[ProtoMessage]
+  enums : Array[ProtoEnum]
+}
+
+pub(all) struct ProtoEnum {
+  name : String
+  values : Array[ProtoEnumValue]
+}
+
+pub(all) struct ProtoEnumValue {
+  name : String
+  number : Int32
+}
+
+pub(all) struct ProtoField {
+  name : String
+  type_ : String
+  number : Int32
+}
+
+pub(all) struct ProtoMessage {
+  name : String
+  fields : Array[ProtoField]
+  oneofs : Array[ProtoOneof]
+  reserved_numbers : Array[Int32]
+  reserved_names : Array[String]
+}
+
+pub(all) struct ProtoOneof {
+  name : String
+  variants : Array[ProtoField]
+}
+
+pub(all) struct ProtoService {
+  name : String
+  rpcs : Array[Rpc]
+}
+
+pub(all) struct Rpc {
+  name : String
+  request : String
+  response : String
+  client_streaming : Bool
+  server_streaming : Bool
+}
+
+// Type aliases
+
+// Traits

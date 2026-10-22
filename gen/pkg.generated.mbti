@@ -1,0 +1,30 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonctl/gen"
+
+import {
+  "moonbitstack/moonctl/api",
+  "moonbitstack/moonctl/template",
+}
+
+// Values
+pub fn generate(@api.Spec, template? : String) -> String raise @template.TemplateError
+
+pub fn generate_builtin(@api.Spec) -> String
+
+pub fn generate_with(@api.Spec, String) -> String raise @template.TemplateError
+
+pub fn group_note(@api.Group) -> String
+
+pub fn number_json(String) -> Json
+
+pub fn render_structs(Array[@api.TypeDef]) -> String
+
+pub fn spec_to_value(@api.Spec) -> @template.Value
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
