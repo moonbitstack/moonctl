@@ -31,9 +31,13 @@ pub fn generate_doc(@api.Spec, version? : @doc.DocVersion, title? : String, api_
 
 pub fn generate_gql(@api.Spec) -> String
 
+pub fn generate_gql_tree(@api.Spec, style? : @style.Style, dir? : String) -> Array[@scaffold.TreeFile]
+
 pub fn generate_grpc(@proto.Proto) -> String
 
 pub fn generate_model(@api.Spec) -> String
+
+pub fn generate_rpc_tree(@proto.Proto, style? : @style.Style, dir? : String) -> Array[@scaffold.TreeFile]
 
 pub fn generate_tree(@api.Spec, style? : @style.Style, dir? : String) -> Array[@scaffold.TreeFile]
 
@@ -74,6 +78,8 @@ pub fn resolve_import(String, String) -> String
 pub fn scaffold_api(String) -> Array[@plugin.GenFile]
 
 pub fn scaffold_docker(String, port? : Int32) -> Array[@plugin.GenFile]
+
+pub fn scaffold_gql(String) -> Array[@plugin.GenFile]
 
 pub fn scaffold_kube(String, port? : Int32, replicas? : Int32) -> Array[@plugin.GenFile]
 
@@ -117,6 +123,8 @@ pub type FuncFn = (Array[@template.Value]) -> @template.Value raise @template.Te
 pub using @plugin {type GenFile}
 
 pub using @api {type Group}
+
+pub using @proto {type Label}
 
 pub using @model {type PgTarget}
 

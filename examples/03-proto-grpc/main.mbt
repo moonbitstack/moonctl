@@ -1,10 +1,11 @@
 ///|
 /// The `.proto` front end → moonrpc. `parse_proto` reads a proto3 file — messages
 /// (with `repeated`, `map<K,V>`, `oneof`, and `reserved`), enums, and a service
-/// whose RPCs may be client/server `stream`ing — and `generate_grpc` emits a
-/// moonrpc service stub: a struct per message, a `@moonrpc.Method` per RPC, the
-/// server handler struct, and the method listing. `proto_reserved_conflicts`
-/// surfaces a field that illegally reuses a `reserved` number or name.
+/// whose RPCs may be client/server `stream`ing — and `generate_grpc` emits for
+/// moonrpc a struct per message with `encode` and `decode`, a `@moonrpc.Method` per
+/// RPC, and per service a record of handlers whose `handlers()` is ready for
+/// `GrpcServer`. `proto_reserved_conflicts` surfaces a field that illegally reuses a
+/// `reserved` number or name.
 ///
 ///     moon run examples/03-proto-grpc
 #coverage.skip
@@ -56,6 +57,8 @@ fn main {
       println("  reserved conflict in \{m.name}: \{conflicts.join(", ")}")
     }
   }
-  println("\n==== generate_grpc(parse_proto(src)) -> moonrpc stub ====\n")
+  println(
+    "\n==== generate_grpc(parse_proto(src)) -> moonrpc messages and handlers ====\n",
+  )
   println(@moonctl.generate_grpc(proto))
 }

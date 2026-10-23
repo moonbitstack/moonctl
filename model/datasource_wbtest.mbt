@@ -144,11 +144,11 @@ test "tables_from_reflection groups columns and maps SQL types" {
   assert_eq(tables[1].name, "posts")
   let users = tables[0]
   assert_eq(users.columns.length(), 3)
-  assert_eq(users.columns[0].type_, "Int")
+  assert_eq(users.columns[0].type_, "Int32")
   assert_eq(users.columns[0].primary_key, true)
   assert_eq(users.columns[0].nullable, false)
   assert_eq(users.columns[1].type_, "String")
-  assert_eq(users.columns[2].type_, "Int")
+  assert_eq(users.columns[2].type_, "Int32")
   assert_eq(users.columns[2].nullable, true)
   let posts = tables[1]
   assert_eq(posts.columns[0].type_, "Int64")

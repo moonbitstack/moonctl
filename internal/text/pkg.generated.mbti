@@ -12,6 +12,8 @@ pub fn is_ws(UInt16) -> Bool
 
 pub fn join_lines(Array[String]) -> String
 
+pub fn lower_first(String) -> String
+
 pub fn path_segments(String) -> Array[String]
 
 pub fn quote(String) -> String

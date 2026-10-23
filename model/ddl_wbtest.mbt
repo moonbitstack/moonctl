@@ -27,9 +27,9 @@ test "parse_ddl: columns, types, primary key, nullability" {
   assert_eq(t.columns[1].type_, "String")
   assert_eq(t.columns[1].primary_key, false)
   assert_eq(t.columns[1].nullable, false)
-  // age INTEGER -> Int, nullable
+  // age INTEGER -> Int32, nullable
   assert_eq(t.columns[2].name, "age")
-  assert_eq(t.columns[2].type_, "Int")
+  assert_eq(t.columns[2].type_, "Int32")
   assert_eq(t.columns[2].nullable, true)
   // active BOOLEAN DEFAULT 1 -> Bool, default captured
   assert_eq(t.columns[3].name, "active")
@@ -99,21 +99,14 @@ test "generate_crud: struct, model, migration, typed CRUD shape" {
     true,
   )
   assert_eq(
-    contains(
-      code, "@moonorm.column(\"id\", @moonorm.IntType, primary_key=true),",
-    ),
+    contains(code, "@moonorm.column(\"id\", IntType, primary_key=true),"),
     true,
   )
   assert_eq(
-    contains(
-      code, "@moonorm.column(\"name\", @moonorm.TextType, nullable=false),",
-    ),
+    contains(code, "@moonorm.column(\"name\", TextType, nullable=false),"),
     true,
   )
-  assert_eq(
-    contains(code, "@moonorm.column(\"active\", @moonorm.BoolType),"),
-    true,
-  )
+  assert_eq(contains(code, "@moonorm.column(\"active\", BoolType),"), true)
   // from_row + to_columns
   assert_eq(contains(code, "    id: row.int64(0),"), true)
   assert_eq(contains(code, "    active: row.bool(3),"), true)
@@ -187,7 +180,7 @@ test "generate_crud: no primary key -> insert/all only, no by-id helpers" {
 
 ///|
 test "map_sql_type: the full type set the batch requires" {
-  assert_eq(map_sql_type("integer"), "Int")
+  assert_eq(map_sql_type("integer"), "Int32")
   assert_eq(map_sql_type("bigint"), "Int64")
   assert_eq(map_sql_type("text"), "String")
   assert_eq(map_sql_type("real"), "Double")

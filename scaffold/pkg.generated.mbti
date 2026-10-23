@@ -4,10 +4,15 @@ package "moonbitstack/moonctl/scaffold"
 import {
   "moonbitstack/moonctl/api",
   "moonbitstack/moonctl/plugin",
+  "moonbitstack/moonctl/proto",
   "moonbitstack/moonctl/style",
 }
 
 // Values
+pub fn generate_gql_tree(@api.Spec, style? : @style.Style, dir? : String) -> Array[TreeFile]
+
+pub fn generate_rpc_tree(@proto.Proto, style? : @style.Style, dir? : String) -> Array[TreeFile]
+
 pub fn generate_tree(@api.Spec, style? : @style.Style, dir? : String) -> Array[TreeFile]
 
 pub let pins : Map[String, String]
@@ -17,6 +22,8 @@ pub let port : Int32
 pub fn scaffold_api(String) -> Array[@plugin.GenFile]
 
 pub fn scaffold_docker(String, port? : Int32) -> Array[@plugin.GenFile]
+
+pub fn scaffold_gql(String) -> Array[@plugin.GenFile]
 
 pub fn scaffold_kube(String, port? : Int32, replicas? : Int32) -> Array[@plugin.GenFile]
 

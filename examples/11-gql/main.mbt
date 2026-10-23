@@ -2,9 +2,9 @@
 /// The `gql` generator — the GraphQL counterpart of `generate` (moonapi) and
 /// `generate_grpc` (moonrpc). `generate_gql` turns each `.api` `type` block into a
 /// moongql code-first object type (mapping MoonBit scalars to GraphQL scalars, an
-/// `Array[T]` to a non-null list, a `Map[...]` to a JSON string), adds a `Query`
-/// root with a `<type>(id: ID!)` lookup per type, and emits a resolver stub per
-/// field. The output compiles against `moonbitstack/moongql`; fill in the stub bodies.
+/// `Array[T]` to a non-null list, a `Map[...]` to a JSON string) and adds a `Query`
+/// root with `ping` and a `<type>(id: ID!)` lookup per type. The resolvers are the
+/// author's: `mctl gql new` seeds them next to the schema.
 ///
 ///     moon run examples/11-gql
 #coverage.skip
@@ -29,6 +29,6 @@ fn main raise {
   println(
     "service \{spec.service}: \{spec.types.length()} type blocks -> GraphQL schema\n",
   )
-  println("==== generate_gql(spec) -> moongql schema + resolver stubs ====\n")
+  println("==== generate_gql(spec) -> moongql schema ====\n")
   println(@moonctl.generate_gql(spec))
 }

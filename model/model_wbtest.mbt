@@ -25,27 +25,13 @@ test "storable type: struct, model, table descriptor, migration" {
     true,
   )
   assert_eq(
-    contains(
-      code, "@moonorm.column(\"id\", @moonorm.IntType, primary_key=true),",
-    ),
+    contains(code, "@moonorm.column(\"id\", IntType, primary_key=true),"),
     true,
   )
-  assert_eq(
-    contains(code, "@moonorm.column(\"name\", @moonorm.TextType),"),
-    true,
-  )
-  assert_eq(
-    contains(code, "@moonorm.column(\"admin\", @moonorm.BoolType),"),
-    true,
-  )
-  assert_eq(
-    contains(code, "@moonorm.column(\"score\", @moonorm.RealType),"),
-    true,
-  )
-  assert_eq(
-    contains(code, "@moonorm.column(\"data\", @moonorm.BlobType),"),
-    true,
-  )
+  assert_eq(contains(code, "@moonorm.column(\"name\", TextType),"), true)
+  assert_eq(contains(code, "@moonorm.column(\"admin\", BoolType),"), true)
+  assert_eq(contains(code, "@moonorm.column(\"score\", RealType),"), true)
+  assert_eq(contains(code, "@moonorm.column(\"data\", BlobType),"), true)
   // from_row decoder, projection order
   assert_eq(contains(code, "    id: row.int64(0),"), true)
   assert_eq(contains(code, "    name: row.text(1),"), true)
@@ -95,7 +81,7 @@ test "plain int maps to IntType via row.int / @moondb.Int" {
     #|  n: int
     #|}
   let code = generate_model(@api.parse(src))
-  assert_eq(contains(code, "@moonorm.column(\"n\", @moonorm.IntType),"), true)
+  assert_eq(contains(code, "@moonorm.column(\"n\", IntType),"), true)
   assert_eq(contains(code, "    n: row.int(0),"), true)
   assert_eq(contains(code, "    (\"n\", @moondb.Int(r.n)),"), true)
   // no `id` column here -> primary_key is not forced on
@@ -114,14 +100,8 @@ test "table name and columns are snake-cased" {
     contains(code, "pub let blog_post_model : @moonorm.Model[BlogPost]"),
     true,
   )
-  assert_eq(
-    contains(code, "@moonorm.column(\"post_id\", @moonorm.IntType),"),
-    true,
-  )
-  assert_eq(
-    contains(code, "@moonorm.column(\"author_name\", @moonorm.TextType),"),
-    true,
-  )
+  assert_eq(contains(code, "@moonorm.column(\"post_id\", IntType),"), true)
+  assert_eq(contains(code, "@moonorm.column(\"author_name\", TextType),"), true)
   // the struct field is snake-cased too, so the decoder and the projection read
   // the one name — `postID : Int64` is a MoonBit field, `PostID : Int64` is not
   assert_eq(contains(code, "  post_id : Int64"), true)
@@ -154,10 +134,7 @@ test "the struct, the model and the document spell one field the same way" {
   assert_eq(contains(@gen.generate(spec), "  user_name : String"), true)
   let model = generate_model(spec)
   assert_eq(contains(model, "  user_name : String"), true)
-  assert_eq(
-    contains(model, "@moonorm.column(\"user_name\", @moonorm.TextType)"),
-    true,
-  )
+  assert_eq(contains(model, "@moonorm.column(\"user_name\", TextType)"), true)
   assert_eq(contains(model, "    user_name: row.text(0),"), true)
   assert_eq(
     contains(model, "    (\"user_name\", @moondb.Text(r.user_name)),"),
@@ -197,9 +174,7 @@ test "an embedded block's fields reach the model too" {
     true,
   )
   assert_eq(
-    contains(
-      code, "@moonorm.column(\"id\", @moonorm.IntType, primary_key=true),",
-    ),
+    contains(code, "@moonorm.column(\"id\", IntType, primary_key=true),"),
     true,
   )
   assert_eq(contains(code, "    name: row.text(1),"), true)

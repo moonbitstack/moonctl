@@ -13,29 +13,22 @@ test "generate_gql maps type blocks to a moongql schema" {
   let code = generate_gql(@api.parse(src))
   assert_eq(code.contains("pub fn build_schema() -> @moongql.Schema"), true)
   assert_eq(code.contains("let user = schema.object(\"User\")"), true)
+  assert_eq(code.contains("user.field(\"id\", NonNull(Scalar(\"Int\")))"), true)
   assert_eq(
-    code.contains(
-      "user.field(\"id\", @moongql.NonNull(@moongql.Scalar(\"Int\")))",
-    ),
-    true,
-  )
-  assert_eq(
-    code.contains(
-      "user.field(\"name\", @moongql.NonNull(@moongql.Scalar(\"String\")))",
-    ),
+    code.contains("user.field(\"name\", NonNull(Scalar(\"String\")))"),
     true,
   )
   // []string -> a non-null list of non-null strings.
   assert_eq(
     code.contains(
-      "user.field(\"tags\", @moongql.NonNull(@moongql.ListOf(@moongql.NonNull(@moongql.Scalar(\"String\")))))",
+      "user.field(\"tags\", NonNull(ListOf(NonNull(Scalar(\"String\")))))",
     ),
     true,
   )
 }
 
 ///|
-test "generate_gql adds a Query lookup and resolver stubs per type" {
+test "generate_gql adds ping and a Query lookup per type, and no resolvers" {
   let src =
     #|type Post {
     #|  title: string
@@ -47,19 +40,15 @@ test "generate_gql adds a Query lookup and resolver stubs per type" {
   let code = generate_gql(@api.parse(src))
   assert_eq(
     code.contains(
-      "query.field_args(\"post\", [(\"id\", @moongql.NonNull(@moongql.Scalar(\"ID\")))], @moongql.Named(\"Post\"))",
+      "query.field_args(\"post\", [(\"id\", NonNull(Scalar(\"ID\")))], Named(\"Post\"))",
     ),
     true,
   )
-  assert_eq(code.contains("pub fn resolvers() -> @moongql.Resolvers"), true)
   assert_eq(
-    code.contains("resolvers.field(\"Post\", \"title\", fn(info) {"),
+    code.contains("query.field(\"ping\", NonNull(Scalar(\"String\")))"),
     true,
   )
-  assert_eq(
-    code.contains("resolvers.field(\"Query\", \"post\", fn(info) {"),
-    true,
-  )
+  assert_eq(code.contains("resolvers"), false)
 }
 
 ///|
@@ -75,20 +64,9 @@ test "generate_gql names a field on the wire, embeds and all" {
     #|}
   let code = generate_gql(@api.parse(src))
   // the embedded field belongs to the type that inlined it
+  assert_eq(code.contains("user.field(\"id\", NonNull(Scalar(\"Int\")))"), true)
   assert_eq(
-    code.contains(
-      "user.field(\"id\", @moongql.NonNull(@moongql.Scalar(\"Int\")))",
-    ),
-    true,
-  )
-  assert_eq(
-    code.contains(
-      "user.field(\"user_name\", @moongql.NonNull(@moongql.Scalar(\"String\")))",
-    ),
-    true,
-  )
-  assert_eq(
-    code.contains("resolvers.field(\"User\", \"user_name\", fn(info) {"),
+    code.contains("user.field(\"user_name\", NonNull(Scalar(\"String\")))"),
     true,
   )
   assert_eq(code.contains("UserName"), false)
@@ -105,8 +83,5 @@ test "generate_gql maps a named field type to a Named reference" {
     #|  get /teams/:id get_team
     #|}
   let code = generate_gql(@api.parse(src))
-  assert_eq(
-    code.contains("owner\", @moongql.NonNull(@moongql.Named(\"User\")))"),
-    true,
-  )
+  assert_eq(code.contains("owner\", NonNull(Named(\"User\")))"), true)
 }

@@ -115,40 +115,103 @@ test "generated OpenAPI 3.1 parses and carries the expected paths" {
 }
 
 ///|
-test "scaffold_api emits a compilable moonapi project tree" {
+test "scaffold_api is the layered tree with a spec, a README and a ping test" {
   let files = scaffold_api("greet")
-  assert_eq(files.length(), 5)
+  let paths = files.map(f => f.path)
+  for
+    path in [
+      "greet/greet.api", "greet/README.md", "greet/greet.mbt", "greet/internal/handler/routes_test.mbt",
+    ] {
+    assert_eq(paths.contains(path), true, msg=path)
+  }
   let m = file_at(files, "greet/moon.mod")
-  assert_eq(contains(m, "name = \"greet\""), true)
-  assert_eq(contains(m, pinned("moonbitstack/moonapi")), true)
-  assert_eq(contains(m, pinned("moonbitstack/moonasgi")), true)
-  let pkg = file_at(files, "greet/src/moon.pkg")
+  for
+    dep in [
+      "moonbitstack/moonapi", "moonbitstack/moonasgi", "moonbitstack/mooncat", "moonbitlang/async",
+    ] {
+    assert_eq(contains(m, pinned(dep)), true, msg=dep)
+  }
   assert_eq(
-    pkg, "import {\n  \"moonbitstack/moonapi\",\n  \"moonbitstack/moonasgi\",\n}\n",
+    contains(file_at(files, "greet/internal/logic/pinglogic.mbt"), "\"pong\""),
+    true,
   )
-  let api = file_at(files, "greet/greet.api")
-  assert_eq(contains(api, "service greet {"), true)
-  let app = file_at(files, "greet/src/app.mbt")
-  // the generated app uses the 0.10.5-safe arrow-closure route registration
-  assert_eq(contains(app, "pub fn build_app() -> @moonapi.App"), true)
-  assert_eq(contains(app, "ctx => ping(ctx)"), true)
-  assert_eq(contains(app, "DO NOT EDIT"), true)
-  assert_eq(file_at(files, "greet/README.md") != "", true)
+  assert_eq(
+    contains(
+      file_at(files, "greet/internal/handler/moon.pkg"),
+      "\"moonbitstack/moonasgi/client\",",
+    ),
+    true,
+  )
 }
 
 ///|
-test "scaffold_rpc emits a moonrpc project tree" {
+test "scaffold_rpc is the layered gRPC tree with a Ping that answers" {
   let files = scaffold_rpc("echo")
-  assert_eq(files.length(), 5)
+  let paths = files.map(f => f.path)
+  for
+    path in [
+      "echo/echo.proto", "echo/README.md", "echo/pb/echo_grpc.mbt", "echo/internal/server/echoserver.mbt",
+      "echo/client/echoclient.mbt", "echo/client/echoclient_test.mbt",
+    ] {
+    assert_eq(paths.contains(path), true, msg=path)
+  }
   assert_eq(
     contains(file_at(files, "echo/moon.mod"), pinned("moonbitstack/moonrpc")),
     true,
   )
-  let proto = file_at(files, "echo/echo.proto")
-  assert_eq(contains(proto, "service Echo {"), true)
-  assert_eq(contains(proto, "rpc Ping(PingReq) returns (PingResp);"), true)
-  let stub = file_at(files, "echo/src/service.mbt")
-  assert_eq(contains(stub, "@moonrpc.Method"), true)
+  assert_eq(
+    contains(
+      file_at(files, "echo/echo.proto"),
+      "rpc Ping(PingReq) returns (PingResp);",
+    ),
+    true,
+  )
+  assert_eq(
+    contains(file_at(files, "echo/echo.mbt"), "grpc.handlers[path] = handler"),
+    true,
+  )
+  assert_eq(
+    contains(
+      file_at(files, "echo/internal/logic/pinglogic.mbt"),
+      "Ok(@pb.PingResp::{ message: \"pong\" })",
+    ),
+    true,
+  )
+  let smoke = file_at(files, "echo/client/echoclient_test.mbt")
+  assert_eq(contains(smoke, "@client.EchoClient::new("), true)
+  assert_eq(
+    contains(smoke, "for path, handler in @server.echoserver(svc).handlers() {"),
+    true,
+  )
+}
+
+///|
+test "scaffold_gql is the GraphQL tree with a ping resolver and its test" {
+  let files = scaffold_gql("books")
+  let paths = files.map(f => f.path)
+  for
+    path in [
+      "books/books.api", "books/README.md", "books/internal/schema/schema.mbt", "books/internal/logic/resolvers_test.mbt",
+    ] {
+    assert_eq(paths.contains(path), true, msg=path)
+  }
+  let m = file_at(files, "books/moon.mod")
+  assert_eq(contains(m, pinned("moonbitstack/moongql")), true)
+  assert_eq(contains(m, pinned("moonbitstack/mooncat")), true)
+  assert_eq(
+    contains(
+      file_at(files, "books/books.mbt"),
+      "@moongql.graphql_app(@schema.build_schema(), @logic.resolvers(svc))",
+    ),
+    true,
+  )
+  assert_eq(
+    contains(
+      file_at(files, "books/internal/logic/resolvers.mbt"),
+      "resolvers.field(\"Query\", \"ping\", _ => Json::string(\"pong\"))",
+    ),
+    true,
+  )
 }
 
 ///|

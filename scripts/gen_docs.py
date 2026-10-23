@@ -27,10 +27,11 @@ SECTIONS = [
      "{{.Field}} interpolation, if/range/with, $variables, | pipelines and a "
      "function library. generate_with drives codegen from a custom template."),
     ("grpc", "proto/proto.mbt", "gRPC codegen",
-     "A minimal .proto (proto3) parser and the moonrpc service-stub generator - "
-     "parse_proto turns source into a Proto; generate_grpc emits message structs, "
-     "@moonrpc.Method descriptors and a <Service>Server handler skeleton that "
-     "compiles against moonbitstack/moonrpc."),
+     "A proto3 parser and the moonrpc generator - parse_proto turns source into a "
+     "Proto; generate_grpc emits a struct per message with encode / decode in "
+     "protobuf wire form, @moonrpc.Method descriptors, and per service a record "
+     "with one function per RPC whose handlers() keys every RPC by its :path for "
+     "GrpcServer."),
     ("model", "model/model.mbt", "ORM model codegen",
      "The moonorm model generator - generate_model turns a Spec's .api type "
      "blocks into a model struct, a @moonorm.Model with declared columns plus "
@@ -69,17 +70,26 @@ SECTIONS = [
      "schema's ReflectedColumns into the same moonorm model + CRUD the .sql path "
      "produces. The schema reading itself lives in the native reflect sub-package."),
     ("scaffold", "scaffold/scaffold.mbt", "Project scaffolds",
-     "The nested project generators - scaffold_api / scaffold_rpc / scaffold_model "
-     "emit a whole runnable project tree (moon.mod, a sample spec, generated "
-     "source, README), and scaffold_docker / scaffold_kube emit a Dockerfile and a "
-     "Kubernetes deployment, as goctl's api new / rpc new / docker / kube do."),
+     "goctl's api new / rpc new, plus gql new - scaffold_api, scaffold_rpc and "
+     "scaffold_gql write a service that passes its tests and serves on 12000; "
+     "scaffold_model a moonorm data layer; scaffold_docker / scaffold_kube a "
+     "Dockerfile and a Kubernetes deployment."),
+    ("rpctree", "scaffold/rpc.mbt", "gRPC project tree",
+     "The layered tree for a .proto - pb/ with the messages, codecs and handler "
+     "tables, internal/logic with one function per RPC, internal/server wiring "
+     "them together, client/ with a typed client per service, and the entry point "
+     "serving it all."),
+    ("gqltree", "scaffold/gql.mbt", "GraphQL project tree",
+     "The layered tree for a GraphQL service - internal/schema generated from the "
+     "spec, internal/logic with the author's resolvers and a test, and the entry "
+     "point serving graphql_app on mooncat."),
     ("manifest", "scaffold/manifest.mbt", "Generated manifests",
      "The moon.mod and moon.pkg every generated project is written with, and pins - "
      "the version of each library they import, which CI builds every kind of "
      "scaffold against."),
     ("gql", "gql/gql.mbt", "GraphQL generator",
-     "A moongql schema and its resolver skeletons from the same .api spec the REST "
-     "routes come from, so one description feeds both surfaces."),
+     "A moongql schema from the same .api spec the REST routes come from, so one "
+     "description feeds both surfaces. The resolvers are the author's code."),
     ("agentgen", "agent/agent.mbt", "Agent scaffolding",
      "Generating a moonkoog tool registry from the spec's types, so an .api "
      "description becomes tools an agent can call."),

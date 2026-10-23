@@ -43,7 +43,7 @@ fn map_sql_type(t : String) -> String {
     | "smallint"
     | "tinyint"
     | "mediumint"
-    | "serial" => "Int"
+    | "serial" => "Int32"
     "bigint" | "int8" | "bigserial" => "Int64"
     "text"
     | "varchar"
@@ -360,12 +360,7 @@ fn emit_ddl_model(
       ""
     }
     col_lines.push(
-      "    @moonorm.column(" +
-      @text.quote(c.name) +
-      ", @moonorm." +
-      cls +
-      flags +
-      "),",
+      "    @moonorm.column(" + @text.quote(c.name) + ", " + cls + flags + "),",
     )
   }
   let from_fields : Array[String] = []

@@ -145,6 +145,23 @@ pub fn upper_first(s : String) -> String {
 }
 
 ///|
+/// Lowercase a leading ASCII letter: a type's name as the field that looks it up.
+pub fn lower_first(s : String) -> String {
+  if s.length() == 0 {
+    return s
+  }
+  let c = s[0].to_int()
+  if c >= 0x41 && c <= 0x5A {
+    match (c + 0x20).to_char() {
+      Some(ch) => ch.to_string() + s[1:].to_owned()
+      None => s
+    }
+  } else {
+    s
+  }
+}
+
+///|
 /// Turn a `snake_case` table name into the `PascalCase` struct name its model maps
 /// to (`blog_posts` → `BlogPosts`). Underscores split words; other characters carry
 /// through.

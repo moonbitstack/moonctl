@@ -173,11 +173,11 @@ test "an embed leading back to a block already folded in stops there" {
     #|}
   let code = generate(@api.parse(src))
   assert_eq(
-    contains(code, "pub(all) struct A {\n  b : Int\n  a : Int\n}"),
+    contains(code, "pub(all) struct A {\n  b : Int32\n  a : Int32\n}"),
     true,
   )
   assert_eq(
-    contains(code, "pub(all) struct B {\n  a : Int\n  b : Int\n}"),
+    contains(code, "pub(all) struct B {\n  a : Int32\n  b : Int32\n}"),
     true,
   )
 }
@@ -226,7 +226,7 @@ test "an anonymous nested block becomes a type of its own" {
     ),
     true,
   )
-  assert_eq(contains(code, "pub(all) struct OuterInner {\n  a : Int\n"), true)
+  assert_eq(contains(code, "pub(all) struct OuterInner {\n  a : Int32\n"), true)
 }
 
 ///|

@@ -103,7 +103,7 @@ fn type_schema(type_ : String, v : DocVersion) -> Json {
   match t {
     "String" => Json((Map([("type", Json("string"))]) : Map[String, Json]))
     "Bool" => Json((Map([("type", Json("boolean"))]) : Map[String, Json]))
-    "Int" | "UInt" =>
+    "Int32" | "UInt32" =>
       Json(
         (
           Map([("type", Json("integer")), ("format", Json("int32"))]) :
@@ -255,7 +255,7 @@ fn route_params(
 fn literal_json(type_ : String, raw : String) -> Json {
   match type_ {
     "Bool" => if raw == "true" { Json(true) } else { Json(false) }
-    "Int" | "Int64" | "UInt" | "UInt64" | "Double" | "Float" =>
+    "Int32" | "Int64" | "UInt32" | "UInt64" | "Double" | "Float" =>
       @gen.number_json(raw)
     _ => Json(raw)
   }

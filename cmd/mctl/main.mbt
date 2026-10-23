@@ -65,32 +65,9 @@ async fn gen_api(
       println("mctl: generated " + out + " from " + input)
       return
     }
-    let tree = @moonctl.generate_tree(
-      spec,
-      style=@moonctl.Style::parse(style),
-      dir~,
-    )
-    let here : Map[String, Bool] = Map([])
-    for f in tree {
-      if @fs.exists(f.path) {
-        here[f.path] = true
-      }
-    }
-    let files = @moonctl.tree_plan(tree, p => here.contains(p))
-    for f in files {
-      write_gen_file(f)
-    }
-    let kept = tree.length() - files.length()
-    println(
-      "mctl: wrote " +
-      files.length().to_string() +
-      " file(s) from " +
-      input +
-      (if kept == 0 {
-        ""
-      } else {
-        "; kept the " + kept.to_string() + " already there"
-      }),
+    write_tree(
+      input,
+      @moonctl.generate_tree(spec, style=@moonctl.Style::parse(style), dir~),
     )
   } catch {
     e => println("mctl: error generating from " + input + ": " + e.to_string())
@@ -98,16 +75,57 @@ async fn gen_api(
 }
 
 ///|
-/// Read a `.proto` file, parse it, and write a moonrpc service stub (message
-/// structs + `@moonrpc.Method` descriptors + a `<Service>Server` handler skeleton)
-/// to `<stem>_grpc.mbt`.
-async fn gen_rpc(input : String) -> Unit {
-  let out = replace_ext(input, ".proto", "_grpc.mbt")
+/// Write the files of `tree` a run should touch: what moonctl owns always, what
+/// it only seeds when it is not on disk yet.
+async fn write_tree(input : String, tree : Array[@moonctl.TreeFile]) -> Unit {
+  let here : Map[String, Bool] = Map([])
+  for f in tree {
+    if @fs.exists(f.path) {
+      here[f.path] = true
+    }
+  }
+  let files = @moonctl.tree_plan(tree, p => here.contains(p))
+  for f in files {
+    write_gen_file(f)
+  }
+  let kept = tree.length() - files.length()
+  println(
+    "mctl: wrote " +
+    files.length().to_string() +
+    " file(s) from " +
+    input +
+    (if kept == 0 {
+      ""
+    } else {
+      "; kept the " + kept.to_string() + " already there"
+    }),
+  )
+}
+
+///|
+/// Read a `.proto` file and write the moonrpc service tree for it, or with `flat`
+/// only the messages, codecs and handler tables to `<stem>_grpc.mbt`.
+async fn gen_rpc(input : String, opts : Opts) -> Unit {
   try {
-    let source = @fs.read_file(input).text()
-    let code = @moonctl.generate_grpc(@moonctl.parse_proto(source))
-    @fs.write_file(out, code, create_mode=CreateOrTruncate)
-    println("mctl: generated " + out + " from " + input)
+    let proto = @moonctl.parse_proto(@fs.read_file(input).text())
+    if opts.flat {
+      let out = replace_ext(input, ".proto", "_grpc.mbt")
+      @fs.write_file(
+        out,
+        @moonctl.generate_grpc(proto),
+        create_mode=CreateOrTruncate,
+      )
+      println("mctl: generated " + out + " from " + input)
+      return
+    }
+    write_tree(
+      input,
+      @moonctl.generate_rpc_tree(
+        proto,
+        style=@moonctl.Style::parse(opts.style),
+        dir=opts.dir,
+      ),
+    )
   } catch {
     e => println("mctl: error generating from " + input + ": " + e.to_string())
   }
@@ -130,12 +148,27 @@ async fn gen_model(input : String) -> Unit {
 ///|
 /// Read a `.api` spec, parse its `type` blocks, and write a moongql code-first
 /// schema + resolver stubs to `<stem>_schema.mbt`.
-async fn gen_gql(input : String) -> Unit {
-  let out = replace_ext(input, ".api", "_schema.mbt")
+async fn gen_gql(input : String, opts : Opts) -> Unit {
   try {
-    let code = @moonctl.generate_gql(read_spec(input))
-    @fs.write_file(out, code, create_mode=CreateOrTruncate)
-    println("mctl: generated " + out + " from " + input)
+    let spec = read_spec(input)
+    if opts.flat {
+      let out = replace_ext(input, ".api", "_schema.mbt")
+      @fs.write_file(
+        out,
+        @moonctl.generate_gql(spec),
+        create_mode=CreateOrTruncate,
+      )
+      println("mctl: generated " + out + " from " + input)
+      return
+    }
+    write_tree(
+      input,
+      @moonctl.generate_gql_tree(
+        spec,
+        style=@moonctl.Style::parse(opts.style),
+        dir=opts.dir,
+      ),
+    )
   } catch {
     e => println("mctl: error generating from " + input + ": " + e.to_string())
   }
@@ -345,7 +378,7 @@ fn usage() -> Unit {
     "  mctl gen api   <file.api>    parse a .api spec  -> a moonapi project tree (etc/, internal/…)",
   )
   println(
-    "  mctl gen proto <file.proto>  parse a .proto     -> <file>_grpc.mbt (moonrpc stub)",
+    "  mctl gen rpc   <file.proto>  parse a .proto     -> a moonrpc service tree (pb/, internal/…, client/)",
   )
   println(
     "  mctl gen model <file.api>    parse .api types   -> <file>_model.mbt (moonorm models)",
@@ -357,7 +390,7 @@ fn usage() -> Unit {
     "  mctl gen doc   <file.api>    parse a .api spec  -> <file>_openapi.json + _swagger.html",
   )
   println(
-    "  mctl gen gql   <file.api>    parse .api types   -> <file>_schema.mbt (moongql schema + resolvers)",
+    "  mctl gen gql   <file.api>    parse .api types   -> a moongql service tree (internal/schema, …)",
   )
   println(
     "  mctl gen agent <file.api>    parse .api service -> <file>_agent.mbt (moonkoog tools + AIAgent)",
@@ -373,6 +406,9 @@ fn usage() -> Unit {
   )
   println(
     "  mctl rpc  new  <name>        scaffold a moonrpc service project under <name>/",
+  )
+  println(
+    "  mctl gql  new  <name>        scaffold a moongql service project under <name>/",
   )
   println(
     "  mctl model new <name>        scaffold a moonorm data-layer project under <name>/",
@@ -394,7 +430,7 @@ fn usage() -> Unit {
   )
   println("  mctl help                    show this message")
   println("")
-  println("flags (gen api):")
+  println("flags (gen api, gen rpc, gen gql):")
   println(
     "  --style <template>           how names are spelled: gozero (default), goZero, go_zero, …",
   )
@@ -479,11 +515,11 @@ fn split_flags(argv : Array[String]) -> (Array[String], Opts) {
 async fn dispatch(what : String, file : String, opts : Opts) -> Unit {
   match what {
     "api" => gen_api(file, opts.style, opts.dir, opts.flat)
-    "proto" | "rpc" => gen_rpc(file)
+    "proto" | "rpc" => gen_rpc(file, opts)
     "model" => gen_model(file)
     "crud" => gen_crud(file)
     "doc" => gen_doc(file)
-    "gql" => gen_gql(file)
+    "gql" => gen_gql(file, opts)
     "agent" => gen_agent(file)
     "datasource" => gen_datasource(file, "datasource_model.mbt")
     _ => usage()
@@ -511,6 +547,8 @@ async fn main {
     write_scaffold("api project " + args[2], @moonctl.scaffold_api(args[2]))
   } else if n >= 3 && args[0] == "rpc" && args[1] == "new" {
     write_scaffold("rpc project " + args[2], @moonctl.scaffold_rpc(args[2]))
+  } else if n >= 3 && args[0] == "gql" && args[1] == "new" {
+    write_scaffold("gql project " + args[2], @moonctl.scaffold_gql(args[2]))
   } else if n >= 3 && args[0] == "model" && args[1] == "new" {
     write_scaffold("model project " + args[2], @moonctl.scaffold_model(args[2]))
   } else if n >= 2 && args[0] == "docker" {

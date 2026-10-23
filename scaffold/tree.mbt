@@ -95,9 +95,7 @@ pub fn generate_tree(
     Some(s) => s
     None => @style.Style::gozero()
   }
-  let out : Array[TreeFile] = []
   let mod_ = spec.service
-  let svc_file = st.format(spec.service)
   let config_pkg = mod_ + "/internal/config"
   let svc_pkg = mod_ + "/internal/svc"
   let handler_pkg = mod_ + "/internal/handler"
@@ -105,72 +103,18 @@ pub fn generate_tree(
   let api = ("moonbitstack/moonapi", "")
   let asgi = ("moonbitstack/moonasgi", "")
 
-  // The module itself.
-  out.push({
-    path: at(dir, "moon.mod"),
-    content: mod_file(mod_, ["moonbitstack/moonapi", "moonbitstack/moonasgi"]),
-    regen: Once,
-  })
-  out.push({
-    path: at(dir, "moon.pkg"),
-    content: pkg_file(
-      [api, (config_pkg, ""), (svc_pkg, ""), (handler_pkg, "")],
-      main_=true,
+  let out = base_tree(
+    mod_,
+    st,
+    dir,
+    deps=[
+      "moonbitstack/moonapi", "moonbitstack/moonasgi", "moonbitstack/mooncat",
+    ],
+    imports=[api, ("moonbitstack/mooncat", ""), (handler_pkg, "")],
+    main=asgi_main(
+      mod_, "HTTP", "@handler.register_handlers(@moonapi.App::new(), svc).to_asgi()",
     ),
-    regen: Once,
-  })
-  out.push({
-    path: at(dir, svc_file + ".mbt"),
-    content: "///|\n/// The " +
-    spec.service +
-    " service: read the configuration, build the context the handlers share, and\n/// register every route on a fresh app. What comes back is a moonasgi application —\n/// serve it with whichever server you run.\nfn main {\n  let cfg = @config.Config::new()\n  println(\"" +
-    spec.service +
-    " configured for \" + cfg.host + \":\" + cfg.port.to_string())\n  @handler.register_handlers(@moonapi.App::new(), @svc.ServiceContext::new(cfg))\n  |> ignore\n}\n",
-    regen: Once,
-  })
-
-  // etc/<service>.yaml — the configuration the entry point reads.
-  out.push({
-    path: at(dir, "etc/" + svc_file + ".yaml"),
-    content: "name: " +
-    spec.service +
-    "\nhost: 0.0.0.0\nport: " +
-    port.to_string() +
-    "\n",
-    regen: Once,
-  })
-
-  // internal/config
-  out.push({
-    path: at(dir, "internal/config/moon.pkg"),
-    content: pkg_file([]),
-    regen: Once,
-  })
-  out.push({
-    path: at(dir, "internal/config/" + st.format("config") + ".mbt"),
-    content: "///|\n/// What the " +
-    spec.service +
-    " service reads out of `etc/" +
-    svc_file +
-    ".yaml`.\npub(all) struct Config {\n  host : String\n  port : Int\n}\n\n///|\n/// The configuration `etc/" +
-    svc_file +
-    ".yaml` ships with.\npub fn Config::new(host? : String = \"0.0.0.0\", port? : Int = " +
-    port.to_string() +
-    ") -> Config {\n  { host, port }\n}\n",
-    regen: Once,
-  })
-
-  // internal/svc
-  out.push({
-    path: at(dir, "internal/svc/moon.pkg"),
-    content: pkg_file([(config_pkg, "")]),
-    regen: Once,
-  })
-  out.push({
-    path: at(dir, "internal/svc/" + st.format("service_context") + ".mbt"),
-    content: "///|\n/// What every handler is given besides its request: the loaded configuration, and\n/// whatever else the service depends on — add those here.\npub(all) struct ServiceContext {\n  config : @config.Config\n}\n\n///|\n/// Build the context the handlers share.\npub fn ServiceContext::new(config : @config.Config) -> ServiceContext {\n  { config, }\n}\n",
-    regen: Once,
-  })
+  )
 
   // internal/types — the spec's schemas, rewritten on every run.
   out.push({
@@ -207,10 +151,35 @@ pub fn generate_tree(
   for d in group_dirs {
     routes_imports.push((handler_pkg + "/" + d, d))
   }
+  // The test's imports do not depend on the spec, so a regeneration never leaves
+  // the seeded test without them.
+  let tests = pkg_file([("moonbitstack/moonasgi/client", ""), (config_pkg, "")])
   out.push({
     path: at(dir, "internal/handler/moon.pkg"),
-    content: pkg_file(routes_imports),
+    content: pkg_file(routes_imports) +
+    "\n" +
+    tests.replace(old="}\n", new="} for \"test\"\n"),
     regen: Always,
+  })
+  let ping =
+    #|
+    #|  let reply = client.get("/ping")
+    #|  assert_eq(reply.status, 200)
+    #|  assert_eq(reply.text(), "pong")
+  let test_src =
+    #|///|
+    #|test "the app answers its routes and nothing else" {
+    #|  let svc = @svc.ServiceContext::new(@config.Config::new())
+    #|  let app = @handler.register_handlers(@moonapi.App::new(), svc)
+    #|  let client = @client.TestClient::new(req => app.handle(req))
+    #|  assert_eq(client.get("/no/such/route").status, 404)%ping
+    #|}
+  let pings = spec.routes.any(r => r.verb == "get" && r.path == "/ping")
+  out.push({
+    path: at(dir, "internal/handler/" + st.format("routes") + "_test.mbt"),
+    content: test_src.replace(old="%ping", new=if pings { ping } else { "" }) +
+    "\n",
+    regen: Once,
   })
   out.push({
     path: at(dir, "internal/handler/" + st.format("routes") + ".mbt"),
@@ -273,7 +242,13 @@ pub fn generate_tree(
       ". This is where the service does its work.\npub fn " +
       name +
       "(\n  _svc : @svc.ServiceContext,\n  _ctx : @moonapi.Context,\n) -> @moonasgi.Response {\n  @moonapi.text(200, " +
-      @text.quote("TODO: " + r.handler) +
+      @text.quote(
+        if r.handler == "ping" {
+          "pong"
+        } else {
+          "TODO: " + r.handler
+        },
+      ) +
       ")\n}\n",
       regen: Once,
     })

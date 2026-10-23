@@ -1,4 +1,5 @@
 // A moongql schema from a spec's type blocks.
 import {
   "moonbitstack/moonctl/api",
+  "moonbitstack/moonctl/internal/text",
 }

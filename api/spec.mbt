@@ -139,9 +139,9 @@ fn map_type(raw : String) -> String {
   match t {
     "string" => "String"
     "bool" => "Bool"
-    "int" | "int8" | "int16" | "int32" | "rune" => "Int"
+    "int" | "int8" | "int16" | "int32" | "rune" => "Int32"
     "int64" => "Int64"
-    "uint" | "uint8" | "uint16" | "uint32" => "UInt"
+    "uint" | "uint8" | "uint16" | "uint32" => "UInt32"
     "uint64" => "UInt64"
     "byte" => "Byte"
     "bytes" => "Bytes"

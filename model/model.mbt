@@ -1,12 +1,12 @@
 ///|
-/// The `@moonorm.ColumnType` for a field type, or `None` when the type has no
+/// The `ColumnType` constructor for a field type, or `None` when the type has no
 /// single-column storage class (`Array`, `Map`, a nested `type`, `Float`, unsigned
 /// ints — none map onto one `@moondb.Value`). Only a type in this set gets a
 /// declared column, a `from_row` read, and a `to_columns` bind, so a model is only
 /// generated when every field is storable.
 fn storage_class(type_ : String) -> String? {
   match type_ {
-    "Int" => Some("IntType")
+    "Int32" => Some("IntType")
     "Int64" => Some("IntType")
     "String" => Some("TextType")
     "Double" => Some("RealType")
@@ -23,7 +23,7 @@ fn storage_class(type_ : String) -> String? {
 fn row_read(type_ : String, idx : Int32) -> String {
   let i = idx.to_string()
   match type_ {
-    "Int" => "row.int(" + i + ")"
+    "Int32" => "row.int(" + i + ")"
     "Int64" => "row.int64(" + i + ")"
     "String" => "row.text(" + i + ")"
     "Double" => "row.double(" + i + ")"
@@ -38,7 +38,7 @@ fn row_read(type_ : String, idx : Int32) -> String {
 /// column of `type_`, e.g. `Int64` → `@moondb.Int64(r.id)`.
 fn value_ctor(type_ : String, expr : String) -> String {
   match type_ {
-    "Int" => "@moondb.Int(" + expr + ")"
+    "Int32" => "@moondb.Int(" + expr + ")"
     "Int64" => "@moondb.Int64(" + expr + ")"
     "String" => "@moondb.Text(" + expr + ")"
     "Double" => "@moondb.Double(" + expr + ")"
@@ -129,12 +129,7 @@ fn emit_model(
     }
     let pk = if cname == "id" { ", primary_key=true" } else { "" }
     col_lines.push(
-      "    @moonorm.column(" +
-      @text.quote(cname) +
-      ", @moonorm." +
-      cls +
-      pk +
-      "),",
+      "    @moonorm.column(" + @text.quote(cname) + ", " + cls + pk + "),",
     )
   }
   let from_fields : Array[String] = []

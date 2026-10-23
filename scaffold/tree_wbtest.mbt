@@ -75,6 +75,7 @@ test "a generated tree lays the service out the way goctl does" {
       #|internal/types/moon.pkg
       #|internal/types/types.mbt
       #|internal/handler/moon.pkg
+      #|internal/handler/routes_test.mbt
       #|internal/handler/routes.mbt
       #|internal/handler/user/moon.pkg
       #|internal/handler/user/loginhandler.mbt
@@ -170,10 +171,20 @@ test "the tree is a module, with an entry point and a config to start from" {
     contains(tree_at(tree, "greet.mbt"), "@handler.register_handlers("),
     true,
   )
+  assert_eq(
+    contains(
+      tree_at(tree, "greet.mbt"),
+      "@mooncat.serve(app, host=cfg.host, port=cfg.port)",
+    ),
+    true,
+  )
   // The family's default port, in the file and in the code that stands in for it.
   assert_eq(contains(tree_at(tree, "etc/greet.yaml"), "port: 12000"), true)
   assert_eq(
-    contains(tree_at(tree, "internal/config/config.mbt"), "port? : Int = 12000"),
+    contains(
+      tree_at(tree, "internal/config/config.mbt"),
+      "port~ : Int32 = 12000",
+    ),
     true,
   )
   assert_eq(
@@ -239,6 +250,7 @@ test "every name the tree invents is spelled in the style, not just the handlers
       #|internal/types/moon.pkg
       #|internal/types/Types.mbt
       #|internal/handler/moon.pkg
+      #|internal/handler/Routes_test.mbt
       #|internal/handler/Routes.mbt
       #|internal/handler/OrderAdmin/moon.pkg
       #|internal/handler/OrderAdmin/ListOrdersHandler.mbt
@@ -302,6 +314,7 @@ test "a name two blocks ask for is written once, wherever the tree goes" {
       #|out/internal/types/moon.pkg
       #|out/internal/types/types.mbt
       #|out/internal/handler/moon.pkg
+      #|out/internal/handler/routes_test.mbt
       #|out/internal/handler/routes.mbt
       #|out/internal/handler/user/moon.pkg
       #|out/internal/handler/admin/moon.pkg
@@ -339,7 +352,7 @@ test "a service with no routes still gets a tree that compiles" {
 test "a second generation refreshes the routes and types and touches nothing else" {
   let first = tree_plan(generate_tree(sample_spec()), _ => false)
   // everything is written on the first run
-  assert_eq(first.length(), 21)
+  assert_eq(first.length(), 22)
   let on_disk : Map[String, Bool] = Map([])
   for f in first {
     on_disk[f.path] = true

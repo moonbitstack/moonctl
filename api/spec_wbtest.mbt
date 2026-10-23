@@ -268,5 +268,5 @@ test "parse type blocks into schemas" {
   assert_eq(user.fields[1].type_, "String")
   assert_eq(user.fields[2].type_, "Bool")
   assert_eq(user.fields[3].type_, "Array[String]")
-  assert_eq(user.fields[4].type_, "Map[String, Int]")
+  assert_eq(user.fields[4].type_, "Map[String, Int32]")
 }

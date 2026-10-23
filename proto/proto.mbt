@@ -20,9 +20,9 @@ fn map_proto_type(raw : String) -> String {
   match raw {
     "double" => "Double"
     "float" => "Float"
-    "int32" | "sint32" | "sfixed32" => "Int"
+    "int32" | "sint32" | "sfixed32" => "Int32"
     "int64" | "sint64" | "sfixed64" => "Int64"
-    "uint32" | "fixed32" => "UInt"
+    "uint32" | "fixed32" => "UInt32"
     "uint64" | "fixed64" => "UInt64"
     "bool" => "Bool"
     "string" => "String"
@@ -49,12 +49,29 @@ fn last_segment(s : String) -> String {
 }
 
 ///|
-/// One field of a protobuf `message`: its name, the (already MoonBit-mapped)
-/// type, and its wire number (the `= N`). `repeated` becomes `Array[T]` and
-/// `map<K, V>` becomes `Map[K, V]`.
+/// Whether a field holds one value, a list, or a map with proto key and value
+/// types.
+pub(all) enum Label {
+  Single
+  Repeated
+  MapOf(key~ : String, value~ : String)
+} derive(Eq, Debug)
+
+///|
+pub extend Label with Debug::{to_repr}
+
+///|
+pub extend Label with Eq::{not_equal, equal}
+
+///|
+/// One field of a protobuf `message`: its name, its MoonBit type (`repeated` is
+/// `Array[T]`, `map<K, V>` is `Map[K, V]`), its proto element type as written,
+/// its label and its wire number.
 pub(all) struct ProtoField {
   name : String
   type_ : String
+  proto : String
+  label : Label
   number : Int32
 }
 
@@ -381,7 +398,8 @@ fn parse_field(toks : Array[String], i : Int32) -> (ProtoField?, Int32) {
     }
     let end = skip_to_semi(toks, j)
     let type_ = "Map[" + map_proto_type(k) + ", " + map_proto_type(v) + "]"
-    return (Some({ name: fname, type_, number, }), end)
+    let label = MapOf(key=k, value=v)
+    return (Some({ name: fname, type_, proto: v, label, number, }), end)
   }
   let mut j = i
   let mut repeated = false
@@ -404,7 +422,8 @@ fn parse_field(toks : Array[String], i : Int32) -> (ProtoField?, Int32) {
   let end = skip_to_semi(toks, j + 1)
   let mapped = map_proto_type(ptype)
   let type_ = if repeated { "Array[" + mapped + "]" } else { mapped }
-  (Some({ name: fname, type_, number, }), end)
+  let label = if repeated { Repeated } else { Single }
+  (Some({ name: fname, type_, proto: ptype, label, number, }), end)
 }
 
 ///|
@@ -430,7 +449,7 @@ fn parse_service(toks : Array[String], start : Int32) -> (ProtoService, Int32) {
         client_streaming = true
         j = j + 1
       }
-      let request = if j < n { toks[j] } else { "Unit" }
+      let request = if j < n { last_segment(toks[j]) } else { "Unit" }
       j = j + 1
       if j < n && toks[j] == ")" {
         j = j + 1
@@ -446,7 +465,7 @@ fn parse_service(toks : Array[String], start : Int32) -> (ProtoService, Int32) {
         server_streaming = true
         j = j + 1
       }
-      let response = if j < n { toks[j] } else { "Unit" }
+      let response = if j < n { last_segment(toks[j]) } else { "Unit" }
       j = j + 1
       if j < n && toks[j] == ")" {
         j = j + 1
@@ -645,6 +664,16 @@ fn rpc_out(r : Rpc) -> String {
 }
 
 ///|
+/// The close of a generated type with `Eq` and `Debug`, exported as methods.
+fn derived(name : String) -> String {
+  "} derive(Eq, Debug)\n\n///|\npub extend " +
+  name +
+  " with Debug::{to_repr}\n\n///|\npub extend " +
+  name +
+  " with Eq::{not_equal, equal}\n\n"
+}
+
+///|
 /// Generate a moonrpc service stub from a parsed `.proto`: a MoonBit struct per
 /// `message`, a `@moonrpc.Method` descriptor per RPC (its gRPC `:path` is
 /// `/package.Service/Method`), a `<Service>Server` handler-registration struct
@@ -657,13 +686,13 @@ pub fn generate_grpc(proto : Proto) -> String {
     out = out +
       "///|\n/// `" +
       e.name +
-      "` enum (generated from the `.proto` `enum` block).\npub enum " +
+      "` enum (generated from the `.proto` `enum` block).\npub(all) enum " +
       e.name +
       " {\n"
     for v in e.values {
       out = out + "  " + v.name + "\n"
     }
-    out = out + "} derive(Eq, Debug)\n\n"
+    out = out + derived(e.name)
     out = out +
       "///|\n/// The protobuf number for a `" +
       e.name +
@@ -671,7 +700,7 @@ pub fn generate_grpc(proto : Proto) -> String {
       e.name +
       "::to_int(self : " +
       e.name +
-      ") -> Int {\n  match self {\n"
+      ") -> Int32 {\n  match self {\n"
     for v in e.values {
       out = out + "    " + v.name + " => " + v.number.to_string() + "\n"
     }
@@ -686,7 +715,7 @@ pub fn generate_grpc(proto : Proto) -> String {
       e.name +
       "` value for a protobuf number, defaulting to the zero value.\npub fn " +
       e.name +
-      "::from_int(n : Int) -> " +
+      "::from_int(n : Int32) -> " +
       e.name +
       " {\n  match n {\n"
     for v in e.values {
@@ -694,6 +723,7 @@ pub fn generate_grpc(proto : Proto) -> String {
     }
     out = out + "    _ => " + default_name + "\n  }\n}\n\n"
   }
+  let enums = proto.enums.map(e => e.name)
   for m in proto.messages {
     // A oneof becomes a union enum (exactly one variant set), defined before the
     // struct that carries it.
@@ -704,13 +734,13 @@ pub fn generate_grpc(proto : Proto) -> String {
         m.name +
         "." +
         o.name +
-        "` oneof: exactly one variant is set.\npub enum " +
+        "` oneof: exactly one variant is set.\npub(all) enum " +
         ename +
         " {\n"
       for v in o.variants {
         out = out + "  " + cap_first(v.name) + "(" + v.type_ + ")\n"
       }
-      out = out + "} derive(Eq, Debug)\n\n"
+      out = out + derived(ename)
     }
     out = out +
       "///|\n/// `" +
@@ -719,12 +749,12 @@ pub fn generate_grpc(proto : Proto) -> String {
       m.name +
       " {\n"
     for f in m.fields {
-      out = out + "  " + f.name + " : " + f.type_ + "\n"
+      out = out + "  " + f.name + " : " + field_type(f, enums) + "\n"
     }
     for o in m.oneofs {
-      out = out + "  " + o.name + " : " + m.name + cap_first(o.name) + "\n"
+      out = out + "  " + o.name + " : " + m.name + cap_first(o.name) + "?\n"
     }
-    out = out + "}\n\n"
+    out = out + derived(m.name)
     // The wire-number table: field name -> its protobuf number (oneof members
     // included), for wire encoding and reflection.
     let pairs : Array[String] = []
@@ -743,7 +773,7 @@ pub fn generate_grpc(proto : Proto) -> String {
       m.name +
       "`'s fields.\npub fn " +
       @text.to_snake(m.name) +
-      "_field_numbers() -> Array[(String, Int)] {\n  [" +
+      "_field_numbers() -> Array[(String, Int32)] {\n  [" +
       commas(pairs) +
       "]\n}\n\n"
   }
@@ -801,5 +831,5 @@ pub fn generate_grpc(proto : Proto) -> String {
       commas(names) +
       "]\n}\n\n"
   }
-  out
+  out + codecs(proto)
 }

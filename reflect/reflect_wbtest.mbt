@@ -57,7 +57,7 @@ test "reflect a live SQLite schema into models" {
   assert_eq(has(code, "users_model : @moonorm.Model[Users]"), true)
   assert_eq(has(code, "pub fn users_insert("), true)
   assert_eq(
-    has(code, "pub fn users_find_by_id(sess : @moonorm.Session, id : Int)"),
+    has(code, "pub fn users_find_by_id(sess : @moonorm.Session, id : Int32)"),
     true,
   )
   assert_eq(has(code, "pub(all) struct Posts {"), true)

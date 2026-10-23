@@ -196,13 +196,13 @@ The layout follows goctl's: the spec language on its own, then one package per t
 | `gen` | the moonapi service a spec describes, and the validation its tags ask for | `api/gogen` |
 | `template` | the template engine, Go `text/template` syntax and semantics | `text/template` |
 | `style` | `--style` naming templates | `config` |
-| `proto` | moonrpc services from `.proto` | `rpc` |
+| `proto` | moonrpc messages, codecs and handler tables from `.proto` | `rpc` |
 | `doc` | OpenAPI and Swagger documents | `api/docgen` |
 | `gql` | a moongql schema | — |
 | `model` | moonorm models from a spec, from DDL, or from a live database | `model` |
 | `agent` | a moonkoog agent | — |
 | `plugin` | the plugin protocol | `plugin` |
-| `scaffold` | project skeletons and the layered tree | `api new`, `rpc new`, `docker`, `kube` |
+| `scaffold` | project skeletons and the layered trees | `api new`, `rpc new`, `docker`, `kube` |
 
 ## Usage
 
@@ -220,13 +220,16 @@ As the `mctl` command-line tool (native binary):
 $ mctl gen api   greet.api                 # -> a moonapi project tree (etc/, internal/…)
 $ mctl gen api   greet.api --style go_zero --dir out
 $ mctl gen api   greet.api --flat          # -> greet.mbt (one file, as before)
-$ mctl gen proto greet.proto               # -> greet_grpc.mbt     (moonrpc service stub)
+$ mctl gen rpc   greet.proto               # -> a moonrpc project tree (pb/, internal/…, client/)
+$ mctl gen rpc   greet.proto --flat        # -> greet_grpc.mbt (messages, codecs, handler tables)
+$ mctl gen gql   greet.api                 # -> a moongql project tree (internal/schema, …)
 $ mctl gen model user.api                  # -> user_model.mbt     (moonorm model + migration)
 $ mctl gen crud  schema.sql                # -> schema_model.mbt   (moonorm model + typed CRUD)
 $ mctl gen doc   greet.api                 # -> greet_openapi.json + greet_swagger.html
 $ mctl model datasource sqlite:shop.db     # -> datasource_model.mbt (read a live DB's schema)
 $ mctl api  new  blog                      # scaffold a moonapi service project under blog/
 $ mctl rpc  new  echo                      # scaffold a moonrpc service project under echo/
+$ mctl gql  new  books                     # scaffold a moongql service project under books/
 $ mctl model new account                   # scaffold a moonorm data-layer project under account/
 $ mctl docker    greet                     # -> Dockerfile + .dockerignore
 $ mctl kube      greet                     # -> deploy/deployment.yaml + deploy/service.yaml
@@ -312,31 +315,34 @@ generated models compile against `moonorm` + `moondb`).
 
 ## Project scaffolds
 
-Like goctl's `api new` / `rpc new` / `docker` / `kube`, `mctl` scaffolds whole nested
-project trees, not just single files:
+`api new`, `rpc new` and `gql new` write a service that runs as it stands: `moon test --target native` passes, `moon run --target native .` serves it on port 12000.
 
 ```console
-$ mctl api  new  blog        # blog/{moon.mod, blog.api, src/{moon.pkg, app.mbt}, README.md}
-$ mctl rpc  new  echo        # echo/{moon.mod, echo.proto, src/{moon.pkg, service.mbt}, README.md}
-$ mctl model new account     # account/{moon.mod, schema.sql, src/{moon.pkg, model.mbt}, README.md}
+$ mctl api  new  blog        # moonapi on mooncat
+$ mctl rpc  new  echo        # moonrpc, with a typed client
+$ mctl gql  new  books       # moongql on mooncat
+$ mctl model new account     # a moonorm data layer
 $ mctl docker    greet       # Dockerfile (two-stage native build) + .dockerignore
 $ mctl kube      greet       # deploy/deployment.yaml + deploy/service.yaml
 ```
 
-Every generated `moon.mod` imports the libraries at the versions in `pins`, and CI
-scaffolds each kind of project and builds it against them on every push. A
-generated project is promised to compile with those versions; one that wants a
-later release edits its own `moon.mod`.
+The three services share goctl's layout. Files marked `DO NOT EDIT` belong to mctl and are rewritten by the matching `gen` command; everything else is seeded once and then belongs to the author.
 
-The `api`, `rpc` and `model` skeletons emit their source through the same built-in
-generators the `gen` commands use, seeded from a sample spec, so a fresh scaffold
-compiles against the published libraries out of the box (`moon check` → rc 0, no
-warnings). Each returns its files as `GenFile { path, content }` — the same shape the
-plugin protocol uses — which the `mctl` binary writes out, creating nested directories
-as it goes:
+| Path | api | rpc | gql |
+|:--:|:--:|:--:|:--:|
+| `<name>.mbt` | serve the app on mooncat | serve the handler tables on `GrpcServer` | serve `graphql_app` on mooncat |
+| `etc/`, `internal/config`, `internal/svc` | ✓ | ✓ | ✓ |
+| generated | `internal/types`, `internal/handler/routes.mbt` | `pb/`, `internal/server`, `client/<name>client.mbt` | `internal/schema` |
+| the author's | `internal/handler/*`, `internal/logic/*` | `internal/logic/*` | `internal/logic/resolvers.mbt` |
+| test | the routes through `TestClient` | `Ping` over a real socket | a `{ ping }` query |
+
+For every message, `pb/` has `encode` and `decode` in protobuf wire form, checked against Google's runtime in both directions. Every service gets a record with one function per RPC and `handlers()`, its RPCs keyed by `:path` for `GrpcServer`. A request that does not decode ends the call with `INVALID_ARGUMENT`.
+
+Every generated `moon.mod` imports the libraries at the versions in `pins`. On every push, CI scaffolds each kind of project, runs its tests against those versions, and regenerates over an rpc scaffold to check that the author's files survive. A project that wants a later release edits its own `moon.mod`.
 
 ```moonbit
-let files = @moonctl.scaffold_api("blog")        // -> Array[GenFile] to write
+let files = @moonctl.scaffold_rpc("echo")        // -> Array[GenFile] to write
+let tree = @moonctl.generate_rpc_tree(proto)     // -> Array[TreeFile], each marked Always or Once
 ```
 
 ## Plugins

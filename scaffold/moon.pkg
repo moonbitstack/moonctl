@@ -6,6 +6,7 @@ import {
   "moonbitstack/moonctl/api",
   "moonbitstack/moonctl/gen",
   "moonbitstack/moonctl/proto",
+  "moonbitstack/moonctl/gql",
   "moonbitstack/moonctl/model",
   "moonbitstack/moonctl/plugin",
   "moonbitstack/moonyaml",

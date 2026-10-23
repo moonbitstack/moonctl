@@ -60,7 +60,7 @@ test "parse a minimal .proto" {
   assert_eq(req.fields[0].name, "name")
   assert_eq(req.fields[0].type_, "String")
   assert_eq(req.fields[0].number, 1)
-  assert_eq(req.fields[1].type_, "Int")
+  assert_eq(req.fields[1].type_, "Int32")
   assert_eq(req.fields[1].number, 2)
   assert_eq(req.fields[2].type_, "Array[String]")
   assert_eq(req.fields[2].number, 3)
@@ -118,7 +118,7 @@ test "generate moonrpc service stub" {
   assert_eq(contains(code, "[greeter_say_hello]"), true)
   assert_eq(
     contains(
-      code, "pub fn hello_request_field_numbers() -> Array[(String, Int)] {",
+      code, "pub fn hello_request_field_numbers() -> Array[(String, Int32)] {",
     ),
     true,
   )
@@ -151,12 +151,18 @@ test "parse a proto enum and generate a MoonBit enum with its int mapping" {
   // an enum-typed message field passes the enum name through as its type
   assert_eq(proto.messages[0].fields[0].type_, "Light")
   let code = generate_grpc(proto)
-  assert_eq(contains(code, "pub enum Light {"), true)
+  assert_eq(contains(code, "pub(all) enum Light {"), true)
   assert_eq(contains(code, "  RED\n"), true)
   assert_eq(contains(code, "} derive(Eq, Debug)"), true)
-  assert_eq(contains(code, "pub fn Light::to_int(self : Light) -> Int {"), true)
+  assert_eq(
+    contains(code, "pub fn Light::to_int(self : Light) -> Int32 {"),
+    true,
+  )
   assert_eq(contains(code, "    GREEN => 2"), true)
-  assert_eq(contains(code, "pub fn Light::from_int(n : Int) -> Light {"), true)
+  assert_eq(
+    contains(code, "pub fn Light::from_int(n : Int32) -> Light {"),
+    true,
+  )
   assert_eq(contains(code, "    _ => LIGHT_UNKNOWN"), true)
 }
 
@@ -190,7 +196,7 @@ test "nested message and enum declarations are hoisted to top level" {
   // The hoisted Inner struct and Kind enum are generated.
   let code = generate_grpc(proto)
   assert_eq(contains(code, "pub(all) struct Inner {"), true)
-  assert_eq(contains(code, "pub enum Kind {"), true)
+  assert_eq(contains(code, "pub(all) enum Kind {"), true)
 }
 
 ///|
@@ -214,10 +220,10 @@ test "a oneof becomes a union enum, not flattened fields" {
   assert_eq(ev.oneofs[0].variants.length(), 2)
   assert_eq(ev.oneofs[0].variants[0].name, "text")
   let code = generate_grpc(proto)
-  assert_eq(contains(code, "pub enum EventPayload {"), true)
+  assert_eq(contains(code, "pub(all) enum EventPayload {"), true)
   assert_eq(contains(code, "  Text(String)"), true)
-  assert_eq(contains(code, "  Code(Int)"), true)
-  assert_eq(contains(code, "  payload : EventPayload"), true)
+  assert_eq(contains(code, "  Code(Int32)"), true)
+  assert_eq(contains(code, "  payload : EventPayload?\n"), true)
 }
 
 ///|

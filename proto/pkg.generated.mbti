@@ -1,6 +1,10 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "moonbitstack/moonctl/proto"
 
+import {
+  "moonbitlang/core/debug",
+}
+
 // Values
 pub fn commas(Array[String]) -> String
 
@@ -13,6 +17,15 @@ pub fn proto_reserved_conflicts(ProtoMessage) -> Array[String]
 // Errors
 
 // Types and methods
+pub(all) enum Label {
+  Single
+  Repeated
+  MapOf(key~ : String, value~ : String)
+} derive(Eq, @debug.Debug)
+pub fn Label::equal(Self, Self) -> Bool
+pub fn Label::not_equal(Self, Self) -> Bool
+pub fn Label::to_repr(Self) -> @debug.Repr
+
 pub(all) struct Proto {
   package_ : String
   services : Array[ProtoService]
@@ -33,6 +46,8 @@ pub(all) struct ProtoEnumValue {
 pub(all) struct ProtoField {
   name : String
   type_ : String
+  proto : String
+  label : Label
   number : Int32
 }
 

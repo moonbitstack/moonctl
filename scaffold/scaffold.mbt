@@ -45,71 +45,109 @@ fn sample_sql(name : String) -> String {
 }
 
 ///|
-/// Scaffold a runnable moonapi service project under `<name>/`: a `moon.mod`
-/// (depending on the published `moonapi` + `moonasgi`), a sample `<name>.api` spec,
-/// its generated routes+handlers in `src/app.mbt` (through the same `generate` the
-/// `gen api` command uses, so it compiles), and a README. This is goctl's
-/// `goctl api new`.
-pub fn scaffold_api(name : String) -> Array[@plugin.GenFile] {
-  let api = sample_api(name)
-  let app = @gen.generate_builtin(@api.parse_lenient(api))
-  [
-    {
-      path: name + "/moon.mod",
-      content: mod_file(name, ["moonbitstack/moonapi", "moonbitstack/moonasgi"]),
-    },
-    { path: name + "/" + name + ".api", content: api, },
-    {
-      path: name + "/src/moon.pkg",
-      content: pkg_file([
-        ("moonbitstack/moonapi", ""),
-        ("moonbitstack/moonasgi", ""),
-      ]),
-    },
-    { path: name + "/src/app.mbt", content: app, },
-    {
-      path: name + "/README.md",
-      content: "# " +
-      name +
-      "\n\nA moonapi service scaffolded by `mctl api new`. Edit `" +
-      name +
-      ".api`, regenerate with `mctl gen api " +
-      name +
-      ".api`, and fill in the handler stubs in `src/app.mbt`.\n",
-    },
-  ]
+/// The files of a fresh project: every file of `tree`, its spec at `spec_path`
+/// and a README.
+fn fresh(
+  name : String,
+  tree : Array[TreeFile],
+  spec_path~ : String,
+  spec~ : String,
+  readme~ : String,
+) -> Array[@plugin.GenFile] {
+  let files = tree_plan(tree, _ => false)
+  files.push({ path: name + "/" + spec_path, content: spec, })
+  files.push({ path: name + "/README.md", content: readme, })
+  files
 }
 
 ///|
-/// Scaffold a moonrpc service project under `<name>/`: a `moon.mod` (depending
-/// on the published `moonrpc`), a sample `<name>.proto`, its generated service stub
-/// in `src/service.mbt` (through the same `generate_grpc` as `gen proto`), and a
-/// README. goctl's `goctl rpc new`.
+/// How a fresh project is run, tested and regenerated.
+fn readme(name : String, what : String, regen : String) -> String {
+  let src =
+    #|# %name
+    #|
+    #|%what scaffolded by mctl.
+    #|
+    #|```bash
+    #|moon test --target native      # the tests, one of them over a real socket
+    #|moon run --target native .     # serve on 0.0.0.0:12000
+    #|%regen                         # after editing the spec
+    #|```
+    #|
+    #|A regeneration rewrites only the files that start with `DO NOT EDIT`; the rest
+    #|are yours.
+  src
+  .replace_all(old="%name", new=name)
+  .replace_all(old="%what", new=what)
+  .replace_all(old="%regen", new=regen) +
+  "\n"
+}
+
+///|
+/// Scaffold a moonapi service under `<name>/`: goctl's `api new`. The layered
+/// tree of `generate_tree` for a sample spec with `GET /ping`, a test calling it,
+/// and an entry point serving it on mooncat.
+pub fn scaffold_api(name : String) -> Array[@plugin.GenFile] {
+  let api = sample_api(name)
+  fresh(
+    name,
+    generate_tree(@api.parse_lenient(api), dir=name),
+    spec_path=name + ".api",
+    spec=api,
+    readme=readme(name, "A moonapi service", "mctl gen api " + name + ".api"),
+  )
+}
+
+///|
+/// Scaffold a moonrpc service under `<name>/`: goctl's `rpc new`. The layered
+/// tree of `generate_rpc_tree` for a sample proto with a `Ping` that answers
+/// `pong`, and a test serving it and calling it through the typed client.
 pub fn scaffold_rpc(name : String) -> Array[@plugin.GenFile] {
-  let proto = sample_proto(name)
-  let stub = @proto.generate_grpc(@proto.parse_proto(proto))
-  [
-    {
-      path: name + "/moon.mod",
-      content: mod_file(name, ["moonbitstack/moonrpc"]),
-    },
-    { path: name + "/" + name + ".proto", content: proto, },
-    {
-      path: name + "/src/moon.pkg",
-      content: pkg_file([("moonbitstack/moonrpc", "")]),
-    },
-    { path: name + "/src/service.mbt", content: stub, },
-    {
-      path: name + "/README.md",
-      content: "# " +
-      name +
-      "\n\nA moonrpc service scaffolded by `mctl rpc new`. Edit `" +
-      name +
-      ".proto`, regenerate with `mctl gen proto " +
-      name +
-      ".proto`, and implement the RPC handlers in `src/service.mbt`.\n",
-    },
-  ]
+  let src = sample_proto(name)
+  let proto = @proto.parse_proto(src)
+  let service = @text.to_pascal(name)
+  let smoke =
+    #|///|
+    #|async test "Ping answers over a socket" {
+    #|  @async.with_task_group(g => {
+    #|    let svc = @svc.ServiceContext::new(@config.Config::new())
+    #|    let grpc = @net.GrpcServer::new()
+    #|%register    let task = g.spawn(() => grpc.serve(host="127.0.0.1", port=12099))
+    #|    @async.sleep(400)
+    #|    let peer = @client.%ServiceClient::new(@net.Channel::connect("127.0.0.1", 12099))
+    #|    assert_eq(peer.ping(@pb.PingReq::{}).message, "pong")
+    #|    peer.close()
+    #|    task.cancel()
+    #|  })
+    #|}
+  fresh(
+    name,
+    rpc_tree(
+      proto,
+      @style.Style::gozero(),
+      name,
+      logic={ "Ping": "Ok(@pb.PingResp::{ message: \"pong\" })" },
+      smoke=smoke.replace_all(old="%Service", new=service) + "\n",
+    ),
+    spec_path=name + ".proto",
+    spec=src,
+    readme=readme(name, "A moonrpc service", "mctl gen rpc " + name + ".proto"),
+  )
+}
+
+///|
+/// Scaffold a moongql service under `<name>/`: the layered tree of
+/// `generate_gql_tree` for a sample spec, with a `ping` resolver and a test
+/// querying it.
+pub fn scaffold_gql(name : String) -> Array[@plugin.GenFile] {
+  let api = sample_api(name)
+  fresh(
+    name,
+    generate_gql_tree(@api.parse_lenient(api), dir=name),
+    spec_path=name + ".api",
+    spec=api,
+    readme=readme(name, "A moongql service", "mctl gen gql " + name + ".api"),
+  )
 }
 
 ///|

@@ -14,9 +14,9 @@ fn lit(type_ : String, raw : String) -> String? {
   match type_ {
     "String" => Some(@text.quote(raw))
     "Bool" => if raw == "true" || raw == "false" { Some(raw) } else { None }
-    "Int" => Some(raw)
+    "Int32" => Some(raw)
     "Int64" => Some(raw + "L")
-    "UInt" => Some(raw + "U")
+    "UInt32" => Some(raw + "U")
     "UInt64" => Some(raw + "UL")
     "Double" =>
       Some(if @api.index_of(raw, '.', 0) < 0 { raw + ".0" } else { raw })
@@ -42,7 +42,7 @@ pub fn number_json(raw : String) -> Json {
 /// Whether `type_` is one a `range=` can bound.
 fn is_numeric(type_ : String) -> Bool {
   match type_ {
-    "Int" | "Int64" | "UInt" | "UInt64" | "Double" | "Float" => true
+    "Int32" | "Int64" | "UInt32" | "UInt64" | "Double" | "Float" => true
     _ => false
   }
 }
