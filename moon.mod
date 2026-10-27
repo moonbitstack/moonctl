@@ -28,3 +28,5 @@ import {
   "moonbitstack/moonsqlite@0.3.1",
   "moonbitstack/moonpostgres@0.6.4",
 }
+
+source = "src"
