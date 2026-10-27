@@ -411,6 +411,9 @@ fn usage() -> Unit {
     "  mctl gql  new  <name>        scaffold a moongql service project under <name>/",
   )
   println(
+    "  mctl mcp  new  <name>        scaffold a moonmcp server project under <name>/",
+  )
+  println(
     "  mctl model new <name>        scaffold a moonorm data-layer project under <name>/",
   )
   println(
@@ -529,7 +532,7 @@ async fn dispatch(what : String, file : String, opts : Opts) -> Unit {
 ///|
 /// Entry point for the `mctl` binary. `@env.args()[0]` is the executable path on
 /// native, so the sub-command starts at index 1. Commands: `gen <what> <file>` (and
-/// its `generate` synonym), `model datasource <dsn>`, the `api|rpc|model new <name>`
+/// its `generate` synonym), `model datasource <dsn>`, the `api|rpc|gql|mcp|model new <name>`
 /// project scaffolds, `docker`/`kube <name>`, and `plugin <exe> <file>`.
 async fn main {
   let argv = @env.args()
@@ -549,6 +552,8 @@ async fn main {
     write_scaffold("rpc project " + args[2], @moonctl.scaffold_rpc(args[2]))
   } else if n >= 3 && args[0] == "gql" && args[1] == "new" {
     write_scaffold("gql project " + args[2], @moonctl.scaffold_gql(args[2]))
+  } else if n >= 3 && args[0] == "mcp" && args[1] == "new" {
+    write_scaffold("mcp project " + args[2], @moonctl.scaffold_mcp(args[2]))
   } else if n >= 3 && args[0] == "model" && args[1] == "new" {
     write_scaffold("model project " + args[2], @moonctl.scaffold_model(args[2]))
   } else if n >= 2 && args[0] == "docker" {

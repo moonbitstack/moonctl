@@ -9,9 +9,10 @@
 /// builds, so a generated project is promised to compile with them. A project that
 /// wants a later release edits its own `moon.mod`.
 pub let pins : Map[String, String] = {
-  "moonbitstack/moonapi": "0.16.0",
-  "moonbitstack/moonasgi": "0.10.0",
-  "moonbitstack/mooncat": "0.18.1",
+  "moonbitstack/moonapi": "0.17.2",
+  "moonbitstack/moonasgi": "0.10.2",
+  "moonbitstack/mooncat": "0.18.6",
+  "moonbitstack/moonmcp": "0.1.1",
   "moonbitstack/moongql": "0.10.0",
   "moonbitstack/moonrpc": "0.21.0",
   "moonbitstack/moonorm": "0.11.0",

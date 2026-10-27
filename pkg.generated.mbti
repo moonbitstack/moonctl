@@ -35,6 +35,8 @@ pub fn generate_gql_tree(@api.Spec, style? : @style.Style, dir? : String) -> Arr
 
 pub fn generate_grpc(@proto.Proto) -> String
 
+pub fn generate_mcp_tree(String, style? : @style.Style, dir? : String) -> Array[@scaffold.TreeFile]
+
 pub fn generate_model(@api.Spec) -> String
 
 pub fn generate_rpc_tree(@proto.Proto, style? : @style.Style, dir? : String) -> Array[@scaffold.TreeFile]
@@ -82,6 +84,8 @@ pub fn scaffold_docker(String, port? : Int32) -> Array[@plugin.GenFile]
 pub fn scaffold_gql(String) -> Array[@plugin.GenFile]
 
 pub fn scaffold_kube(String, port? : Int32, replicas? : Int32) -> Array[@plugin.GenFile]
+
+pub fn scaffold_mcp(String) -> Array[@plugin.GenFile]
 
 pub fn scaffold_model(String) -> Array[@plugin.GenFile]
 

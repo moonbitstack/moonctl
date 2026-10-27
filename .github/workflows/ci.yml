@@ -82,11 +82,14 @@ jobs:
           "$mctl" api new demoapi
           "$mctl" rpc new demorpc
           "$mctl" gql new demogql
+          "$mctl" mcp new demomcp
           "$mctl" model new demomodel
-          for dir in demoapi demorpc demogql; do
+          for dir in demoapi demorpc demogql demomcp; do
             (cd "$dir" && moon check --target all --deny-warn && moon test --target native)
           done
           (cd demomodel && moon check --target native --deny-warn && moon build --target native)
+          printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"hello","arguments":{"name":"leo"},"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}' \
+            | (cd demomcp && moon run --target native . -- --stdio) | grep -q 'hello, leo'
 
       - name: regenerate over a scaffold
         run: |

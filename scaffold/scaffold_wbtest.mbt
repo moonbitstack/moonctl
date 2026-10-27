@@ -138,7 +138,7 @@ test "scaffold_api is the layered tree with a spec, a README and a ping test" {
   assert_eq(
     contains(
       file_at(files, "greet/internal/handler/moon.pkg"),
-      "\"moonbitstack/moonasgi/client\",",
+      "\"moonbitstack/moonasgi/testing\",",
     ),
     true,
   )
@@ -303,4 +303,37 @@ test "the generated manifests are documents" {
   assert_eq(down(svc, ["spec", "type"][:]), Some(Json::string("ClusterIP")))
   // The house port, so a generated manifest and a generated config agree.
   assert_eq(port, 12000)
+}
+
+///|
+test "mcp new lays out an MCP server whose registration is rebuilt from its tools" {
+  let files = scaffold_mcp("hello")
+  let paths = files.map(f => f.path)
+  for
+    want in [
+      "hello/moon.mod", "hello/moon.pkg", "hello/hello.mbt", "hello/internal/tools/tools.mbt",
+      "hello/internal/tools/tools.g.mbt", "hello/internal/tools/tools_test.mbt",
+      "hello/internal/tools/moon.pkg", "hello/README.md",
+    ] {
+    assert_true(paths.contains(want))
+  }
+  let mod_ = files
+    .search_by(f => f.path == "hello/moon.mod")
+    .map(i => files[i].content)
+    .unwrap()
+  assert_true(
+    mod_.contains(
+      "\"moonbitstack/moonmcp@" + pins["moonbitstack/moonmcp"] + "\"",
+    ),
+  )
+  assert_true(mod_.contains("rule(name: \"mcp\""))
+  let tools_pkg = files
+    .search_by(f => f.path == "hello/internal/tools/moon.pkg")
+    .map(i => files[i].content)
+    .unwrap()
+  assert_true(
+    tools_pkg.contains(
+      "dev_build(rule: \"mcp\", input: \"tools.mbt\", output: \"tools.g.mbt\")",
+    ),
+  )
 }

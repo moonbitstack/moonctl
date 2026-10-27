@@ -19,6 +19,8 @@ pub fn number_json(String) -> Json
 
 pub fn render_structs(Array[@api.TypeDef]) -> String
 
+pub fn route_path(String) -> String
+
 pub fn spec_to_value(@api.Spec) -> @template.Value
 
 // Errors

@@ -202,7 +202,7 @@ The layout follows goctl's: the spec language on its own, then one package per t
 | `model` | moonorm models from a spec, from DDL, or from a live database | `model` |
 | `agent` | a moonkoog agent | — |
 | `plugin` | the plugin protocol | `plugin` |
-| `scaffold` | project skeletons and the layered trees | `api new`, `rpc new`, `docker`, `kube` |
+| `scaffold` | project skeletons and the layered trees | `api new`, `rpc new`, `gql new`, `mcp new`, `docker`, `kube` |
 
 ## Usage
 
@@ -315,18 +315,19 @@ generated models compile against `moonorm` + `moondb`).
 
 ## Project scaffolds
 
-`api new`, `rpc new` and `gql new` write a service that runs as it stands: `moon test --target native` passes, `moon run --target native .` serves it on port 12000.
+`api new`, `rpc new`, `gql new` and `mcp new` write a service that runs as it stands: `moon test --target native` passes, `moon run --target native .` serves it on port 12000.
 
 ```console
 $ mctl api  new  blog        # moonapi on mooncat
 $ mctl rpc  new  echo        # moonrpc, with a typed client
 $ mctl gql  new  books       # moongql on mooncat
+$ mctl mcp  new  notes       # moonmcp over HTTP, or stdio with -- --stdio
 $ mctl model new account     # a moonorm data layer
 $ mctl docker    greet       # Dockerfile (two-stage native build) + .dockerignore
 $ mctl kube      greet       # deploy/deployment.yaml + deploy/service.yaml
 ```
 
-The three services share goctl's layout. Files marked `DO NOT EDIT` belong to mctl and are rewritten by the matching `gen` command; everything else is seeded once and then belongs to the author.
+The four services share goctl's layout. Files marked `DO NOT EDIT` belong to mctl and are rewritten by the matching `gen` command; everything else is seeded once and then belongs to the author.
 
 | Path | api | rpc | gql |
 |:--:|:--:|:--:|:--:|

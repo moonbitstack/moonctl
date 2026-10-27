@@ -1,4 +1,21 @@
 ///|
+/// A spec path as the route template moonapi reads: each `:name` segment of
+/// the spec becomes `{name}`.
+pub fn route_path(path : String) -> String {
+  path
+  .split("/")
+  .map(seg => {
+    if seg.has_prefix(":") {
+      "{" + seg.view(start_offset=1).to_owned() + "}"
+    } else {
+      seg.to_owned()
+    }
+  })
+  .collect()
+  .join("/")
+}
+
+///|
 /// A group's annotations spelled the way the spec wrote them, e.g. `group: user,
 /// prefix: /api/v1, middleware: Log`. Empty for a group that carries nothing.
 pub fn group_note(g : @api.Group) -> String {
@@ -110,7 +127,12 @@ pub fn generate_builtin(spec : @api.Spec) -> String {
     // closure — a closure infers the raise effect, so a stub that never raises and a
     // filled-in handler that raises an `HttpException` are both accepted unchanged.
     let handler = "ctx => " + r.handler + "(ctx)"
-    let head = "  app." + r.verb + "(" + @text.quote(r.path) + ", " + handler
+    let head = "  app." +
+      r.verb +
+      "(" +
+      @text.quote(route_path(r.path)) +
+      ", " +
+      handler
     out = out +
       (if r.summary != "" {
         head + ", summary=" + @text.quote(r.summary) + ")\n"

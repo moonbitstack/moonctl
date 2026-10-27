@@ -153,7 +153,11 @@ pub fn generate_tree(
   }
   // The test's imports do not depend on the spec, so a regeneration never leaves
   // the seeded test without them.
-  let tests = pkg_file([("moonbitstack/moonasgi/client", ""), (config_pkg, "")])
+  let tests = pkg_file([
+    ("moonbitstack/moonasgi/testing", ""),
+    ("moonbitlang/async", ""),
+    (config_pkg, ""),
+  ])
   out.push({
     path: at(dir, "internal/handler/moon.pkg"),
     content: pkg_file(routes_imports) +
@@ -168,10 +172,10 @@ pub fn generate_tree(
     #|  assert_eq(reply.text(), "pong")
   let test_src =
     #|///|
-    #|test "the app answers its routes and nothing else" {
+    #|async test "the app answers its routes and nothing else" {
     #|  let svc = @svc.ServiceContext::new(@config.Config::new())
     #|  let app = @handler.register_handlers(@moonapi.App::new(), svc)
-    #|  let client = @client.TestClient::new(req => app.handle(req))
+    #|  let client = @testing.Client::new(app.to_asgi())
     #|  assert_eq(client.get("/no/such/route").status, 404)%ping
     #|}
   let pings = spec.routes.any(r => r.verb == "get" && r.path == "/ping")
@@ -318,7 +322,7 @@ fn render_routes(spec : @api.Spec, st : @style.Style) -> String {
     let head = "  app." +
       r.verb +
       "(" +
-      @text.quote(r.path) +
+      @text.quote(@gen.route_path(r.path)) +
       ", ctx => " +
       call +
       "(svc, ctx)"

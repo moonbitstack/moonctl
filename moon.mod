@@ -1,6 +1,6 @@
 name = "moonbitstack/moonctl"
 
-version = "0.12.0"
+version = "0.12.1"
 
 readme = "README.md"
 

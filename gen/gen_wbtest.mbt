@@ -326,3 +326,10 @@ test "generate dispatches to the template engine when given one" {
     true,
   )
 }
+
+///|
+test "spec paths become route templates" {
+  assert_eq(route_path("/users/:id/cards/:card"), "/users/{id}/cards/{card}")
+  assert_eq(route_path("/ping"), "/ping")
+  assert_eq(route_path("/"), "/")
+}
