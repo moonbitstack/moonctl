@@ -3,6 +3,8 @@ package "moonbitstack/moonctl"
 
 import {
   "moonbitstack/moonctl/api",
+  "moonbitstack/moonctl/cli",
+  "moonbitstack/moonctl/client",
   "moonbitstack/moonctl/doc",
   "moonbitstack/moonctl/model",
   "moonbitstack/moonctl/plugin",
@@ -13,13 +15,43 @@ import {
 }
 
 // Values
+pub fn bug_report(String, String, Array[(String, String)]) -> String
+
+pub fn client_file(@api.Spec, @client.Lang) -> (String, String)
+
+pub fn client_file_name(@client.Lang, String) -> String
+
+pub fn command_names() -> Array[String]
+
+pub fn commands() -> Array[@cli.Command]
+
+pub fn completion(String) -> String
+
+pub fn config_get(@cli.Config, String) -> String?
+
+pub fn config_keys() -> Array[String]
+
+pub fn config_set(@cli.Config, String, String) -> @cli.Config
+
+pub fn config_text(@cli.Config) -> String
+
+pub fn default_config() -> @cli.Config
+
 pub fn deps(String, from? : String) -> Array[String]
+
+pub fn env_report(String, Array[(String, String)]) -> String
+
+pub fn find_template(String) -> @cli.TemplateEntry?
+
+pub fn format(String) -> String
 
 pub fn gen_files_to_json(Array[@plugin.GenFile]) -> Json
 
 pub fn generate(@api.Spec, template? : String) -> String raise @template.TemplateError
 
 pub fn generate_agent(@api.Spec) -> String
+
+pub fn generate_client(@api.Spec, @client.Lang) -> String
 
 pub fn generate_crud(Array[@model.DdlTable]) -> String
 
@@ -35,7 +67,11 @@ pub fn generate_gql_tree(@api.Spec, style? : @style.Style, dir? : String) -> Arr
 
 pub fn generate_grpc(@proto.Proto) -> String
 
+pub fn generate_markdown(@api.Spec, title? : String) -> String
+
 pub fn generate_mcp_tree(String, style? : @style.Style, dir? : String) -> Array[@scaffold.TreeFile]
+
+pub fn generate_migrations(@api.Spec) -> String
 
 pub fn generate_model(@api.Spec) -> String
 
@@ -45,11 +81,23 @@ pub fn generate_tree(@api.Spec, style? : @style.Style, dir? : String) -> Array[@
 
 pub fn generate_with(@api.Spec, String) -> String raise @template.TemplateError
 
+pub fn has_errors(Array[@api.Diagnostic]) -> Bool
+
+pub fn markdown_file_name(String) -> String
+
+pub fn migrate_config(String) -> (String, Array[String])
+
+pub fn migrate_file_name(String) -> String
+
+pub fn mod_pins(String) -> Array[(String, String)]
+
 pub fn openapi_document(@api.Spec, version? : @doc.DocVersion, title? : String, api_version? : String) -> Json
 
 pub fn parse(String) -> @api.Spec raise @api.SpecError
 
 pub fn parse_all(String, Map[String, String], from? : String) -> @api.Spec raise @api.SpecError
+
+pub fn parse_config(String) -> @cli.Config
 
 pub fn parse_ddl(String) -> Array[@model.DdlTable]
 
@@ -60,6 +108,10 @@ pub fn parse_gen_files(Json) -> Array[@plugin.GenFile]
 pub fn parse_lenient(String) -> @api.Spec
 
 pub fn parse_proto(String) -> @proto.Proto
+
+pub fn pin_module(String, String, String) -> (String, String?)
+
+pub fn pinned_version(String, String) -> String?
 
 pub let pins : Map[String, String]
 
@@ -97,11 +149,29 @@ pub fn spec_to_json(@api.Spec) -> Json
 
 pub fn spec_to_value(@api.Spec) -> @template.Value
 
+pub fn subcommands(String) -> Array[String]
+
 pub fn swagger_ui_stub(spec_url? : String, title? : String) -> String
 
 pub fn tables_from_reflection(Array[@model.ReflectedColumn]) -> Array[@model.DdlTable]
 
+pub fn template_detail(@cli.TemplateEntry) -> String
+
+pub fn template_table() -> String
+
+pub fn templates() -> Array[@cli.TemplateEntry]
+
+pub fn templates_of(String) -> Array[@cli.TemplateEntry]
+
 pub fn tree_plan(Array[@scaffold.TreeFile], (String) -> Bool) -> Array[@plugin.GenFile]
+
+pub fn upgrade_pins(String, Array[String], String) -> (String, Array[String])
+
+pub fn usage_text(String) -> String
+
+pub fn validate(@api.Spec) -> Array[@api.Diagnostic]
+
+pub fn validate_source(String) -> Array[@api.Diagnostic]
 
 // Errors
 
@@ -110,6 +180,10 @@ pub fn tree_plan(Array[@scaffold.TreeFile], (String) -> Bool) -> Array[@plugin.G
 // Type aliases
 pub using @api {type Bind}
 
+pub using @cli {type Command}
+
+pub using @cli {type Config}
+
 pub using @model {type DataSource}
 
 pub using @model {type DataSourceError}
@@ -117,6 +191,8 @@ pub using @model {type DataSourceError}
 pub using @model {type DdlColumn}
 
 pub using @model {type DdlTable}
+
+pub using @api {type Diagnostic}
 
 pub using @doc {type DocVersion}
 
@@ -129,6 +205,8 @@ pub using @plugin {type GenFile}
 pub using @api {type Group}
 
 pub using @proto {type Label}
+
+pub using @client {type Lang}
 
 pub using @model {type PgTarget}
 
@@ -158,6 +236,8 @@ pub using @api {type Route}
 
 pub using @proto {type Rpc}
 
+pub using @api {type Severity}
+
 pub using @api {type Spec}
 
 pub using @api {type SpecError}
@@ -167,6 +247,8 @@ pub using @style {type Style}
 pub using @style {type StyleError}
 
 pub using @template {type Template}
+
+pub using @cli {type TemplateEntry}
 
 pub using @template {type TemplateError}
 

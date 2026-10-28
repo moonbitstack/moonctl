@@ -5,6 +5,7 @@
 import {
   "moonbitstack/moonctl",
   "moonbitstack/moonctl/reflect",
+  "moonbitstack/moonctl/internal/text",
   "moonbitstack/moonsqlite" @sqlite,
   "moonbitstack/moonpostgres" @pg,
   "moonbitlang/core/env",

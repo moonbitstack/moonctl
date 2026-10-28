@@ -1,0 +1,78 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonctl/cli"
+
+// Values
+pub fn bug_report(String, String, Array[(String, String)]) -> String
+
+pub fn command_names() -> Array[String]
+
+pub fn commands() -> Array[Command]
+
+pub fn completion(String) -> String
+
+pub fn config_get(Config, String) -> String?
+
+pub fn config_keys() -> Array[String]
+
+pub fn config_set(Config, String, String) -> Config
+
+pub fn config_text(Config) -> String
+
+pub fn default_config() -> Config
+
+pub fn env_report(String, Array[(String, String)]) -> String
+
+pub fn find_template(String) -> TemplateEntry?
+
+pub fn migrate_config(String) -> (String, Array[String])
+
+pub fn mod_pins(String) -> Array[(String, String)]
+
+pub fn parse_config(String) -> Config
+
+pub fn pin_module(String, String, String) -> (String, String?)
+
+pub fn pinned_version(String, String) -> String?
+
+pub fn subcommands(String) -> Array[String]
+
+pub fn template_detail(TemplateEntry) -> String
+
+pub fn template_table() -> String
+
+pub fn templates() -> Array[TemplateEntry]
+
+pub fn templates_of(String) -> Array[TemplateEntry]
+
+pub fn upgrade_pins(String, Array[String], String) -> (String, Array[String])
+
+pub fn usage_text(String) -> String
+
+// Errors
+
+// Types and methods
+pub(all) struct Command {
+  name : String
+  usage : String
+  summary : String
+}
+
+pub(all) struct Config {
+  version : Int32
+  home : String
+  remote : String
+  branch : String
+  style : String
+  templates : Array[String]
+}
+
+pub(all) struct TemplateEntry {
+  name : String
+  kind : String
+  description : String
+  path : String
+}
+
+// Type aliases
+
+// Traits

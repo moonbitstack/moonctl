@@ -1,0 +1,6 @@
+// Typed HTTP clients for a `.api` service — TypeScript, Dart, Kotlin and Java
+// (goctl's `api ts`, and the clients it leaves to plugins).
+import {
+  "moonbitstack/moonctl/internal/text",
+  "moonbitstack/moonctl/api",
+}

@@ -1,0 +1,10 @@
+// The command surface mctl presents: the table `mctl help` prints, the completion
+// scripts `mctl completion` writes, the template library `mctl template` lists, the
+// `key = value` file `mctl config` edits, the reports `mctl env` and `mctl bug`
+// produce, and the `moon.mod` rewrite `mctl upgrade` performs.
+//
+// None of it touches the disk: every function here takes text and returns text, so
+// the command surface is testable and the binary owns the IO.
+import {
+  "moonbitstack/moonctl/internal/text",
+}

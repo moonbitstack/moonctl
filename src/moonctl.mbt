@@ -23,11 +23,50 @@ pub using @api {
   type Spec,
   type SpecError,
   type TypeDef,
+  type Diagnostic,
+  type Severity,
   deps,
+  format,
+  has_errors,
   parse,
   parse_all,
   parse_lenient,
   resolve_import,
+  validate,
+  validate_source,
+}
+
+///|
+pub using @client {type Lang, client_file, client_file_name, generate_client}
+
+///|
+pub using @cli {
+  type Command,
+  type Config,
+  type TemplateEntry,
+  bug_report,
+  command_names,
+  commands,
+  completion,
+  config_get,
+  config_keys,
+  config_set,
+  config_text,
+  default_config,
+  env_report,
+  find_template,
+  migrate_config,
+  mod_pins,
+  parse_config,
+  pin_module,
+  pinned_version,
+  subcommands,
+  template_detail,
+  template_table,
+  templates,
+  templates_of,
+  upgrade_pins,
+  usage_text,
 }
 
 ///|
@@ -53,6 +92,8 @@ pub using @proto {
 pub using @doc {
   type DocVersion,
   generate_doc,
+  generate_markdown,
+  markdown_file_name,
   openapi_document,
   swagger_ui_stub,
 }
@@ -71,7 +112,9 @@ pub using @model {
   generate_crud,
   generate_crud_from_ddl,
   generate_crud_from_reflection,
+  generate_migrations,
   generate_model,
+  migrate_file_name,
   parse_ddl,
   parse_dsn,
   tables_from_reflection,

@@ -8,6 +8,10 @@ import {
 // Values
 pub fn generate_doc(@api.Spec, version? : DocVersion, title? : String, api_version? : String) -> String
 
+pub fn generate_markdown(@api.Spec, title? : String) -> String
+
+pub fn markdown_file_name(String) -> String
+
 pub fn openapi_document(@api.Spec, version? : DocVersion, title? : String, api_version? : String) -> Json
 
 pub fn swagger_ui_stub(spec_url? : String, title? : String) -> String

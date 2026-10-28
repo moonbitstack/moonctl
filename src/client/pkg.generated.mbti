@@ -1,0 +1,29 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/moonctl/client"
+
+import {
+  "moonbitstack/moonctl/api",
+}
+
+// Values
+pub fn client_file(@api.Spec, Lang) -> (String, String)
+
+pub fn client_file_name(Lang, String) -> String
+
+pub fn generate_client(@api.Spec, Lang) -> String
+
+// Errors
+
+// Types and methods
+pub(all) enum Lang {
+  TypeScript
+  Dart
+  Kotlin
+  Java
+}
+pub fn Lang::ext(Self) -> String
+pub fn Lang::label(Self) -> String
+
+// Type aliases
+
+// Traits

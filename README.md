@@ -234,6 +234,24 @@ $ mctl model new account                   # scaffold a moonorm data-layer proje
 $ mctl docker    greet                     # -> Dockerfile + .dockerignore
 $ mctl kube      greet                     # -> deploy/deployment.yaml + deploy/service.yaml
 $ mctl plugin    ./my-plugin greet.api     # run an external plugin over the parsed spec
+
+$ mctl api format greet.api                # canonical spelling on stdout (--write for in place)
+$ mctl api validate greet.api              # findings, then "N error(s), M warning(s)"
+$ mctl api doc   greet.api                 # -> greet_api.md      (Markdown reference)
+$ mctl api ts    greet.api                 # -> greet_client.ts   (typed client)
+$ mctl api dart  greet.api                 # -> greet_client.dart
+$ mctl api kt    greet.api                 # -> greet_client.kt
+$ mctl api java  greet.api                 # -> GreetClient.java
+$ mctl migrate   greet.api                 # -> greet_migrate.sql (one table per type)
+$ mctl model mysql datasource root@tcp(db)/shop       # -> mysql_model.mbt
+$ mctl model pg    datasource postgres://u:p@db/shop  # -> pg_model.mbt
+$ mctl quickstart blog                     # scaffold an api project, then say what to run
+$ mctl template  list                      # the bundled template library
+$ mctl upgrade   0.13.0                    # move the moonbitstack pins in moon.mod
+$ mctl config    set branch release        # edit ~/.mctl/config
+$ mctl env                                 # what mctl resolved, and from where
+$ mctl completion bash                     # a shell completion script
+$ mctl bug "api format eats my comment"    # a report pre-filled with the environment
 ```
 
 `generate` works as a synonym for `gen`, and `rpc` for `proto`.
@@ -368,6 +386,112 @@ let req   = @moonctl.plugin_request(spec, api_file_path~, style~, dir~) // its s
 let files = @moonctl.parse_gen_files(@json.parse(out)) // the plugin's stdout -> files to write
 ```
 
+## Checking a spec: `api format`, `api validate`
+
+A spec that parses can still be wrong: a route pointing at a type nobody declared,
+two handlers under one name, a `:id` segment with no field to fill it. `validate` is
+the second pair of eyes, and every finding names the rule that caught it, so a
+toolchain can turn one class of finding off without turning the rest off.
+
+```console
+$ mctl api validate greet.api
+error [unknown-type] POST /users: request type "CreateReq" is not declared
+warning [path-param] GET /users/:id: `:id` has no field named "id" in GetReq, so nothing fills it
+mctl: greet.api: 1 error(s), 1 warning(s)
+```
+
+`format` is the canonical spelling of the same file — one route and one type per
+line, tags where they were, comments kept — so a spec reviews as a diff instead of
+as a re-indent. It is idempotent, which is what makes it safe to run over a whole
+repository:
+
+```moonbit
+let findings = @moonctl.validate_source(source)   // Array[Diagnostic]
+let ok = @moonctl.has_errors(findings) == false
+let canonical = @moonctl.format(source)           // format(format(x)) == format(x)
+```
+
+## Clients: TypeScript, Dart, Kotlin, Java
+
+`mctl api ts|dart|kt|java` reads the same spec and writes a typed client, one file
+per language. The request type of a route becomes a model, its `path:` / `form:` /
+`header:` fields become parameters (the body and the path segments leading, the
+optional ones last), its response type becomes the return type, and a non-2xx answer
+raises the client's own error. The generator lives in `src/client` and shares one
+reading of the spec across four emitters, so a route is spelled the same way in all
+four.
+
+| Language | File | Ports the caller fills in |
+| --- | --- | --- |
+| TypeScript | `greet_client.ts` | `Fetch` (defaults to the global `fetch`), `token` |
+| Dart | `greet_client.dart` | `Send`, `token` |
+| Kotlin | `greet_client.kt` | `Transport` + `Codec` |
+| Java | `GreetClient.java` | `Transport` + `Codec`, nested in the class |
+
+Transport is a port on purpose: a generated client compiles with no third-party
+dependency, and runs over `fetch`, `dio`, Ktor or a test double without editing the
+generated file. TypeScript and Dart serialize with the JSON their standard library
+already has; Kotlin and Java take a `Codec` (`encode(value) -> String`,
+`decode(text) -> Map`), so the project's existing kotlinx.serialization, Gson or
+Jackson does the JSON and the client forces no fourth library into the build.
+
+Each generated client was compiled once with its own compiler as the acceptance
+check:
+
+```console
+$ tsc --strict --noEmit --target es2022 --lib es2022,dom greet_client.ts
+$ dart analyze greet_client.dart
+$ kotlinc greet_client.kt -d greet.jar
+$ javac -Xlint:all -d out GreetClient.java
+```
+
+`mctl api doc` writes the human-facing counterpart to the OpenAPI document: the
+route table, the groups, then one table per type saying where each field is bound
+and what the tag constrains it to.
+
+## Migrations from a spec
+
+`mctl migrate` reads the `type` blocks as tables — a column per field, the `id`
+field as the primary key, `optional` as `NULL`, and a list or a nested type as
+`JSON` — and writes `<service>_migrate.sql`. It is a starting point, and says so in
+its header: a spec knows the shape of a value, not its indexes, its uniqueness or
+its foreign keys.
+
+```moonbit
+let sql = @moonctl.generate_migrations(spec)
+```
+
+## Template library, config, and the housekeeping
+
+The command surface is data, not code: `src/cli` holds one table that `mctl help`
+prints, `mctl completion` completes from and the README lists, so a new command is
+completable and documented by being added once.
+
+| Command | What it does |
+| --- | --- |
+| `mctl help` | the command table, with the flags every generator shares |
+| `mctl completion <shell>` | a completion script for bash, zsh, fish or pwsh, generated from the table |
+| `mctl template list` / `show <name>` | the bundled template library, and what one entry produces |
+| `mctl config list|get|set|path|migrate` | the `key = value` file mctl reads before it starts |
+| `mctl env` | what mctl resolved — home, remote, branch, style — and where from |
+| `mctl bug [title]` | a bug report pre-filled with the environment |
+| `mctl upgrade [version]` | move the `moonbitstack/*` pins in `moon.mod`, touching nothing else |
+| `mctl quickstart <name>` | scaffold an api project, then print what to run next |
+| `mctl migrate <file.api>` | the SQL a spec's types imply |
+| `mctl model mysql|pg datasource <dsn>` | live-database reflection, written under the engine's name |
+
+The template library is reached three ways, as in goctl: the bundled defaults, a
+`--home <dir>` of your own, or `--remote <url> --branch <name>` for a shared one.
+`config` keeps the choice between runs, and `--home` / `--remote` / `--branch` win
+over it for a single run.
+
+```console
+$ mctl config set home ~/templates
+$ mctl config set branch release
+$ mctl config get branch
+release
+```
+
 ## OpenAPI / Swagger
 
 `generate_doc` emits an OpenAPI document straight from a `.api` spec — routes
@@ -428,8 +552,14 @@ goctl's `--style` naming templates, and multi-file specs (`import`, single and g
 resolved against the importing file). Generated moonapi routing registers each handler through a raising
 arrow closure, so a scaffold compiles under moonc 0.10.5 (where a pure named handler no
 longer coerces to moonapi's raising `ApiHandler`). All verified across every backend
-(0 warnings under `--deny-warn`). Next, feature-by-feature: a Redis-cached CRUD
-variant.
+(0 warnings under `--deny-warn`). This round added the spec toolchain (`api format`,
+`api validate` with per-rule diagnostics, `api doc` as Markdown), the four typed
+clients (`api ts`, `api dart`, `api kt`, `api java` — each compiled once with its own
+compiler, and snapshotted by the tests), `migrate` (a spec's types as SQL), the
+`model mysql|pg datasource` spellings, and the command surface that makes the rest
+discoverable (`help`, `completion`, `template`, `config`, `env`, `bug`, `upgrade`,
+`quickstart`). Still open from goctl's list: the `model mongo` document model, the
+`gateway` scaffold, and the cached-CRUD and plugin-fault-injection variants.
 
 ## License
 

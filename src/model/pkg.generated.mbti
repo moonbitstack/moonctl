@@ -12,7 +12,11 @@ pub fn generate_crud_from_ddl(String) -> String
 
 pub fn generate_crud_from_reflection(Array[ReflectedColumn]) -> String
 
+pub fn generate_migrations(@api.Spec) -> String
+
 pub fn generate_model(@api.Spec) -> String
+
+pub fn migrate_file_name(String) -> String
 
 pub fn parse_ddl(String) -> Array[DdlTable]
 

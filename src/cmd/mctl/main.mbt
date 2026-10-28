@@ -371,89 +371,17 @@ async fn write_scaffold(
 
 ///|
 fn usage() -> Unit {
-  println("mctl — a spec-driven code generator for MoonBit (← goctl)")
-  println("")
-  println("usage:")
-  println(
-    "  mctl gen api   <file.api>    parse a .api spec  -> a moonapi project tree (etc/, internal/…)",
-  )
-  println(
-    "  mctl gen rpc   <file.proto>  parse a .proto     -> a moonrpc service tree (pb/, internal/…, client/)",
-  )
-  println(
-    "  mctl gen model <file.api>    parse .api types   -> <file>_model.mbt (moonorm models)",
-  )
-  println(
-    "  mctl gen crud  <file.sql>    parse a SQL DDL    -> <file>_model.mbt (moonorm models + CRUD)",
-  )
-  println(
-    "  mctl gen doc   <file.api>    parse a .api spec  -> <file>_openapi.json + _swagger.html",
-  )
-  println(
-    "  mctl gen gql   <file.api>    parse .api types   -> a moongql service tree (internal/schema, …)",
-  )
-  println(
-    "  mctl gen agent <file.api>    parse .api service -> <file>_agent.mbt (moonkoog tools + AIAgent)",
-  )
-  println(
-    "  mctl model datasource <dsn>  read a live DB schema -> datasource_model.mbt (moonorm + CRUD)",
-  )
-  println(
-    "                               dsn: sqlite:PATH | postgres://user:pass@host:port/db",
-  )
-  println(
-    "  mctl api  new  <name>        scaffold a moonapi service project under <name>/",
-  )
-  println(
-    "  mctl rpc  new  <name>        scaffold a moonrpc service project under <name>/",
-  )
-  println(
-    "  mctl gql  new  <name>        scaffold a moongql service project under <name>/",
-  )
-  println(
-    "  mctl mcp  new  <name>        scaffold a moonmcp server project under <name>/",
-  )
-  println(
-    "  mctl model new <name>        scaffold a moonorm data-layer project under <name>/",
-  )
-  println(
-    "  mctl docker    <name>        write a Dockerfile + .dockerignore for the service",
-  )
-  println(
-    "  mctl kube      <name>        write deploy/deployment.yaml + deploy/service.yaml",
-  )
-  println(
-    "  mctl plugin    <exe> <file>  run an external plugin over a .api spec ({Api, ApiFilePath,",
-  )
-  println(
-    "                               Style, Dir} JSON on stdin, {path,content} files on stdout).",
-  )
-  println(
-    "                               <exe> may carry arguments: \"myplugin -flag value\".",
-  )
-  println("  mctl help                    show this message")
-  println("")
-  println("flags (gen api, gen rpc, gen gql):")
-  println(
-    "  --style <template>           how names are spelled: gozero (default), goZero, go_zero, …",
-  )
-  println(
-    "  --dir <path>                 write the tree under <path> instead of here",
-  )
-  println(
-    "  --flat                       write one <file>.mbt instead of the project tree",
-  )
-  println("")
-  println(
-    "`generate` is accepted as a synonym for `gen`, and `rpc` for `proto`. A .api spec",
-  )
-  println(
-    "may `import` others; they are read relative to the file that imports them.",
-  )
-  println(
-    "Regenerating keeps every file you have edited — only the routes and the types are",
-  )
-  println("rewritten.")
+  println(@moonctl.usage_text(MCTL_VERSION))
+}
+
+///|
+/// `args` without its first `n` words — the arguments of a sub-command.
+fn tail(args : Array[String], n : Int32) -> Array[String] {
+  let out : Array[String] = []
+  for i = n; i < args.length(); i = i + 1 {
+    out.push(args[i])
+  }
+  out
 }
 
 ///|
@@ -513,6 +441,23 @@ fn split_flags(argv : Array[String]) -> (Array[String], Opts) {
 }
 
 ///|
+/// `argv` without the `--write` / `-w` flag, and whether it carried one. Only
+/// `mctl api format --write` reads it, so it is taken out before the command line is
+/// split into words and the flags every generator shares.
+fn take_write_flag(argv : Array[String]) -> (Array[String], Bool) {
+  let out : Array[String] = []
+  let mut write = false
+  for a in argv {
+    if a == "--write" || a == "-w" {
+      write = true
+    } else {
+      out.push(a)
+    }
+  }
+  (out, write)
+}
+
+///|
 /// Dispatch a `gen <what> <file>` sub-command. `rpc` and `proto` are synonyms
 /// (proto → moonrpc), so both spellings work.
 async fn dispatch(what : String, file : String, opts : Opts) -> Unit {
@@ -540,12 +485,55 @@ async fn main {
   for i = 1; i < argv.length(); i = i + 1 {
     rest.push(argv[i])
   }
+  let (rest, write) = take_write_flag(rest)
   let (args, opts) = split_flags(rest)
   let n = args.length()
   if n >= 3 && (args[0] == "gen" || args[0] == "generate") {
     dispatch(args[1], args[2], opts)
   } else if n >= 3 && args[0] == "model" && args[1] == "datasource" {
     gen_datasource(args[2], "datasource_model.mbt")
+  } else if n == 0 || args[0] == "help" {
+    usage()
+  } else if args[0] == "completion" {
+    cmd_completion(if n >= 2 { args[1] } else { "" })
+  } else if args[0] == "template" {
+    cmd_template(tail(args, 1))
+  } else if args[0] == "config" {
+    cmd_config(tail(args, 1))
+  } else if args[0] == "env" {
+    cmd_env()
+  } else if args[0] == "bug" {
+    cmd_bug(if n >= 2 { args[1] } else { "" })
+  } else if args[0] == "upgrade" {
+    cmd_upgrade(if n >= 2 { args[1] } else { MCTL_VERSION })
+  } else if n >= 2 && args[0] == "migrate" {
+    cmd_migrate(args[1])
+  } else if n >= 2 && args[0] == "quickstart" {
+    cmd_quickstart(args[1])
+  } else if n >= 4 &&
+    args[0] == "model" &&
+    args[1] == "mysql" &&
+    args[2] == "datasource" {
+    gen_datasource_for("mysql", args[3])
+  } else if n >= 4 &&
+    args[0] == "model" &&
+    args[1] == "pg" &&
+    args[2] == "datasource" {
+    gen_datasource_for("pg", args[3])
+  } else if n >= 3 && args[0] == "api" && args[1] == "format" {
+    api_format(args[2], write)
+  } else if n >= 3 && args[0] == "api" && args[1] == "validate" {
+    api_validate(args[2])
+  } else if n >= 3 && args[0] == "api" && args[1] == "doc" {
+    api_doc(args[2])
+  } else if n >= 3 && args[0] == "api" && args[1] == "ts" {
+    api_client(args[2], @moonctl.Lang::TypeScript)
+  } else if n >= 3 && args[0] == "api" && args[1] == "dart" {
+    api_client(args[2], @moonctl.Lang::Dart)
+  } else if n >= 3 && args[0] == "api" && args[1] == "kt" {
+    api_client(args[2], @moonctl.Lang::Kotlin)
+  } else if n >= 3 && args[0] == "api" && args[1] == "java" {
+    api_client(args[2], @moonctl.Lang::Java)
   } else if n >= 3 && args[0] == "api" && args[1] == "new" {
     write_scaffold("api project " + args[2], @moonctl.scaffold_api(args[2]))
   } else if n >= 3 && args[0] == "rpc" && args[1] == "new" {
