@@ -7,6 +7,7 @@
 [**Documentation**](https://moonbitstack.github.io/moonctl/) ·
 [**Quick start**](https://moonbitstack.github.io/moonctl/getting-started/quick-start.html) ·
 [**Commands**](https://moonbitstack.github.io/moonctl/reference/commands.html) ·
+[**Library API**](https://moonbitstack.github.io/moonctl/reference/api.html) ·
 [**mooncakes**](https://mooncakes.io/docs/moonbitstack/moonctl)
 
 [![Check and Test](https://github.com/moonbitstack/moonctl/actions/workflows/ci.yml/badge.svg)](https://github.com/moonbitstack/moonctl/actions/workflows/ci.yml)
@@ -640,9 +641,14 @@ by verb and path exactly, so a `:param` pattern is emitted but never matched.
 ## Documentation
 
 [`docs/`](./docs) is the published documentation — a landing page, a quick start,
-three guides and a command reference. Plain HTML and CSS with one small script: open
-`docs/index.html` in a browser to read it, there is no build step and nothing to
-install.
+three guides, a command reference and the library API. Plain HTML and CSS with one
+small script: open `docs/index.html` in a browser to read it, there is no build step
+and nothing to install.
+
+The API page is the exception to "hand written": `scripts/gen_api_reference.py`
+regenerates it from the `pkg.generated.mbti` interfaces `moon info` writes, and CI
+fails if the committed page and the current interfaces disagree. Run it after
+changing a public signature.
 
 ## License
 

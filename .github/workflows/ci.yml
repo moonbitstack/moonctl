@@ -62,6 +62,12 @@ jobs:
         run: |
           moon info --target all && git diff --exit-code
 
+      - name: docs (api reference matches the interfaces)
+        # The page is generated from the .mbti files above, so it has to be
+        # regenerated in the same commit that moves a public signature.
+        if: runner.os == 'Linux'
+        run: python3 scripts/gen_api_reference.py --check
+
   scaffold:
     # A pin that no longer compiles, or a service that no longer answers, fails
     # here rather than in the first project someone scaffolds.
