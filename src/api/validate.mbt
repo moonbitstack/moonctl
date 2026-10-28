@@ -470,3 +470,24 @@ pub fn validate_source(source : String) -> Array[Diagnostic] {
   }
   validate(spec)
 }
+
+///|
+/// Validate one file of a spec together with everything it imports, `files` being
+/// every source the walk has read keyed by the path it was read from. Without this a
+/// spec that embeds a type from another file is told that the type does not exist —
+/// true of the file on its own, false of the spec it belongs to.
+pub fn validate_files(
+  source : String,
+  files : Map[String, String],
+  from~ : String = "",
+) -> Array[Diagnostic] {
+  let spec = parse_all(source, files, from~) catch {
+    Syntax(line~, msg~) =>
+      return [finding(Error, "syntax", "line " + line.to_string(), msg)]
+    Missing(file~, path~) =>
+      return [
+        finding(Error, "import", file, "cannot read import \"" + path + "\""),
+      ]
+  }
+  validate(spec)
+}

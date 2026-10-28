@@ -15,7 +15,7 @@ fn replace_ext(input : String, ext : String, suffix : String) -> String {
 ///|
 /// Read `input` and every `.api` it imports — following each file's own imports in
 /// turn — and parse the lot into one spec.
-async fn read_spec(input : String) -> @moonctl.Spec {
+async fn read_files(input : String) -> Map[String, String] {
   let files : Map[String, String] = Map([])
   let pending = [input]
   let mut i = 0
@@ -36,6 +36,12 @@ async fn read_spec(input : String) -> @moonctl.Spec {
       }
     }
   }
+  files
+}
+
+///|
+async fn read_spec(input : String) -> @moonctl.Spec {
+  let files = read_files(input)
   let source = match files.get(input) {
     Some(s) => s
     None => ""

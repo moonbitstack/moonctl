@@ -38,8 +38,18 @@ fn bind_word(f : @api.Field) -> String {
 /// as one line, or an empty string when the tag carries none.
 fn constraints(f : @api.Field) -> String {
   let parts : Array[String] = []
-  for o in f.options() {
-    parts.push("one of `" + o + "`")
+  // `options=free|pro` is one constraint with two permitted values, so it reads as
+  // one phrase — "one of `free`, `pro`" — rather than the phrase twice.
+  let allowed = f.options()
+  if allowed.length() > 0 {
+    let mut listed = ""
+    for i = 0; i < allowed.length(); i = i + 1 {
+      if i > 0 {
+        listed = listed + ", "
+      }
+      listed = listed + "`" + allowed[i] + "`"
+    }
+    parts.push("one of " + listed)
   }
   match f.default_() {
     Some(v) => parts.push("default `" + v + "`")

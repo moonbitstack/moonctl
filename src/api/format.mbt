@@ -86,6 +86,7 @@ fn collapse(code : String) -> String {
   let mut in_tag = false
   let mut pending = false
   let mut force = false
+  let mut path_param = false
   while i < n {
     let c = code[i]
     if in_str == false && in_tag == false && @text.is_ws(c) {
@@ -96,6 +97,7 @@ fn collapse(code : String) -> String {
     if in_str == false && in_tag == false {
       let last = last_char(out)
       let want = (pending || force) &&
+        (path_param == false || is_word_char(c) == false) &&
         out.length() > 0 &&
         last != '(' &&
         last != ' ' &&
@@ -110,12 +112,23 @@ fn collapse(code : String) -> String {
         out = out + " "
       }
     }
+    let before = last_char(out)
     out = out + code[i:i + 1].to_owned()
     if in_str == false && in_tag == false {
+      // `key:value` in a group wants the space; `:id` in a path does not. A
+      // colon right after a slash names a path parameter, and a space there
+      // would turn `/profile/:id` into a route that matches nothing.
       if c == ':' {
-        force = true
+        if before == '/' {
+          path_param = true
+        } else {
+          force = true
+        }
       } else {
         force = false
+        if path_param && is_word_char(c) == false {
+          path_param = false
+        }
       }
       // a comma is followed by one space, the way a group lists its settings
       if c == ',' {
@@ -220,15 +233,27 @@ fn last_char(s : String) -> UInt16 {
 }
 
 ///|
-/// Format an `.api` source. Nesting is read off braces and off a multi-line
-/// `@server(` block; blank lines collapse to one; the result ends in exactly one
-/// newline. Comments and struct tags survive verbatim, and the function is
-/// idempotent: formatting an already formatted spec returns it unchanged.
+/// Whether `c` may appear in a name — the letters, digits and underscore a path
+/// parameter is spelled with.
+fn is_word_char(c : UInt16) -> Bool {
+  (c >= 'a' && c <= 'z') ||
+  (c >= 'A' && c <= 'Z') ||
+  (c >= '0' && c <= '9') ||
+  c == '_'
+}
+
+///|
+/// Format an `.api` source. Nesting is read off braces and off the two blocks that
+/// open with a parenthesis — a multi-line `@server (` and a `type (` group; blank
+/// lines collapse to one; the result ends in exactly one newline. Comments and
+/// struct tags survive verbatim, and the function is idempotent: formatting an
+/// already formatted spec returns it unchanged.
 pub fn format(source : String) -> String {
   let out : Array[String] = []
   let mut depth = 0
   let mut blank = false
   let mut in_server = false
+  let mut in_type = false
   for raw in lines(source) {
     let line = normalize_leading_ws(raw)
     let text = normalize_line(line)
@@ -242,7 +267,9 @@ pub fn format(source : String) -> String {
       out.push("")
       blank = false
     }
-    let closes = @text.starts_with(text, "}") || (in_server && text == ")")
+    let closes = @text.starts_with(text, "}") ||
+      (in_server && text == ")") ||
+      (in_type && text == ")")
     let d = if closes && depth > 0 { depth - 1 } else { depth }
     out.push(indent(d) + text)
     if closes {
@@ -252,11 +279,17 @@ pub fn format(source : String) -> String {
       if in_server && text == ")" {
         in_server = false
       }
+      if in_type && text == ")" {
+        in_type = false
+      }
     }
     if last_char(text) == '{' {
       depth = depth + 1
     } else if text == "@server (" {
       in_server = true
+      depth = depth + 1
+    } else if text == "type (" {
+      in_type = true
       depth = depth + 1
     }
   }

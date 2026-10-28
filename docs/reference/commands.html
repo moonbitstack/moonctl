@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commands — moonctl</title>
+<meta name="description" content="The whole mctl command surface: what each command reads and writes, the flags, and the library function behind it.">
+<meta name="theme-color" content="#08080d">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="container">
+    <a class="brand" href="../index.html">
+      <span class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6">
+          <rect x="2.6" y="2.6" width="18.8" height="18.8" rx="5.4"/>
+          <path d="M9.4 8.6 6.8 12l2.6 3.4M14.6 8.6 17.2 12l-2.6 3.4" stroke-linecap="square"/>
+        </svg>
+      </span>
+      moonctl
+      <span class="sub">mctl</span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="../getting-started/installation.html">Docs</a>
+      <a href="../guides/api-spec.html">Guides</a>
+      <a href="../reference/commands.html" aria-current="true">Reference</a>
+      <a href="../getting-started/quick-start.html">Quick start</a>
+    </nav>
+    <div class="nav-right">
+      <button class="icon-btn" type="button" data-theme-toggle aria-label="Switch theme">
+        <svg class="i-moon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/>
+        </svg>
+        <svg class="i-sun" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+          <circle cx="12" cy="12" r="4.2"/>
+          <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/>
+        </svg>
+      </button>
+      <a class="icon-btn" href="https://github.com/moonbitstack/moonctl" aria-label="Repository on GitHub">
+        <svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor" aria-hidden="true">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/>
+        </svg>
+      </a>
+      <button class="icon-btn nav-toggle" type="button" data-nav-toggle aria-label="Menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <path d="M4 7h16M4 12h16M4 17h16"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="docs-wrap">
+  <aside class="side" id="side">
+    <div class="side-group">
+      <span class="label">Getting started</span>
+      <a href="../getting-started/installation.html">Installation</a>
+      <a href="../getting-started/quick-start.html">Quick start</a>
+    </div>
+    <div class="side-group">
+      <span class="label">Guides</span>
+      <a href="../guides/api-spec.html">The .api spec</a>
+      <a href="../guides/clients.html">Clients</a>
+      <a href="../guides/models.html">Models</a>
+      <a href="../guides/gateway.html">Gateway</a>
+    </div>
+    <div class="side-group">
+      <span class="label">Reference</span>
+      <a href="../reference/commands.html" aria-current="page">Commands</a>
+    </div>
+  </aside>
+
+  <main class="doc" id="main">
+    <button class="side-toggle" type="button" data-side-toggle aria-expanded="false">Contents</button>
+    <h1>Commands</h1>
+    <p class="lede">
+      One binary, <code>mctl</code>, and a verb for each thing it can write. Every generator
+      takes a file and writes beside it unless <code>--dir</code> says otherwise.
+    </p>
+
+    <div class="prose">
+      <h2 id="surface">The surface <a class="anchor" href="#surface"></a></h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Command</th><th>Reads</th><th>Writes</th></tr></thead>
+          <tbody>
+            <tr id="gen-api"><td><code>mctl gen api &lt;file.api&gt;</code></td><td>a spec</td><td>a moonapi project tree — or one file with <code>--flat</code></td></tr>
+            <tr id="gen-rpc"><td><code>mctl gen rpc &lt;file.proto&gt;</code></td><td>a proto</td><td>a moonrpc project tree: messages, codecs, handler table, client</td></tr>
+            <tr><td><code>mctl gen gql &lt;file.api&gt;</code></td><td>a spec</td><td>a moongql schema and resolvers</td></tr>
+            <tr><td><code>mctl gen model &lt;file.api&gt;</code></td><td>a spec</td><td><code>&lt;stem&gt;_model.mbt</code> — models and migrations</td></tr>
+            <tr><td><code>mctl gen crud &lt;file.sql&gt;</code></td><td>DDL</td><td><code>&lt;stem&gt;_model.mbt</code> — models and typed CRUD</td></tr>
+            <tr><td><code>mctl gen doc &lt;file.api&gt;</code></td><td>a spec</td><td>an OpenAPI document and a Swagger page</td></tr>
+            <tr><td><code>mctl gen agent &lt;file.api&gt;</code></td><td>a spec</td><td>a moonkoog agent skeleton</td></tr>
+            <tr id="api-format"><td><code>mctl api format &lt;file.api&gt;</code></td><td>a spec</td><td>the canonical text, on stdout, or in place with <code>--write</code></td></tr>
+            <tr id="api-validate"><td><code>mctl api validate &lt;file.api&gt;</code></td><td>a spec</td><td>the findings, then a count — nothing on disk</td></tr>
+            <tr id="api-doc"><td><code>mctl api doc &lt;file.api&gt;</code></td><td>a spec</td><td><code>&lt;stem&gt;_api.md</code> — routes, groups, types, constraints</td></tr>
+            <tr id="api-clients"><td><code>mctl api ts|dart|kt|java &lt;file.api&gt;</code></td><td>a spec</td><td>one typed client per route, in that language</td></tr>
+            <tr id="migrate"><td><code>mctl migrate &lt;file.api&gt;</code></td><td>a spec</td><td><code>&lt;service&gt;_migrate.sql</code> — one table per type block</td></tr>
+            <tr id="model-mongo"><td><code>mctl model mongo &lt;file.api&gt;</code></td><td>a spec</td><td><code>&lt;service&gt;_mongo.mbt</code> — documents and repositories</td></tr>
+            <tr id="model-cache"><td><code>mctl model cache &lt;file.api&gt;</code></td><td>a spec</td><td><code>&lt;service&gt;_cache.mbt</code> — cache-aside CRUD</td></tr>
+            <tr><td><code>mctl model mysql datasource &lt;dsn&gt;</code></td><td>a live MySQL schema</td><td><code>mysql_model.mbt</code></td></tr>
+            <tr><td><code>mctl model pg datasource &lt;dsn&gt;</code></td><td>a live PostgreSQL schema</td><td><code>pg_model.mbt</code></td></tr>
+            <tr id="gateway"><td><code>mctl gateway &lt;file.proto&gt;</code></td><td>a proto, and <code>&lt;stem&gt;.routes</code> if present</td><td><code>&lt;stem&gt;_gateway.mbt</code> — an HTTP front door</td></tr>
+            <tr id="quickstart"><td><code>mctl quickstart &lt;name&gt;</code></td><td>—</td><td>a service: scaffold, generate, build</td></tr>
+            <tr><td><code>mctl api new &lt;name&gt;</code></td><td>—</td><td>an empty moonapi project</td></tr>
+            <tr><td><code>mctl rpc new &lt;name&gt;</code></td><td>—</td><td>an empty moonrpc project</td></tr>
+            <tr><td><code>mctl gql new &lt;name&gt;</code></td><td>—</td><td>an empty moongql project</td></tr>
+            <tr><td><code>mctl model new &lt;name&gt;</code></td><td>—</td><td>an empty data-layer project</td></tr>
+            <tr><td><code>mctl docker &lt;name&gt;</code></td><td>—</td><td><code>Dockerfile</code> and <code>.dockerignore</code></td></tr>
+            <tr><td><code>mctl kube &lt;name&gt;</code></td><td>—</td><td><code>deploy/deployment.yaml</code> and <code>deploy/service.yaml</code></td></tr>
+            <tr><td><code>mctl plugin &lt;exe&gt; &lt;file.api&gt;</code></td><td>a spec, a plugin</td><td>whatever the plugin returns, inside the output directory</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="housekeeping">Housekeeping <a class="anchor" href="#housekeeping"></a></h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td><code>mctl env</code></td><td>print the configuration in force and where each value came from</td></tr>
+            <tr><td><code>mctl config list|get|set|path|migrate</code></td><td>read and write the config file</td></tr>
+            <tr><td><code>mctl template list|show [name]</code></td><td>the bundled template catalogue</td></tr>
+            <tr><td><code>mctl completion &lt;shell&gt;</code></td><td>a completion script for bash, zsh, fish or powershell</td></tr>
+            <tr><td><code>mctl upgrade [version]</code></td><td>move the <code>moonbitstack</code> pins in <code>moon.mod</code> to a release</td></tr>
+            <tr><td><code>mctl bug [title]</code></td><td>a bug report, pre-filled with the environment</td></tr>
+            <tr><td><code>mctl help</code></td><td>the command table</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="flags">Flags <a class="anchor" href="#flags"></a></h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Flag</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td><code>--dir &lt;path&gt;</code></td><td>write the tree under <code>path</code> instead of here</td></tr>
+            <tr><td><code>--flat</code></td><td>one <code>.mbt</code> file instead of a project tree</td></tr>
+            <tr><td><code>--style &lt;template&gt;</code></td><td>how generated names are spelled: <code>gozero</code>, <code>goZero</code>, <code>go_zero</code>, …</td></tr>
+            <tr><td><code>--write</code></td><td>rewrite the input file in place (<code>api format</code>)</td></tr>
+            <tr><td><code>--home &lt;path&gt;</code></td><td>use this template home instead of the bundled library</td></tr>
+            <tr><td><code>--remote &lt;url&gt;</code></td><td>read the template library from a git remote</td></tr>
+            <tr><td><code>--branch &lt;name&gt;</code></td><td>the branch of <code>--remote</code>, <code>main</code> by default</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        The three library flags reach the configuration and the <code>env</code> report, but the
+        generator still reads the bundled catalogue; see
+        <a href="../getting-started/installation.html#configuration">Configuration</a>.
+      </p>
+
+      <h2 id="templates">The template catalogue <a class="anchor" href="#templates"></a></h2>
+      <div class="term">
+        <div class="term-bar"><span class="dots"><i></i><i></i><i></i></span>terminal</div>
+<pre><span class="p">$</span> mctl template list</pre>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Template</th><th>Spec</th><th>What it produces</th></tr></thead>
+          <tbody>
+            <tr><td><code>api-service</code></td><td>api</td><td>a moonapi service: routes, handlers, logic, config and a Dockerfile</td></tr>
+            <tr><td><code>api-flat</code></td><td>api</td><td>the same routes and types in one .mbt file, for a small service</td></tr>
+            <tr><td><code>rpc-service</code></td><td>proto</td><td>a moonrpc service: messages, codecs, handler table and a client</td></tr>
+            <tr><td><code>gql-service</code></td><td>api</td><td>a moongql schema and resolver over the spec's types</td></tr>
+            <tr><td><code>mcp-server</code></td><td>api</td><td>an MCP server whose tools are the spec's annotated handlers</td></tr>
+            <tr><td><code>model-mysql</code></td><td>ddl</td><td>moonorm models and CRUD for a MySQL schema, reflected or from DDL</td></tr>
+            <tr><td><code>model-postgres</code></td><td>ddl</td><td>moonorm models and CRUD for a PostgreSQL schema</td></tr>
+            <tr><td><code>model-mongo</code></td><td>api</td><td>document models over a Mongo collection, with a typed collection port</td></tr>
+            <tr><td><code>gateway</code></td><td>proto</td><td>an HTTP gateway that routes to a moonrpc client</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note-line">The command prints the same rows as a Markdown table.</p>
+      <p><code>mctl template show api-service</code> prints one entry; <code>mctl template init</code> writes the library into a directory to edit, and is not implemented yet.</p>
+
+      <h2 id="library">The library behind it <a class="anchor" href="#library"></a></h2>
+      <p>
+        Every command is a thin layer over an exported function, so a build script can do the
+        same thing without a subprocess:
+      </p>
+      <div class="code">
+        <div class="code-head"><span class="file">moon.pkg</span><button class="copy" type="button" data-copy>Copy</button></div>
+<pre>import {
+  "moonbitstack/moonctl",
+}</pre>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Function</th><th>What it returns</th></tr></thead>
+          <tbody>
+            <tr><td><code>parse</code>, <code>parse_all</code></td><td>a <code>Spec</code> from one file, or from a file and the sources it imports</td></tr>
+            <tr><td><code>generate</code>, <code>generate_tree</code></td><td>a scaffold as text, or as a tree of files</td></tr>
+            <tr><td><code>format</code>, <code>validate</code>, <code>validate_files</code></td><td>the canonical text, and the findings for a spec</td></tr>
+            <tr><td><code>generate_client</code>, <code>client_file</code></td><td>a typed client in one of four languages</td></tr>
+            <tr><td><code>generate_markdown</code>, <code>generate_migrations</code></td><td>the Markdown reference, the migration SQL</td></tr>
+            <tr><td><code>generate_mongo</code>, <code>generate_cached</code></td><td>documents and repositories, the cache-aside layer</td></tr>
+            <tr><td><code>generate_gateway</code>, <code>default_routes</code></td><td>the gateway, and the routes a proto implies</td></tr>
+            <tr><td><code>generate_grpc</code>, <code>parse_proto</code></td><td>the moonrpc service, and the proto tree it came from</td></tr>
+            <tr><td><code>generate_model</code>, <code>generate_crud</code></td><td>models and the CRUD layer, from a spec or from DDL</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        The library is pure logic — a string in, a string out — so it runs on all four MoonBit
+        targets, and a build step, a test or a browser page can call it.
+      </p>
+    </div>
+    <nav class="pager" aria-label="Pages">
+      <a href="../guides/gateway.html">
+        <span class="dir">Previous</span>
+        Gateway
+      </a>
+      <a class="next" href="../index.html">
+        <span class="dir">Next</span>
+        Home
+      </a>
+    </nav>
+  </main>
+
+  <nav class="toc" aria-label="On this page">
+    <span class="label">On this page</span>
+    <a href="#surface">The surface</a>
+    <a href="#housekeeping">Housekeeping</a>
+    <a href="#flags">Flags</a>
+    <a href="#templates">The template catalogue</a>
+    <a href="#library">The library behind it</a>
+  </nav>
+</div>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-bottom" style="margin-top:0;border-top:0;padding-top:0">
+      <span><a href="../index.html">moonctl</a></span>
+      <span>Apache-2.0</span>
+      <span>moonbitstack</span>
+      <span class="right"><a href="https://github.com/moonbitstack/moonctl">Edit this page on GitHub</a></span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

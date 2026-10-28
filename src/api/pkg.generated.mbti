@@ -28,6 +28,8 @@ pub fn tokens(String) -> Array[String]
 
 pub fn validate(Spec) -> Array[Diagnostic]
 
+pub fn validate_files(String, Map[String, String], from? : String) -> Array[Diagnostic]
+
 pub fn validate_source(String) -> Array[Diagnostic]
 
 // Errors

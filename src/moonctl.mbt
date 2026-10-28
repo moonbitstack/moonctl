@@ -33,6 +33,7 @@ pub using @api {
   parse_lenient,
   resolve_import,
   validate,
+  validate_files,
   validate_source,
 }
 

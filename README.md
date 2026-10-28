@@ -4,6 +4,11 @@
 
 **A spec-driven code generator for MoonBit — `← goctl`.**
 
+[**Documentation**](https://moonbitstack.github.io/moonctl/) ·
+[**Quick start**](https://moonbitstack.github.io/moonctl/getting-started/quick-start.html) ·
+[**Commands**](https://moonbitstack.github.io/moonctl/reference/commands.html) ·
+[**mooncakes**](https://mooncakes.io/docs/moonbitstack/moonctl)
+
 [![Check and Test](https://github.com/moonbitstack/moonctl/actions/workflows/ci.yml/badge.svg)](https://github.com/moonbitstack/moonctl/actions/workflows/ci.yml)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
 [![mooncakes](https://img.shields.io/badge/mooncakes-Lfan--ke%2Fmoonctl-brightgreen)](https://mooncakes.io/docs/moonbitstack/moonctl)
@@ -629,7 +634,15 @@ silently overwritten. Each of the three generators' output is compiled under
 Still open: the template library is catalogued and configurable (`--home`,
 `--remote`, `--branch`), but no template directory is read from disk yet — the
 bundled catalogue is what generation uses — and `mctl template init` is advertised
-in the usage line without an implementation behind it.
+in the usage line without an implementation behind it. The gateway matches a route
+by verb and path exactly, so a `:param` pattern is emitted but never matched.
+
+## Documentation
+
+[`docs/`](./docs) is the published documentation — a landing page, a quick start,
+three guides and a command reference. Plain HTML and CSS with one small script: open
+`docs/index.html` in a browser to read it, there is no build step and nothing to
+install.
 
 ## License
 

@@ -27,8 +27,12 @@ async fn api_format(input : String, write : Bool) -> Unit {
 /// with no finding prints one line saying so, which is what a script checks.
 async fn api_validate(input : String) -> Unit {
   try {
-    let source = @fs.read_file(input).text()
-    let found = @moonctl.validate_source(source)
+    let files = read_files(input)
+    let source = match files.get(input) {
+      Some(s) => s
+      None => ""
+    }
+    let found = @moonctl.validate_files(source, files, from=input)
     for d in found {
       println(d.to_string())
     }

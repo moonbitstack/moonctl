@@ -193,6 +193,8 @@ pub fn usage_text(String) -> String
 
 pub fn validate(@api.Spec) -> Array[@api.Diagnostic]
 
+pub fn validate_files(String, Map[String, String], from? : String) -> Array[@api.Diagnostic]
+
 pub fn validate_source(String) -> Array[@api.Diagnostic]
 
 // Errors

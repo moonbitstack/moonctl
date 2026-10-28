@@ -1,277 +1,548 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>moonctl — MoonBit codegen API</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet"><style>
-:root{
-  --bg:#fbfbfd; --panel:#ffffff; --panel-2:#f6f7fb; --ink:#14181f;
-  --muted:#5b6675; --line:#e8ebf1; --accent:#6d5efc; --accent-soft:#efecff; --out:#0ca678;
-  --code-bg:#f4f5f9; --shadow:0 1px 2px rgba(20,24,31,.04),0 8px 24px -12px rgba(20,24,31,.10);
-}
-@media (prefers-color-scheme:dark){:root{
-  --bg:#0b0e14; --panel:#131722; --panel-2:#0f131c; --ink:#e9edf6; --muted:#96a1b5;
-  --line:#212736; --accent:#9d8bff; --accent-soft:#1c1b3a; --out:#2dd4a7;
-  --code-bg:#161b26; --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 30px -14px rgba(0,0,0,.5);
-}}
-:root[data-theme=light]{--bg:#fbfbfd;--panel:#fff;--panel-2:#f6f7fb;--ink:#14181f;--muted:#5b6675;--line:#e8ebf1;--accent:#6d5efc;--accent-soft:#efecff;--out:#0ca678;--code-bg:#f4f5f9;--shadow:0 1px 2px rgba(20,24,31,.04),0 8px 24px -12px rgba(20,24,31,.10)}
-:root[data-theme=dark]{--bg:#0b0e14;--panel:#131722;--panel-2:#0f131c;--ink:#e9edf6;--muted:#96a1b5;--line:#212736;--accent:#9d8bff;--accent-soft:#1c1b3a;--out:#2dd4a7;--code-bg:#161b26;--shadow:0 1px 2px rgba(0,0,0,.3),0 12px 30px -14px rgba(0,0,0,.5)}
-*{box-sizing:border-box}
-html{scroll-behavior:smooth}
-@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
-body{margin:0;background:var(--bg);color:var(--ink);
-  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-  font-size:15.5px;line-height:1.6;-webkit-font-smoothing:antialiased}
-code,pre,.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-a{color:var(--accent);text-decoration:none}
-a:hover{text-decoration:underline}
-.layout{display:grid;grid-template-columns:264px minmax(0,1fr);max-width:1180px;margin:0 auto}
-.sidebar{position:sticky;top:0;align-self:start;height:100vh;overflow-y:auto;
-  border-right:1px solid var(--line);padding:1.6rem 1.1rem 2rem;background:var(--panel-2)}
-.brand{display:flex;align-items:center;gap:.55rem;font-family:"IBM Plex Mono";font-weight:600;
-  font-size:1.35rem;letter-spacing:-.01em;color:var(--ink);margin-bottom:.15rem}
-.brand .dot{width:11px;height:11px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
-.brand-sub{color:var(--muted);font-size:.8rem;margin:0 0 1.3rem;padding-left:.15rem}
-.side-nav{display:flex;flex-direction:column;gap:.1rem}
-.side-nav a{color:var(--muted);font-size:.9rem;padding:.32rem .6rem;border-radius:8px;
-  font-family:"IBM Plex Mono";display:flex;align-items:center;gap:.4rem;border-left:2px solid transparent}
-.side-nav a .at{color:var(--accent);opacity:.6}
-.side-nav a:hover{background:var(--accent-soft);color:var(--ink);text-decoration:none}
-.side-nav a.active{color:var(--ink);background:var(--accent-soft);border-left-color:var(--accent);font-weight:500}
-.side-nav a.active .at{opacity:1}
-.side-foot{margin-top:1.6rem;padding-top:1.1rem;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:.4rem}
-.side-foot img{height:20px;display:block}
-.theme-btn{margin-top:1rem;background:none;border:1px solid var(--line);color:var(--muted);
-  border-radius:8px;padding:.35rem .6rem;font:inherit;font-size:.82rem;cursor:pointer;width:100%}
-.theme-btn:hover{border-color:var(--accent);color:var(--ink)}
-main{padding:2.6rem 2.4rem 5rem;min-width:0}
-.hero h1{font-family:"IBM Plex Mono";font-weight:600;font-size:2.9rem;letter-spacing:-.02em;margin:0}
-.hero .tag{color:var(--muted);font-size:1.12rem;max-width:62ch;margin:.5rem 0 1.1rem;text-wrap:balance}
-.badges{display:flex;flex-wrap:wrap;gap:.45rem;margin:0 0 1.4rem}
-.badges img{height:21px;display:block}
-.install{display:flex;align-items:center;gap:.6rem;background:var(--panel);border:1px solid var(--line);
-  border-radius:12px;padding:.65rem 1rem;box-shadow:var(--shadow);max-width:420px}
-.install .prompt{color:var(--out);user-select:none;font-weight:600}
-.install code{flex:1;font-size:.95rem}
-.copy{background:none;border:1px solid var(--line);border-radius:7px;color:var(--muted);
-  cursor:pointer;font:inherit;font-size:.72rem;padding:.2rem .5rem}
-.copy:hover{border-color:var(--accent);color:var(--accent)}
-.copy.ok{color:var(--out);border-color:var(--out)}
-.contract{margin:2.1rem 0 .5rem;background:
-   radial-gradient(120% 130% at 100% 0%, var(--accent-soft) 0%, transparent 55%), var(--panel);
-  border:1px solid var(--line);border-radius:16px;padding:1.2rem 1.4rem;box-shadow:var(--shadow)}
-.contract h2{margin:0 0 .6rem;font-size:1.06rem;display:flex;align-items:center;gap:.5rem}
-.contract h2 .spark{color:var(--accent)}
-.contract pre{margin:0;overflow-x:auto;font-size:.92rem;line-height:1.7}
-.contract .k{color:#8b5cf6;font-weight:500}.contract .ty{color:var(--accent)}.contract .op{color:var(--muted)}
-section.pkg{scroll-margin-top:1.2rem;padding-top:2.4rem;margin-top:2rem;border-top:1px solid var(--line)}
-section.pkg > h2{font-family:"IBM Plex Mono";font-size:1.55rem;margin:0 0 .15rem;letter-spacing:-.01em}
-section.pkg > h2 .at{color:var(--accent)}
-.pdesc{color:var(--muted);margin:.15rem 0 1.2rem;max-width:72ch}
-.item{background:var(--panel);border:1px solid var(--line);border-radius:13px;
-  padding:1rem 1.2rem;margin:.85rem 0;box-shadow:var(--shadow);transition:border-color .15s,transform .15s}
-.item:hover{border-color:color-mix(in oklab,var(--accent) 40%,var(--line))}
-.kind{display:inline-block;font-size:.66rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;
-  border-radius:6px;padding:.1rem .45rem;margin-bottom:.55rem;
-  color:var(--accent);background:var(--accent-soft);border:1px solid color-mix(in oklab,var(--accent) 26%,transparent)}
-.item[data-k=struct] .kind{--c:#8b5cf6}.item[data-k=fn] .kind{--c:#0ca678}.item[data-k=let] .kind{--c:#2563eb}
-.item[data-k=enum] .kind{--c:#d6336c}.item[data-k=type] .kind{--c:#0891b2}
-.item .kind{color:var(--c,var(--accent));background:color-mix(in oklab,var(--c,var(--accent)) 13%,transparent);
-  border-color:color-mix(in oklab,var(--c,var(--accent)) 30%,transparent)}
-.sig{font-size:.98rem;margin:0 0 .55rem;overflow-x:auto;white-space:pre;color:var(--ink);padding-bottom:.15rem}
-.sig .k{color:#8b5cf6;font-weight:500}.sig .ty{color:var(--accent)}.sig .op{color:var(--muted)}
-@media (prefers-color-scheme:dark){.sig .k,.contract .k{color:#b794ff}}
-.doc{margin:0;color:var(--ink);max-width:76ch}
-.doc code{background:var(--code-bg);padding:.06rem .35rem;border-radius:5px;font-size:.9em;color:var(--accent)}
-footer{margin-top:3rem;padding-top:1.3rem;border-top:1px solid var(--line);color:var(--muted);font-size:.9rem}
-@media (max-width:820px){
-  .layout{grid-template-columns:1fr}
-  .sidebar{position:static;height:auto;border-right:none;border-bottom:1px solid var(--line)}
-  .side-nav{flex-flow:row wrap}.side-nav a{border-left:none}.side-nav a.active{border-left:none}
-  main{padding:1.8rem 1.2rem 4rem}.hero h1{font-size:2.2rem}
-}
-</style></head><body>
-<div class="layout">
-<aside class="sidebar"><div class="brand"><span class="dot"></span>moonctl</div><p class="brand-sub">MoonBit codegen — API reference</p><nav class="side-nav">
-<a href="#codegen"><span class="at">§</span>Codegen</a>
-<a href="#imports"><span class="at">§</span>Multi-file specs</a>
-<a href="#style"><span class="at">§</span>Naming style</a>
-<a href="#tree"><span class="at">§</span>Project tree</a>
-<a href="#template"><span class="at">§</span>Template engine</a>
-<a href="#grpc"><span class="at">§</span>gRPC codegen</a>
-<a href="#model"><span class="at">§</span>ORM model codegen</a>
-<a href="#ddl"><span class="at">§</span>DDL to CRUD codegen</a>
-<a href="#tag"><span class="at">§</span>Struct tags</a>
-<a href="#check"><span class="at">§</span>Tag constraints</a>
-<a href="#plugin"><span class="at">§</span>Plugin protocol</a>
-<a href="#doc"><span class="at">§</span>OpenAPI codegen</a>
-<a href="#datasource"><span class="at">§</span>Live datasource reflection</a>
-<a href="#scaffold"><span class="at">§</span>Project scaffolds</a>
-<a href="#rpctree"><span class="at">§</span>gRPC project tree</a>
-<a href="#gqltree"><span class="at">§</span>GraphQL project tree</a>
-<a href="#manifest"><span class="at">§</span>Generated manifests</a>
-<a href="#gql"><span class="at">§</span>GraphQL generator</a>
-<a href="#agentgen"><span class="at">§</span>Agent scaffolding</a>
-<a href="#reflect"><span class="at">§</span>Reflection helper</a>
-</nav><button class="theme-btn" id="theme">◐ toggle theme</button><div class="side-foot"><a href="https://github.com/moonbitstack/moonctl/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/moonbitstack/moonctl/ci.yml?branch=master&label=CI&logo=github"></a><a href="https://mooncakes.io/docs/moonbitstack/moonctl"><img alt="mooncakes" src="https://img.shields.io/badge/mooncakes-Lfan--ke%2Fmoonctl-1f6feb"></a></div></aside>
-<main><header class="hero"><h1>moonctl</h1><p class="tag">A spec-driven code generator for MoonBit &#8212; parse a .api spec and emit compilable moonapi scaffolding, the way goctl does for Go. Pure logic, no runtime dependencies, verified to build against real moonapi.</p><div class="badges"><a href="https://github.com/moonbitstack/moonctl/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/moonbitstack/moonctl/ci.yml?branch=master&label=CI&logo=github"></a><img alt="tests" src="https://img.shields.io/badge/tests-2%20passing%20%C3%974%20backends-0ca678"><a href="https://github.com/moonbitstack/moonctl"><img alt="GitHub" src="https://img.shields.io/badge/GitHub-source-24292f?logo=github"></a><img alt="license" src="https://img.shields.io/badge/license-Apache--2.0-6d5efc"></div><div class="install"><span class="prompt">$</span><code>moon add moonbitstack/moonctl</code><button class="copy" data-copy="moon add moonbitstack/moonctl">copy</button></div><div class="contract"><h2><span class="spark">&#10038;</span> The contract at a glance</h2><pre><span class="k">let</span> spec = @moonctl.parse(source)     // .api source <span class="op">-&gt;</span> <span class="ty">Spec</span> { service, routes }
-<span class="k">let</span> code = @moonctl.generate(spec)     // <span class="op">-&gt;</span> compilable moonapi scaffold (<span class="ty">String</span>)
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>moonctl — write the contract, generate the rest</title>
+<meta name="description" content="moonctl reads a .api spec, a .proto file or a database schema and writes the MoonBit around it: services, models, typed clients in four languages, migrations and a gateway.">
+<meta name="theme-color" content="#08080d">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
 
-// the generated build_app + handler stubs build against real moonapi + moonasgi.</pre></div></header>
-<section class="pkg" id="codegen"><h2><span class="at">§</span>Codegen</h2><p class="pdesc">The .api spec parser and the moonapi scaffold generator - parse turns source into a Spec; generate emits compilable build_app + handler stubs.</p>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> index_of(s : <span class="ty">String</span>, ch : <span class="ty">UInt16</span>, from : <span class="ty">Int32</span>) <span class="op">-&gt;</span> <span class="ty">Int32</span></pre><p class="doc">Index of the first <code>ch</code> in <code>s</code> at or after <code>from</code>, or <code>-1</code> if absent.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> to_i64(s : <span class="ty">String</span>) <span class="op">-&gt;</span> <span class="ty">Int64</span><span class="op">?</span></pre><p class="doc"><code>s</code> read as a non-negative decimal, or <code>None</code> when it is not one.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> tokens(s : <span class="ty">String</span>) <span class="op">-&gt;</span> <span class="ty">Array</span>[<span class="ty">String</span>]</pre><p class="doc">Whitespace-split a line into tokens, keeping a <code>&quot;quoted string&quot;</code> as one token (with the quotes stripped).</p></div>
-<div class="item" data-k="item"><span class="kind">item</span><pre class="sig">suberror <span class="ty">SpecError</span></pre><p class="doc">A spec the parser could not read: <code>Syntax</code> is the 1-based <code>line</code> and what went wrong there, <code>Missing</code> an <code>import</code> whose <code>path</code> was not among the files handed to <code>parse_all</code>.</p></div>
-<div class="item" data-k="struct"><span class="kind">struct</span><pre class="sig"><span class="k">struct</span> <span class="ty">Group</span></pre><p class="doc">The <code>@server( … )</code> annotations governing a block of routes (← goctl&#x27;s route group): the <code>name</code> under which its routes are grouped, the path <code>prefix</code> already folded into their paths, the <code>jwt</code> claim type, the <code>middleware</code> chain, the <code>max_bytes</code> request cap (<code>0</code> when unset), the request <code>timeout</code>, and whether the group&#x27;s requests are signed. <code>extra</code> keeps every other annotation the block carried, in order — goctl lets a spec invent its own, and dropping them would lose what the author wrote.</p></div>
-<div class="item" data-k="struct"><span class="kind">struct</span><pre class="sig"><span class="k">struct</span> <span class="ty">Route</span></pre><p class="doc">One route in a service spec: HTTP verb (lower-cased), path pattern (with its group&#x27;s prefix applied), handler name, an optional summary, and the <code>@server</code> group it was declared under. A modern goctl route (<code>verb /path (Req) returns (Resp)</code>) also carries its request/response type names (its <code>@doc</code> fills <code>summary</code>); both are empty for the legacy inline form (<code>verb /path handler &quot;summary&quot;</code>).</p></div>
-<div class="item" data-k="struct"><span class="kind">struct</span><pre class="sig"><span class="k">struct</span> <span class="ty">Field</span></pre><p class="doc">One field of a <code>type</code> block: its name, the (already MoonBit-mapped) type, and the raw back-tick struct tag (<code>json:&quot;…&quot;</code>/<code>path</code>/<code>form</code>/<code>header</code>, empty when absent) that carries the wire name and binding location.</p></div>
-<div class="item" data-k="struct"><span class="kind">struct</span><pre class="sig"><span class="k">struct</span> <span class="ty">TypeDef</span></pre><p class="doc">A named message schema declared by a <code>type Name { field: Type … }</code> block, generated into a MoonBit struct (goctl&#x27;s request/response types). <code>embeds</code> names the blocks it inlined — a bare <code>Base</code> line — whose fields belong to it as if they had been written out; an anonymous nested block instead becomes a <code>TypeDef</code> of its own, named after the two blocks, with a field pointing at it.</p></div>
-<div class="item" data-k="struct"><span class="kind">struct</span><pre class="sig"><span class="k">struct</span> <span class="ty">Spec</span></pre><p class="doc">A parsed <code>.api</code> service specification. <code>groups</code> lists the <code>@server( … )</code> blocks in the order they were declared; each route also points at the one it belongs to. <code>imports</code> holds the <code>import</code> paths exactly as the file wrote them — relative to the file itself, so resolving one needs the path it was read from; <code>deps</code> and <code>parse_all</code> do that.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> parse(source : <span class="ty">String</span>) <span class="op">-&gt;</span> <span class="ty">Spec</span> raise <span class="ty">SpecError</span></pre><p class="doc">Read a goctl-style <code>.api</code> description into a <code>Spec</code>. Grammar (one statement per line):  ``<code> syntax = &quot;v1&quot;  info ( title:   &quot;greet&quot; version: &quot;v2&quot; )  type LoginReq { name: string }  @server ( group:      user prefix:     /api/v1 middleware: Log ) service greet { @doc &quot;health check&quot; @handler ping get /ping  @handler login post /login (LoginReq) returns (LoginResp)  get /legacy legacy_handler &quot;the inline form&quot; } </code>`<code>  A </code>type<code> block declares a message schema (its fields become a MoonBit struct); field types use goctl&#x27;s Go spellings (</code>string<code>, </code>int64<code>, </code>[]T<code>, </code>map[K]V<code>, …). An </code>@server( … )<code> block annotates every route of the service block that follows it: the routes carry its </code>prefix<code> in their paths and its </code>Group<code> on their </code>group<code>. Verbs are lower-cased, blank lines and </code>//<code> comments are dropped.  Any other line raises a </code>SpecError<code> naming it — a misspelt verb or a missing brace would otherwise generate a quietly truncated program. Use </code>parse_lenient` for a best-effort read of a spec that is still being written.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> parse_lenient(source : <span class="ty">String</span>) <span class="op">-&gt;</span> <span class="ty">Spec</span></pre><p class="doc"><code>parse</code> without the diagnostics: a line the parser cannot read is skipped and whatever the spec does describe is returned. For a caller that generates from a half-written spec on every keystroke; anything that reports to a user should call <code>parse</code>.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> find_type(types : <span class="ty">Array</span>[<span class="ty">TypeDef</span>], name : <span class="ty">String</span>) <span class="op">-&gt;</span> <span class="ty">TypeDef</span><span class="op">?</span></pre><p class="doc">The <code>TypeDef</code> named <code>name</code>, or <code>None</code> when the spec declared no such block.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> flat_fields(t : <span class="ty">TypeDef</span>, types : <span class="ty">Array</span>[<span class="ty">TypeDef</span>]) <span class="op">-&gt;</span> <span class="ty">Array</span>[<span class="ty">Field</span>]</pre><p class="doc">Every field a <code>type</code> block carries with its inline embeds folded in first, which is both the shape an embedded Go struct serialises to and the only one MoonBit can spell — a MoonBit struct has no embedding. An embed naming a block that is not in <code>types</code>, and one that leads back to a block already folded in, contribute nothing.</p></div>
+<header class="site-header">
+  <div class="container">
+    <a class="brand" href="index.html">
+      <span class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6">
+          <rect x="2.6" y="2.6" width="18.8" height="18.8" rx="5.4"/>
+          <path d="M9.4 8.6 6.8 12l2.6 3.4M14.6 8.6 17.2 12l-2.6 3.4" stroke-linecap="square"/>
+        </svg>
+      </span>
+      moonctl
+      <span class="sub">mctl</span>
+    </a>
+
+    <nav class="nav" aria-label="Main">
+      <a href="getting-started/installation.html">Docs</a>
+      <a href="guides/api-spec.html">Guides</a>
+      <a href="reference/commands.html">Reference</a>
+      <a href="getting-started/quick-start.html">Quick start</a>
+    </nav>
+
+    <div class="nav-right">
+      <button class="icon-btn" type="button" data-theme-toggle aria-label="Switch theme">
+        <svg class="i-moon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/>
+        </svg>
+        <svg class="i-sun" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+          <circle cx="12" cy="12" r="4.2"/>
+          <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/>
+        </svg>
+      </button>
+      <a class="icon-btn" href="https://github.com/moonbitstack/moonctl" aria-label="Repository on GitHub">
+        <svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor" aria-hidden="true">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/>
+        </svg>
+      </a>
+      <button class="icon-btn nav-toggle" type="button" data-nav-toggle aria-label="Menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <path d="M4 7h16M4 12h16M4 17h16"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="hero">
+  <div class="container">
+    <div>
+      <span class="eyebrow">Spec-driven code generation</span>
+      <h1>Write the contract.<br>Generate <em>the rest</em>.</h1>
+      <p class="lead">
+        moonctl reads a <code>.api</code> spec, a <code>.proto</code> file or a live database
+        schema and writes the MoonBit around it: routes, types, handlers, typed clients in
+        four languages, models and migrations. Change the spec and run it again — the files
+        it owns are refreshed, the ones you wrote are left alone.
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="getting-started/installation.html">
+          Get started
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 8h10M9 4l4 4-4 4"/>
+          </svg>
+        </a>
+        <a class="btn" href="getting-started/quick-start.html">See it in a minute</a>
+      </div>
+      <div class="hero-meta">
+        <span><i></i>four MoonBit targets</span>
+        <span><i></i>clients with no dependencies</span>
+        <span><i></i>pure logic, no runtime</span>
+      </div>
+    </div>
+
+    <div class="spec-card" aria-hidden="true">
+      <div class="bar">
+        <span class="dots"><i></i><i></i><i></i></span>
+        <span class="name">greet.api</span>
+        <span class="tag">spec</span>
+      </div>
+      <div class="spec-src"><span class="tok-key">service</span> greet {
+  <span class="tok-key">@handler</span> Login
+  <span class="tok-dim">post</span> /login (LoginReq) <span class="tok-key">returns</span> (LoginResp)
+
+  <span class="tok-key">@handler</span> GetProfile
+  <span class="tok-dim">get</span> /profile/:id <span class="tok-key">returns</span> (Profile)
+}</div>
+      <div class="run"><span class="p">$</span>mctl gen api greet.api</div>
+      <div class="tree">
+        <div class="tree-row"><span class="ok">✓</span><span class="path">moon.mod</span><span class="kind">module</span></div>
+        <div class="tree-row"><span class="ok">✓</span><span class="path">etc/greet.yaml</span><span class="kind">config</span></div>
+        <div class="tree-row"><span class="ok">✓</span><span class="path">internal/types/types.mbt</span><span class="kind">generated</span></div>
+        <div class="tree-row"><span class="ok">✓</span><span class="path">internal/handler/routes.mbt</span><span class="kind">generated</span></div>
+        <div class="tree-row"><span class="ok">✓</span><span class="path">internal/handler/user/loginhandler.mbt</span><span class="kind">yours</span></div>
+        <div class="tree-row"><span class="ok">✓</span><span class="path">internal/logic/user/loginlogic.mbt</span><span class="kind">yours</span></div>
+        <div class="tree-row"><span class="ok">✓</span><span class="path">internal/handler/routes_test.mbt</span><span class="kind">test</span></div>
+      </div>
+    </div>
+  </div>
 </section>
-<section class="pkg" id="imports"><h2><span class="at">§</span>Multi-file specs</h2><p class="pdesc">import resolution - deps names the files a spec pulls in, resolved against the file that wrote them, and parse_all merges an entry spec and everything it imports into one Spec (imported types, routes and @server groups first).</p>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> resolve_import(from : <span class="ty">String</span>, path : <span class="ty">String</span>) <span class="op">-&gt;</span> <span class="ty">String</span></pre><p class="doc">An <code>import</code> path resolved against the file that declared it: taken relative to that file&#x27;s directory, with <code>.</code>/<code>..</code> folded away. An already-absolute path is left where it points.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> deps(source : <span class="ty">String</span>, from~ : <span class="ty">String</span> = &quot;&quot;) <span class="op">-&gt;</span> <span class="ty">Array</span>[<span class="ty">String</span>]</pre><p class="doc">The files <code>source</code> imports, each resolved against <code>from</code> — the path <code>source</code> itself was read from. A caller that can read files walks a multi-file spec with this: read a file, follow its <code>deps</code>, and hand everything it collected to <code>parse_all</code>.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> parse_all( source : <span class="ty">String</span>, files : <span class="ty">Map</span>[<span class="ty">String</span>, <span class="ty">String</span>], from~ : <span class="ty">String</span> = &quot;&quot;) <span class="op">-&gt;</span> <span class="ty">Spec</span> raise <span class="ty">SpecError</span></pre><p class="doc">Parse <code>source</code> — the spec at <code>from</code> — together with everything it imports, taken from <code>files</code> (a map from resolved path to source, the shape <code>deps</code> resolves to). What the imports describe is merged in first, in the order they were declared, then the importing file&#x27;s own: types, routes and <code>@server</code> groups all end up in one <code>Spec</code>. A file is scanned once however many times it is imported, so a cycle terminates.  The service name is the last one declared, so the importing file&#x27;s own <code>service</code> block wins and a spec that does nothing but import still takes the name from what it imported.  An <code>import</code> naming a file that is not in <code>files</code> raises <code>Missing</code>; a file that does not parse raises its first complaint the way <code>parse</code> does, with the file it came from named alongside the line.</p></div>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker">01 — Output</span>
+      <h2>One spec in. Six files out.</h2>
+      <p>The same parse feeds every generator, so the route your server answers and the method your client calls cannot drift apart.</p>
+    </div>
+
+    <div class="tabs" data-tabs>
+      <div class="tab-bar" role="tablist" aria-label="Generated output">
+        <button type="button" role="tab" data-tab aria-selected="true" aria-controls="p-ts" id="t-ts">TypeScript</button>
+        <button type="button" role="tab" data-tab aria-selected="false" aria-controls="p-dart" id="t-dart" tabindex="-1">Dart</button>
+        <button type="button" role="tab" data-tab aria-selected="false" aria-controls="p-kt" id="t-kt" tabindex="-1">Kotlin</button>
+        <button type="button" role="tab" data-tab aria-selected="false" aria-controls="p-java" id="t-java" tabindex="-1">Java</button>
+        <button type="button" role="tab" data-tab aria-selected="false" aria-controls="p-md" id="t-md" tabindex="-1">Markdown</button>
+        <button type="button" role="tab" data-tab aria-selected="false" aria-controls="p-sql" id="t-sql" tabindex="-1">SQL</button>
+      </div>
+
+      <div class="tab-panel" data-panel data-active="true" id="p-ts" role="tabpanel" aria-labelledby="t-ts">
+        <div class="panel-head">
+          <span class="file">user-api_client.ts</span>
+          <span class="lines">from <code>mctl api ts</code></span>
+          <button class="copy" type="button" data-copy>Copy</button>
+        </div>
+<pre><span class="c">// Code generated by `mctl api ts` from a `.api` spec. DO NOT EDIT.</span>
+
+export class UserApiClient {
+  readonly baseUrl: string;
+  token?: string;
+
+  constructor(baseUrl: string, fetchImpl?: Fetch, token?: string) {
+    this.baseUrl = baseUrl.replace(/\/+$/, "");
+    this.fetchImpl = fetchImpl ?? ((url, init) =&gt; fetch(url, init));
+    this.token = token;
+  }
+
+  async login(body: LoginReq): Promise&lt;LoginResp&gt; {
+    const path = `/api/v1/login`;
+    const url = this.baseUrl + path;
+    const headers: Record&lt;string, string&gt; = { accept: "application/json" };
+    if (this.token !== undefined) {
+      headers["authorization"] = "Bearer " + this.token;
+    }
+    const res = await this.fetchImpl(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(loginReqToJson(body)),
+    });
+    if (!res.ok) {
+      throw new ApiError(res.status, await res.text());
+    }
+    return loginRespFromJson(JSON.parse(await res.text()));
+  }
+}</pre>
+      </div>
+
+      <div class="tab-panel" data-panel id="p-dart" role="tabpanel" aria-labelledby="t-dart">
+        <div class="panel-head">
+          <span class="file">user-api_client.dart</span>
+          <span class="lines">from <code>mctl api dart</code></span>
+          <button class="copy" type="button" data-copy>Copy</button>
+        </div>
+<pre><span class="c">// Code generated by `mctl api dart` from a `.api` spec. DO NOT EDIT.</span>
+
+import 'dart:convert';
+
+class UserApiClient {
+  UserApiClient({required String baseUrl, required this.send, this.token})
+      : baseUrl = baseUrl.replaceAll(RegExp(r'/+$'), '');
+
+  final String baseUrl;
+  final Send send;
+  final String? token;
+
+  Future&lt;LoginResp&gt; login(LoginReq body) async {
+    final path = '/api/v1/login';
+    final url = Uri.parse('$baseUrl$path');
+    final headers = &lt;String, String&gt;{'accept': 'application/json'};
+    if (token != null) {
+      headers['authorization'] = 'Bearer $token';
+    }
+    final res = await send('POST', url, headers, jsonEncode(body.toJson()));
+    if (!res.ok) {
+      throw ApiException(res.status, res.body);
+    }
+    return LoginResp.fromJson(jsonDecode(res.body) as Map&lt;String, dynamic&gt;);
+  }
+}</pre>
+      </div>
+
+      <div class="tab-panel" data-panel id="p-kt" role="tabpanel" aria-labelledby="t-kt">
+        <div class="panel-head">
+          <span class="file">user-api_client.kt</span>
+          <span class="lines">from <code>mctl api kt</code></span>
+          <button class="copy" type="button" data-copy>Copy</button>
+        </div>
+<pre><span class="c">// Code generated by `mctl api kt` from a `.api` spec. DO NOT EDIT.</span>
+
+class UserApiClient(
+    private val baseUrl: String,
+    private val transport: Transport,
+    private val codec: Codec,
+    private var token: String? = null,
+) {
+    fun login(body: LoginReq): LoginResp {
+        val path = "/api/v1/login"
+        val url = baseUrl + path
+        val headers = linkedMapOf("accept" to "application/json")
+        token?.let { headers["authorization"] = "Bearer " + it }
+        val res = transport.send("POST", url, headers, codec.encode(body))
+        if (!res.ok) {
+            throw ApiException(res.status, res.body)
+        }
+        return LoginResp.fromWire(codec.decode(res.body))
+    }
+
+    fun getProfile(id: String): Profile {
+        val path = "/api/v1/profile/" + enc(id)
+        val res = transport.send("GET", baseUrl + path, linkedMapOf("accept" to "application/json"), null)
+        if (!res.ok) {
+            throw ApiException(res.status, res.body)
+        }
+        return Profile.fromWire(codec.decode(res.body))
+    }
+}</pre>
+      </div>
+
+      <div class="tab-panel" data-panel id="p-java" role="tabpanel" aria-labelledby="t-java">
+        <div class="panel-head">
+          <span class="file">UserApiClient.java</span>
+          <span class="lines">from <code>mctl api java</code></span>
+          <button class="copy" type="button" data-copy>Copy</button>
+        </div>
+<pre><span class="c">// Code generated by `mctl api java` from a `.api` spec. DO NOT EDIT.</span>
+
+public final class UserApiClient {
+    public Profile getProfile(String id) {
+        String path = "/api/v1/profile/" + enc(id);
+        String url = baseUrl + path;
+        Map&lt;String, String&gt; headers = new LinkedHashMap&lt;&gt;();
+        headers.put("accept", "application/json");
+        if (token != null) {
+            headers.put("authorization", "Bearer " + token);
+        }
+        RawResponse res = transport.send("GET", url, headers, null);
+        if (!res.ok()) {
+            throw new ApiException(res.status, res.body);
+        }
+        return Profile.fromWire(codec.decode(res.body));
+    }
+}</pre>
+      </div>
+
+      <div class="tab-panel" data-panel id="p-md" role="tabpanel" aria-labelledby="t-md">
+        <div class="panel-head">
+          <span class="file">user-api_api.md</span>
+          <span class="lines">from <code>mctl api doc</code></span>
+          <button class="copy" type="button" data-copy>Copy</button>
+        </div>
+<pre># user-api
+
+A MoonAPI service with 2 route(s) and 3 type(s).
+
+## Routes
+
+| Method | Path | Handler | Request | Response | Description |
+| --- | --- | --- | --- | --- | --- |
+| POST | `/api/v1/login` | `Login` | `LoginReq` | `LoginResp` | log a user in |
+| GET | `/api/v1/profile/:id` | `GetProfile` | — | `Profile` | — |
+
+### Groups
+
+| Group | Prefix | JWT | Middleware | Max body | Timeout |
+| --- | --- | --- | --- | --- | --- |
+| `user` | `/api/v1` | — | — | — | — |
+
+### Profile
+
+| Field | Type | In | Required | Constraints |
+| --- | --- | --- | --- | --- |
+| `id` | `Int64` | path | yes |  |
+| `name` | `String` | body | yes |  |</pre>
+      </div>
+
+      <div class="tab-panel" data-panel id="p-sql" role="tabpanel" aria-labelledby="t-sql">
+        <div class="panel-head">
+          <span class="file">user-api_migrate.sql</span>
+          <span class="lines">from <code>mctl migrate</code></span>
+          <button class="copy" type="button" data-copy>Copy</button>
+        </div>
+<pre><span class="c">-- One table per `type` block of the spec. A spec says what a value looks
+-- like, not what the database should enforce: indexes, uniqueness and foreign
+-- keys are yours to add.</span>
+
+CREATE TABLE IF NOT EXISTS `profiles` (
+  `id` BIGINT NOT NULL,
+  `name` VARCHAR(191) NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `login_reqs` (
+  `username` VARCHAR(191) NOT NULL,
+  `password` VARCHAR(191) NOT NULL
+);</pre>
+      </div>
+    </div>
+  </div>
 </section>
-<section class="pkg" id="style"><h2><span class="at">§</span>Naming style</h2><p class="pdesc">goctl&#x27;s --style template - Style::parse reads &lt;before&gt;GO&lt;through&gt;ZERO&lt;after&gt; and Style::format spells a name through it, so gozero, goZero, go_zero and Go#zero each name the same thing their own way.</p>
-<div class="item" data-k="item"><span class="kind">item</span><pre class="sig">suberror <span class="ty">StyleError</span></pre><p class="doc">A <code>--style</code> template that is not <code>&lt;before&gt;GO&lt;through&gt;ZERO&lt;after&gt;</code>: either a marker is missing (<code>go</code>, <code>zero</code>), they are the wrong way round, or one is cased neither <code>go</code>/<code>GO</code>/<code>Go</code> nor <code>zero</code>/<code>ZERO</code>/<code>Zero</code> (<code>gOZero</code>, <code>goZEro</code>).</p></div>
-<div class="item" data-k="struct"><span class="kind">struct</span><pre class="sig"><span class="k">struct</span> <span class="ty">Style</span></pre><p class="doc">A <code>--style</code> naming template (← goctl&#x27;s <code>--style</code>), ready to spell names with. Build one with <code>Style::parse</code>, apply it with <code>Style::format</code>.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> <span class="ty">Style</span>::gozero() <span class="op">-&gt;</span> <span class="ty">Style</span></pre><p class="doc">goctl&#x27;s default style, <code>gozero</code>: every word lower-cased and run together.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> <span class="ty">Style</span>::parse(s : <span class="ty">String</span>) <span class="op">-&gt;</span> <span class="ty">Style</span> raise <span class="ty">StyleError</span></pre><p class="doc">Read a <code>--style</code> template. It must contain <code>GO</code> and then <code>ZERO</code> — in any case, with anything before, between and after them:  ``<code> Style::parse(&quot;gozero&quot;).format(&quot;welcome_to_go_zero&quot;)  // welcometogozero Style::parse(&quot;goZero&quot;).format(&quot;welcome_to_go_zero&quot;)  // welcomeToGoZero Style::parse(&quot;go_zero&quot;).format(&quot;welcome_to_go_zero&quot;) // welcome_to_go_zero Style::parse(&quot;Go#zero&quot;).format(&quot;welcome_to_go_zero&quot;) // Welcome#to#go#zero </code>`<code>  The </code>GO<code> marker&#x27;s own casing (</code>go<code>, </code>GO<code> or </code>Go<code>) says how the first word is spelled, </code>ZERO<code>&#x27;s says how every later word is, and what stands between the two markers is what stands between the words. A template missing a marker (</code>go<code>, </code>zero<code>), holding them in the wrong order, or casing one of them any other way (</code>gOZero<code>, </code>goZEro<code>) raises </code>StyleError`.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> <span class="ty">Style</span>::format(self : <span class="ty">Style</span>, name : <span class="ty">String</span>) <span class="op">-&gt;</span> <span class="ty">String</span></pre><p class="doc">Spell <code>name</code> in this style. <code>name</code> is split into words on <code>_</code> and before each capital, the first word takes the <code>GO</code> marker&#x27;s case and the rest take <code>ZERO</code>&#x27;s, and they are joined with whatever stood between the markers.</p></div>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker">02 — Why</span>
+      <h2>Generated, not scaffolded once.</h2>
+      <p>Write the spec, generate, then go and write the part only you can write.</p>
+    </div>
+
+    <div class="card-grid">
+      <article class="card">
+        <span class="num">01</span>
+        <h3>Regeneration is the normal case</h3>
+        <p>Files the spec decides — routes, types, wire formats — are rewritten on every run. Handler bodies, logic and tests are written once and never touched again.</p>
+      </article>
+      <article class="card">
+        <span class="num">02</span>
+        <h3>One parse, many outputs</h3>
+        <p>Clients, models, docs and migrations come from the same spec tree. Rename a route and every output is renamed in the same run.</p>
+      </article>
+      <article class="card">
+        <span class="num">03</span>
+        <h3>Nothing to install</h3>
+        <p>The library is pure logic. Generated clients carry a transport port — <code>fetch</code>, a function, a class — instead of a runtime dependency.</p>
+      </article>
+      <article class="card">
+        <span class="num">04</span>
+        <h3>Loud about bad input</h3>
+        <p>A line the parser cannot read is an error with a line number, never a silently smaller spec. <code>mctl api validate</code> lists what is wrong before any code is written.</p>
+      </article>
+    </div>
+  </div>
 </section>
-<section class="pkg" id="tree"><h2><span class="at">§</span>Project tree</h2><p class="pdesc">The layered output - generate_tree emits the etc/ + internal/config + svc + types + handler + logic + middleware tree goctl writes, each file marked with whether a regeneration may overwrite it, and tree_plan applies that so a second run refreshes the routes and types and keeps every handler you wrote.</p>
-<div class="item" data-k="enum"><span class="kind">enum</span><pre class="sig"><span class="k">enum</span> <span class="ty">Regen</span></pre><p class="doc">Whether a regeneration may replace a file that is already on disk. <code>Always</code> is for what moonctl owns — the routes and the types, which must follow the spec — and <code>Once</code> for what it only seeds: handlers, logic, configuration, manifests.</p></div>
-<div class="item" data-k="item"><span class="kind">item</span><pre class="sig">extend <span class="ty">Regen</span> with <span class="ty">Eq</span>::</pre></div>
-<div class="item" data-k="struct"><span class="kind">struct</span><pre class="sig"><span class="k">struct</span> <span class="ty">TreeFile</span></pre><p class="doc">One file of a generated project tree: where it goes, what is in it, and whether regenerating the tree is allowed to overwrite it.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> generate_tree( spec : @api.<span class="ty">Spec</span>, style<span class="op">?</span> : @style.<span class="ty">Style</span>, dir~ : <span class="ty">String</span> = &quot;&quot;) <span class="op">-&gt;</span> <span class="ty">Array</span>[<span class="ty">TreeFile</span>]</pre><p class="doc">Generate the layered project tree goctl writes, in MoonBit: the service entry point and its <code>moon.mod</code>, <code>etc/&lt;service&gt;.yaml</code>, <code>internal/config</code>, <code>internal/svc</code>, <code>internal/types</code>, <code>internal/handler</code> (the generated routes plus a stub per handler, under <code>internal/handler/&lt;group&gt;/</code> for a grouped route), <code>internal/logic</code>, <code>internal/middleware</code> for every middleware an <code>@server</code> block named, and a <code>moon.pkg</code> for each of those packages.  <code>style</code> (default <code>gozero</code>) names the files and the handler, logic and middleware entry points inside them. Names the spec itself chose — the <code>type</code> blocks and their fields — are left as written, since a MoonBit type name has to keep its capital. <code>dir</code> puts the whole tree under a directory.  Each file says whether a regeneration may overwrite it; hand the result to <code>tree_plan</code> to apply that.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> tree_plan( tree : <span class="ty">Array</span>[<span class="ty">TreeFile</span>], exists : (<span class="ty">String</span>) <span class="op">-&gt;</span> <span class="ty">Bool</span>) <span class="op">-&gt;</span> <span class="ty">Array</span>[@plugin.<span class="ty">GenFile</span>]</pre><p class="doc">The files of <code>tree</code> a run should actually write, given a way to ask whether a path is already on disk. A file moonctl owns (<code>Always</code> — the routes and the types) is always written; anything else is written only when it is not there yet, so a second run refreshes what follows the spec and leaves every handler and logic body the author has since filled in exactly as it is.</p></div>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker">03 — Quick start</span>
+      <h2>Three commands to a running shape.</h2>
+      <p>A spec, a check, a project.</p>
+    </div>
+
+    <div class="split">
+      <div>
+        <h3><span class="step">1</span> Write the contract</h3>
+        <div class="code">
+          <div class="code-head"><span class="file">user.api</span><button class="copy" type="button" data-copy>Copy</button></div>
+<pre>syntax = "v1"
+
+type (
+  LoginReq {
+    Username string `json:"username"`
+    Password string `json:"password"`
+  }
+  LoginResp {
+    Token string `json:"token"`
+  }
+)
+
+@server (
+  prefix: /api/v1
+  group:  user
+)
+
+service user-api {
+  @doc "log a user in"
+  @handler Login
+  post /login (LoginReq) returns (LoginResp)
+}</pre>
+        </div>
+
+      </div>
+
+      <div>
+        <h3><span class="step">2</span> Check it</h3>
+        <div class="term">
+          <div class="term-bar"><span class="dots"><i></i><i></i><i></i></span>terminal</div>
+<pre><span class="p">$</span> mctl api validate user.api
+<span class="out">mctl: user.api is valid</span>
+
+<span class="p">$</span> mctl api format user.api --write
+<span class="out">mctl: formatted user.api</span></pre>
+        </div>
+
+        <h3><span class="step">3</span> Generate</h3>
+        <div class="term">
+          <div class="term-bar"><span class="dots"><i></i><i></i><i></i></span>terminal</div>
+<pre><span class="p">$</span> mctl gen api user.api
+
+<span class="out">mctl: wrote moon.mod
+mctl: wrote moon.pkg
+mctl: wrote user-api.mbt
+mctl: wrote etc/user-api.yaml
+mctl: wrote internal/config/config.mbt
+mctl: wrote internal/svc/servicecontext.mbt
+mctl: wrote internal/types/types.mbt
+mctl: wrote internal/handler/routes.mbt
+mctl: wrote internal/handler/user/loginhandler.mbt
+mctl: wrote internal/logic/user/loginlogic.mbt</span>
+mctl: wrote 19 file(s) from user.api</pre>
+        </div>
+
+        <p class="note-line">What lands in each file is in <a href="getting-started/quick-start.html">the quick start</a>.</p>
+      </div>
+    </div>
+  </div>
 </section>
-<section class="pkg" id="template"><h2><span class="at">§</span>Template engine</h2><p class="pdesc">A runtime template engine (goctl&#x27;s text/template equivalent): Value data, {{.Field}} interpolation, if/range/with, $variables, | pipelines and a function library. generate_with drives codegen from a custom template.</p>
-<div class="item" data-k="enum"><span class="kind">enum</span><pre class="sig"><span class="k">enum</span> <span class="ty">Value</span></pre><p class="doc">Dynamic template data. <code>.Field</code> lookups resolve against <code>Dict</code>; <code>range</code> iterates <code>List</code> (index/element) or <code>Dict</code> (sorted key/value). This is the explicit stand-in for the arbitrary Go values goctl reflects over.</p></div>
-<div class="item" data-k="item"><span class="kind">item</span><pre class="sig">suberror <span class="ty">TemplateError</span></pre><p class="doc">A template parse or execution failure, carrying a human-readable message.</p></div>
-<div class="item" data-k="type"><span class="kind">type</span><pre class="sig"><span class="k">type</span> <span class="ty">FuncFn</span> = (<span class="ty">Array</span>[<span class="ty">Value</span>]) <span class="op">-&gt;</span> <span class="ty">Value</span> raise <span class="ty">TemplateError</span></pre><p class="doc">A pipeline function: it receives the already-evaluated argument list (with the piped-in value, if any, appended last, mirroring Go) and returns a <code>Value</code>.</p></div>
-<div class="item" data-k="struct"><span class="kind">struct</span><pre class="sig"><span class="k">struct</span> <span class="ty">Template</span></pre><p class="doc">A parsed, reusable template — moonctl&#x27;s <code>text/template</code> equivalent. Build it with <code>Template::new</code>, register extra functions with <code>func</code>, parse a source with <code>parse</code>, then <code>render</code> it against a <code>Value</code> any number of times. The parsed node tree stays private, captured inside <code>renderer</code>.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> <span class="ty">Template</span>::new() <span class="op">-&gt;</span> <span class="ty">Template</span></pre><p class="doc">A fresh template preloaded with the default function library. Rendering before <code>parse</code> yields the empty string.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> <span class="ty">Template</span>::func(self : <span class="ty">Template</span>, name : <span class="ty">String</span>, f : <span class="ty">FuncFn</span>) <span class="op">-&gt;</span> <span class="ty">Template</span></pre><p class="doc">Register (or override) a pipeline function, returning <code>self</code> for chaining — the analogue of Go&#x27;s <code>Template.Funcs</code>. Register before <code>parse</code>.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> <span class="ty">Template</span>::parse( self : <span class="ty">Template</span>, source : <span class="ty">String</span>) <span class="op">-&gt;</span> <span class="ty">Template</span> raise <span class="ty">TemplateError</span></pre><p class="doc">Parse <code>source</code> into this template&#x27;s node tree, returning <code>self</code> for chaining. Raises <code>ParseError</code> on a syntax error (unclosed action, dangling <code>{{end}}</code>, …).</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> <span class="ty">Template</span>::render( self : <span class="ty">Template</span>, data : <span class="ty">Value</span>) <span class="op">-&gt;</span> <span class="ty">String</span> raise <span class="ty">TemplateError</span></pre><p class="doc">Render the template against <code>data</code>, producing the output string. Raises <code>ExecError</code> on an execution fault (undefined variable/function, bad range target, …).</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> render(source : <span class="ty">String</span>, data : <span class="ty">Value</span>) <span class="op">-&gt;</span> <span class="ty">String</span> raise <span class="ty">TemplateError</span></pre><p class="doc">Parse and render <code>source</code> against <code>data</code> in one call, with the default function library.</p></div>
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker">04 — Commands</span>
+      <h2>Every generator, one verb away.</h2>
+      <p>A command and a file. The full surface is in the reference.</p>
+    </div>
+
+    <div class="cmd-grid">
+      <a href="reference/commands.html#gen-api">
+        <span class="cmd">mctl gen api</span>
+        <span class="what">A moonapi service from a spec: routes, handlers, logic, config.</span>
+      </a>
+      <a href="reference/commands.html#gen-rpc">
+        <span class="cmd">mctl gen rpc</span>
+        <span class="what">A moonrpc service from a <code>.proto</code>, with messages and codecs.</span>
+      </a>
+      <a href="guides/clients.html">
+        <span class="cmd">mctl api ts · dart · kt · java</span>
+        <span class="what">A typed client per route, in four languages, with no dependencies.</span>
+      </a>
+      <a href="reference/commands.html#api-doc">
+        <span class="cmd">mctl api doc</span>
+        <span class="what">A Markdown reference of the routes, groups and types.</span>
+      </a>
+      <a href="reference/commands.html#migrate">
+        <span class="cmd">mctl migrate</span>
+        <span class="what">The SQL a spec's models imply, one table per type block.</span>
+      </a>
+      <a href="guides/models.html">
+        <span class="cmd">mctl model mongo</span>
+        <span class="what">Document models and typed repositories over a collection port.</span>
+      </a>
+      <a href="guides/gateway.html">
+        <span class="cmd">mctl gateway</span>
+        <span class="what">An HTTP front door in front of a <code>.proto</code>'s RPCs.</span>
+      </a>
+      <a href="reference/commands.html#quickstart">
+        <span class="cmd">mctl quickstart</span>
+        <span class="what">Scaffold, generate and build a service in one step.</span>
+      </a>
+      <a href="guides/api-spec.html#validate">
+        <span class="cmd">mctl api validate</span>
+        <span class="what">Every finding, with a line number, before any code exists.</span>
+      </a>
+    </div>
+  </div>
 </section>
-<section class="pkg" id="grpc"><h2><span class="at">§</span>gRPC codegen</h2><p class="pdesc">A proto3 parser and the moonrpc generator - parse_proto turns source into a Proto; generate_grpc emits a struct per message with encode / decode in protobuf wire form, @moonrpc.Method descriptors, and per service a record with one function per RPC whose handlers() keys every RPC by its :path for GrpcServer.</p>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> commas(parts : <span class="ty">Array</span>[<span class="ty">String</span>]) <span class="op">-&gt;</span> <span class="ty">String</span></pre><p class="doc">Join <code>parts</code> with <code>&quot;, &quot;</code> — the codegen workhorse for column/argument lists.</p></div>
-<div class="item" data-k="enum"><span class="kind">enum</span><pre class="sig"><span class="k">enum</span> <span class="ty">Label</span></pre><p class="doc">Whether a field holds one value, a list, or a map with proto key and value types.</p></div>
-<div class="item" data-k="item"><span class="kind">item</span><pre class="sig">extend <span class="ty">Label</span> with <span class="ty">Debug</span>::</pre></div>
-<div class="item" data-k="item"><span class="kind">item</span><pre class="sig">extend <span class="ty">Label</span> with <span class="ty">Eq</span>::</pre></div>
-<div class="item" data-k="struct"><span class="kind">struct</span><pre class="sig"><span class="k">struct</span> <span class="ty">ProtoField</span></pre><p class="doc">One field of a protobuf <code>message</code>: its name, its MoonBit type (<code>repeated</code> is <code>Array[T]</code>, <code>map&lt;K, V&gt;</code> is <code>Map[K, V]</code>), its proto element type as written, its label and its wire number.</p></div>
-<div class="item" data-k="struct"><span class="kind">struct</span><pre class="sig"><span class="k">struct</span> <span class="ty">ProtoOneof</span></pre><p class="doc">A protobuf <code>oneof</code> group: its name and the members (exactly one may be set). Generated into a MoonBit enum — the faithful equivalent of the &quot;exactly one&quot; invariant, which flattening to optional fields would lose.</p></div>
-<div class="item" data-k="struct"><span class="kind">struct</span><pre class="sig"><span class="k">struct</span> <span class="ty">ProtoMessage</span></pre><p class="doc">A protobuf <code>message</code> declaration, generated into a MoonBit struct. <code>oneof</code> groups are lifted out of <code>fields</code> into <code>oneofs</code>; <code>reserved</code> field numbers and names are recorded so a reused one can be caught.</p></div>
-<div class="item" data-k="struct"><span class="kind">struct</span><pre class="sig"><span class="k">struct</span> <span class="ty">ProtoEnumValue</span></pre><p class="doc">One value of a protobuf <code>enum</code>: its name and its integer number.</p></div>
-<div class="item" data-k="struct"><span class="kind">struct</span><pre class="sig"><span class="k">struct</span> <span class="ty">ProtoEnum</span></pre><p class="doc">A protobuf <code>enum</code> declaration, generated into a MoonBit enum plus an integer mapping (proto3 enums are int-backed, and the value numbered <code>0</code> is the default).</p></div>
-<div class="item" data-k="struct"><span class="kind">struct</span><pre class="sig"><span class="k">struct</span> <span class="ty">Rpc</span></pre><p class="doc">One <code>rpc</code> method of a service: its name, request and response message names, and whether either side is a <code>stream</code> (client/server/bidi streaming).</p></div>
-<div class="item" data-k="struct"><span class="kind">struct</span><pre class="sig"><span class="k">struct</span> <span class="ty">ProtoService</span></pre><p class="doc">A protobuf <code>service</code> declaration and its RPC methods.</p></div>
-<div class="item" data-k="struct"><span class="kind">struct</span><pre class="sig"><span class="k">struct</span> <span class="ty">Proto</span></pre><p class="doc">A parsed <code>.proto</code> file: its <code>package</code> (empty when none) and the services and messages it declares.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> proto_reserved_conflicts(m : <span class="ty">ProtoMessage</span>) <span class="op">-&gt;</span> <span class="ty">Array</span>[<span class="ty">String</span>]</pre><p class="doc">The names of <code>m</code>&#x27;s fields (oneof members included) that reuse a <code>reserved</code> field number or name — protobuf forbids reusing either, and this surfaces an accidental reuse. Empty when the message is clean.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> parse_proto(source : <span class="ty">String</span>) <span class="op">-&gt;</span> <span class="ty">Proto</span></pre><p class="doc">Parse a minimal <code>.proto</code> (proto3). Recognises the <code>package</code> declaration, <code>service</code> blocks with their <code>rpc</code> methods (including <code>stream</code>), <code>message</code> blocks with scalar/<code>repeated</code>/<code>map</code> fields, and top-level <code>enum</code> declarations. <code>syntax</code>, <code>import</code>, and <code>option</code> are skipped.  ``<code> syntax = &quot;proto3&quot;; package greet; service Greeter { rpc SayHello (HelloRequest) returns (HelloReply); } message HelloRequest { string name = 1; } message HelloReply   { string message = 1; } </code>``</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> generate_grpc(proto : <span class="ty">Proto</span>) <span class="op">-&gt;</span> <span class="ty">String</span></pre><p class="doc">Generate a moonrpc service stub from a parsed <code>.proto</code>: a MoonBit struct per <code>message</code>, a <code>@moonrpc.Method</code> descriptor per RPC (its gRPC <code>:path</code> is <code>/package.Service/Method</code>), a <code>&lt;Service&gt;Server</code> handler-registration struct (one synchronous-core handler field per RPC, each returning its reply or a gRPC <code>@moonrpc.Status</code>), and a <code>&lt;service&gt;_methods()</code> listing. The output compiles against <code>moonbitstack/moonrpc</code>.</p></div>
+
+<section class="section">
+  <div class="container">
+    <div class="cta">
+      <div>
+        <h2>Start with the spec you already have.</h2>
+        <p>Write a service block, one type, one route. Run the check, then the generator. The project that comes out builds as it is.</p>
+      </div>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="getting-started/installation.html">Install moonctl</a>
+        <a class="btn" href="guides/api-spec.html">Read the spec language</a>
+      </div>
+    </div>
+  </div>
 </section>
-<section class="pkg" id="model"><h2><span class="at">§</span>ORM model codegen</h2><p class="pdesc">The moonorm model generator - generate_model turns a Spec&#x27;s .api type blocks into a model struct, a @moonorm.Model with declared columns plus from_row / to_columns closures, a @moonorm.Table descriptor and an up/down migration pair, all compiling against moonbitstack/moonorm + moondb.</p>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> generate_model(spec : @api.<span class="ty">Spec</span>) <span class="op">-&gt;</span> <span class="ty">String</span></pre><p class="doc">Generate a moonorm data layer for every <code>type</code> block in <code>spec</code>. A block whose fields are all storable yields: the model <code>struct</code>; a <code>&lt;table&gt;_model : @moonorm.Model[T]</code> built with <code>@moonorm.Model::new</code> — declared columns (an <code>id</code> column is the primary key), a <code>from_row</code> decoder, and the <code>to_columns</code> projection an INSERT binds; a <code>&lt;table&gt;_table : @moonorm.Table</code> descriptor; and a <code>&lt;table&gt;_up</code> / <code>&lt;table&gt;_down</code> migration pair (create the table idempotently / drop it). This is the explicit MoonBit stand-in for a SQLAlchemy declarative class plus an Alembic revision, which reflection would otherwise synthesise. A block with a non-storable field (a slice, map, or nested message) still gets its struct and a plain <code>@moonorm.Table</code> descriptor.  The output compiles against <code>moonbitstack/moonorm</code> + <code>moonbitstack/moondb</code>; a consuming package imports both.</p></div>
-</section>
-<section class="pkg" id="ddl"><h2><span class="at">§</span>DDL to CRUD codegen</h2><p class="pdesc">The SQL DDL front end - parse_ddl reads CREATE TABLE statements (types, primary keys, NOT NULL, defaults) and generate_crud emits a moonorm model plus typed CRUD (find_by_id / insert / update / delete_by_id / all) with parameterised SQL, compiling against moonbitstack/moonorm + moondb.</p>
-<div class="item" data-k="struct"><span class="kind">struct</span><pre class="sig"><span class="k">struct</span> <span class="ty">DdlColumn</span></pre><p class="doc">One parsed column of a <code>CREATE TABLE</code> statement: the SQL column <code>name</code>, the MoonBit <code>type_</code> its SQL type maps to (<code>Int</code>/<code>Int64</code>/<code>String</code>/<code>Double</code>/<code>Bool</code>/ <code>Bytes</code>), whether it is a primary key, whether it accepts NULL, and its literal <code>DEFAULT</code> clause if any (kept as source text — it is emitted into DDL comments, never bound).</p></div>
-<div class="item" data-k="struct"><span class="kind">struct</span><pre class="sig"><span class="k">struct</span> <span class="ty">DdlTable</span></pre><p class="doc">A parsed <code>CREATE TABLE</code>: the SQL table <code>name</code> and its ordered <code>columns</code>.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> parse_ddl(source : <span class="ty">String</span>) <span class="op">-&gt;</span> <span class="ty">Array</span>[<span class="ty">DdlTable</span>]</pre><p class="doc">Parse a SQL DDL script into its <code>CREATE TABLE</code> definitions. Recognises <code>CREATE TABLE [IF NOT EXISTS] name ( … )</code> (quoted or bare name), skipping any other statement. Column types, primary keys (column- or table-level), <code>NOT NULL</code> and <code>DEFAULT</code> clauses are captured; everything needed to emit a moonorm model.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> generate_crud(tables : <span class="ty">Array</span>[<span class="ty">DdlTable</span>]) <span class="op">-&gt;</span> <span class="ty">String</span></pre><p class="doc">Generate a moonorm data-access layer from parsed DDL: for every table, the record <code>struct</code>, its <code>@moonorm.Model</code> (columns + <code>from_row</code> + <code>to_columns</code>), a <code>@moonorm.Table</code> descriptor, an up/down migration pair, and typed CRUD (<code>insert</code>/<code>all</code>, plus <code>find_by_id</code>/<code>update</code>/<code>delete_by_id</code> when the table has a single-column primary key). The output compiles against <code>moonbitstack/moonorm</code> + <code>moonbitstack/moondb</code>; a consuming package imports both. This is the <code>.sql</code>-schema counterpart of goctl&#x27;s <code>model mysql ddl</code>.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> generate_crud_from_ddl(source : <span class="ty">String</span>) <span class="op">-&gt;</span> <span class="ty">String</span></pre><p class="doc">Parse a SQL DDL script and generate its moonorm data-access layer in one step.</p></div>
-</section>
-<section class="pkg" id="tag"><h2><span class="at">§</span>Struct tags</h2><p class="pdesc">What a field&#x27;s back-tick tag says - Field::bind reads whether the value comes from the body, the query string, a URL segment or a header, Field::json_name the wire name it arrives under, Field::mbt_name the MoonBit spelling, and optional / default_ / options / range the constraints that follow the name.</p>
-<div class="item" data-k="enum"><span class="kind">enum</span><pre class="sig"><span class="k">enum</span> <span class="ty">Bind</span></pre><p class="doc">Where a field&#x27;s value is bound from (← goctl&#x27;s struct tags): the request body (<code>json:</code>, and an untagged field), the query string (<code>form:</code>), a URL segment (<code>path:</code>), or a request header (<code>header:</code>).</p></div>
-<div class="item" data-k="item"><span class="kind">item</span><pre class="sig">extend <span class="ty">Bind</span> with <span class="ty">Eq</span>::</pre></div>
-<div class="item" data-k="struct"><span class="kind">struct</span><pre class="sig"><span class="k">struct</span> <span class="ty">Range</span></pre><p class="doc">A <code>range=</code> constraint, e.g. <code>range=[1:120]</code> or <code>range=(0:]</code>. Each bound is written as the spec wrote it and is empty when that end is open; <code>lo_inc</code> / <code>hi_inc</code> say whether the bracket was inclusive (<code>[</code> <code>]</code>) or exclusive (<code>(</code> <code>)</code>).</p></div>
-<div class="item" data-k="item"><span class="kind">item</span><pre class="sig">extend <span class="ty">Range</span> with <span class="ty">Eq</span>::</pre></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> <span class="ty">Field</span>::bind(self : <span class="ty">Field</span>) <span class="op">-&gt;</span> <span class="ty">Bind</span></pre><p class="doc">Where this field&#x27;s value is bound from: <code>form:</code> off the query string, <code>path:</code> out of a URL segment, <code>header:</code> off a request header, and everything else — an untagged field included — out of the request body.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> <span class="ty">Field</span>::json_name(self : <span class="ty">Field</span>) <span class="op">-&gt;</span> <span class="ty">String</span></pre><p class="doc">The name this field is carried under on the wire: the one its binding tag gives (<code>json:&quot;user_name&quot;</code> → <code>user_name</code>, <code>form:&quot;page&quot;</code> → <code>page</code>, <code>path:&quot;region&quot;</code> → <code>region</code>), with the options after it stripped, falling back to the field&#x27;s own name when it carries no tag.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> <span class="ty">Field</span>::mbt_name(self : <span class="ty">Field</span>) <span class="op">-&gt;</span> <span class="ty">String</span></pre><p class="doc">The MoonBit spelling of this field: <code>snake_case</code>, because a MoonBit struct field has to start lower-case — <code>UserName</code> is not one. Every generator that emits MoonBit names the field with this, so the struct, the row decoder and the column projection all agree; <code>json_name</code> is the wire side of the same field.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> <span class="ty">Field</span>::optional(self : <span class="ty">Field</span>) <span class="op">-&gt;</span> <span class="ty">Bool</span></pre><p class="doc">Whether the tag marked this field <code>optional</code> (or Go&#x27;s <code>omitempty</code>): it may be absent, which is what keeps it out of a schema&#x27;s <code>required</code> list.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> <span class="ty">Field</span>::default_(self : <span class="ty">Field</span>) <span class="op">-&gt;</span> <span class="ty">String</span><span class="op">?</span></pre><p class="doc">The <code>default=</code> this field&#x27;s tag declared, written the way the spec wrote it, or <code>None</code> when it declared none.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> <span class="ty">Field</span>::options(self : <span class="ty">Field</span>) <span class="op">-&gt;</span> <span class="ty">Array</span>[<span class="ty">String</span>]</pre><p class="doc">The values an <code>options=a|b|c</code> tag allows this field to take, empty when the tag declared no such list.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> <span class="ty">Field</span>::range(self : <span class="ty">Field</span>) <span class="op">-&gt;</span> <span class="ty">Range</span><span class="op">?</span></pre><p class="doc">The <code>range=[lo:hi]</code> bounds this field&#x27;s tag declared, or <code>None</code> when it declared none. Either bound may be empty, which leaves that end open.</p></div>
-</section>
-<section class="pkg" id="check"><h2><span class="at">§</span>Tag constraints</h2><p class="pdesc">What those constraints turn into - render_checks emits with_defaults, which fills in every default= the spec declared, and check, which refuses a required field left empty, a value outside its range= and one the options= list does not allow.</p>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> number_json(raw : <span class="ty">String</span>) <span class="op">-&gt;</span> <span class="ty">Json</span></pre><p class="doc"><code>raw</code> as a JSON number, or as a string when it does not read as one — a tag option is text until something asks it to be a number.</p></div>
-</section>
-<section class="pkg" id="plugin"><h2><span class="at">§</span>Plugin protocol</h2><p class="pdesc">The external-plugin contract, spoken the way goctl speaks it - plugin_argv splits the invocation, plugin_request writes {Api, ApiFilePath, Style, Dir} to the plugin&#x27;s stdin, and parse_gen_files reads the {path, content} files a plugin returns on stdout; plugin_from_json / spec_from_json and gen_files_to_json are the matching reader/writer a MoonBit plugin uses.</p>
-<div class="item" data-k="struct"><span class="kind">struct</span><pre class="sig"><span class="k">struct</span> <span class="ty">GenFile</span></pre><p class="doc">One file a plugin asks mctl to write: a destination <code>path</code> (relative to the output directory) and its full <code>content</code>.</p></div>
-<div class="item" data-k="struct"><span class="kind">struct</span><pre class="sig"><span class="k">struct</span> <span class="ty">Plugin</span></pre><p class="doc">What a plugin is handed on stdin (← goctl&#x27;s <code>plugin.Plugin</code>): the parsed spec under <code>api</code>, the <code>.api</code> file it was read from, the <code>--style</code> naming template, and the directory the generated tree goes under.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> plugin_argv(invocation : <span class="ty">String</span>) <span class="op">-&gt;</span> (<span class="ty">String</span>, <span class="ty">Array</span>[<span class="ty">String</span>])</pre><p class="doc">Split a plugin invocation into the program to run and the arguments to run it with, the way goctl reads its <code>-plugin</code> value: the first whitespace-separated word is the executable, the rest are its argv. A quoted word keeps its spaces.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> spec_to_json(spec : @api.<span class="ty">Spec</span>) <span class="op">-&gt;</span> <span class="ty">Json</span></pre><p class="doc">Serialise a <code>Spec</code> into the plugin request JSON. The shape mirrors the <code>Spec</code> itself — <code>service</code>, <code>routes</code> (<code>verb</code>/<code>path</code>/<code>handler</code>/<code>summary</code>, plus the <code>group</code> the route was declared under), <code>types</code> (<code>name</code> plus <code>fields</code> of <code>name</code>/<code>type</code>) and <code>groups</code> — so a plugin in any language parses it with an ordinary JSON reader. <code>type_</code> is written as <code>type</code>, the name a caller expects.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> plugin_request( spec : @api.<span class="ty">Spec</span>, api_file_path~ : <span class="ty">String</span> = &quot;&quot;, style~ : <span class="ty">String</span> = &quot;gozero&quot;, dir~ : <span class="ty">String</span> = &quot;&quot;) <span class="op">-&gt;</span> <span class="ty">String</span></pre><p class="doc">The plugin request as a two-space-indented JSON string, ready to write to the plugin&#x27;s stdin: goctl&#x27;s four keys — the spec under <code>Api</code>, plus the file it was read from, the <code>--style</code> template and the output directory, which is everything a plugin needs to decide where its output goes and what to call it.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> plugin_from_json(j : <span class="ty">Json</span>) <span class="op">-&gt;</span> <span class="ty">Plugin</span></pre><p class="doc">Read the request a plugin was handed on stdin. Missing members degrade to empty rather than raising, so a hand-written request still parses.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> spec_from_json(j : <span class="ty">Json</span>) <span class="op">-&gt;</span> @api.<span class="ty">Spec</span></pre><p class="doc">Reconstruct a <code>Spec</code> from the request JSON — the reader a plugin written in MoonBit uses on its stdin. The whole request (<code>{Api, ApiFilePath, Style, Dir}</code>) and a bare spec are both accepted, so a plugin that wants nothing but the routes need not unwrap the envelope. Missing or mistyped members degrade to empty rather than raising, so a partial request still parses.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> parse_gen_files(j : <span class="ty">Json</span>) <span class="op">-&gt;</span> <span class="ty">Array</span>[<span class="ty">GenFile</span>]</pre><p class="doc">Parse a plugin&#x27;s stdout into the files to write. Two shapes are accepted: a bare array <code>[{path, content}, …]</code>, or an object <code>{&quot;files&quot;: [ … ]}</code> (goctl-style envelope). An element missing <code>path</code> or <code>content</code> is skipped. The list preserves the plugin&#x27;s order.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> gen_files_to_json(files : <span class="ty">Array</span>[<span class="ty">GenFile</span>]) <span class="op">-&gt;</span> <span class="ty">Json</span></pre><p class="doc">Serialise a list of generated files into the plugin-reply JSON — the writer a MoonBit plugin uses on its stdout. Emits the <code>{&quot;files&quot;: [...]}</code> envelope.</p></div>
-</section>
-<section class="pkg" id="doc"><h2><span class="at">§</span>OpenAPI codegen</h2><p class="pdesc">The OpenAPI / Swagger generator - generate_doc emits a Swagger 2.0, OpenAPI 3.0 or 3.1 document from a Spec (paths from the routes, component schemas from the type blocks), and swagger_ui_stub renders it.</p>
-<div class="item" data-k="enum"><span class="kind">enum</span><pre class="sig"><span class="k">enum</span> <span class="ty">DocVersion</span></pre><p class="doc">Target OpenAPI / Swagger document version. mctl emits every mainstream version from one <code>.api</code> spec — the same shape moonapi&#x27;s runtime emitter takes, so a generated service and a hand-built moonapi app document the same way.</p></div>
-<div class="item" data-k="item"><span class="kind">item</span><pre class="sig">extend <span class="ty">DocVersion</span> with <span class="ty">Eq</span>::</pre></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> openapi_document( spec : @api.<span class="ty">Spec</span>, version~ : <span class="ty">DocVersion</span> = <span class="ty">OpenApi31</span>, title~ : <span class="ty">String</span> = &quot;&quot;, api_version~ : <span class="ty">String</span> = &quot;0.1.0&quot;) <span class="op">-&gt;</span> <span class="ty">Json</span></pre><p class="doc">Build the OpenAPI / Swagger document for <code>spec</code> as a <code>Json</code> value. Routes fold into <code>paths</code> → HTTP method → operation (with <code>operationId</code>, any <code>:name</code> path parameters, and a 200 response); every <code>type</code> block becomes a component schema (<code>definitions</code> in 2.0, <code>components/schemas</code> in 3.x). <code>version</code> selects the document dialect; <code>title</code>/<code>api_version</code> fill the <code>info</code> block.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> generate_doc( spec : @api.<span class="ty">Spec</span>, version~ : <span class="ty">DocVersion</span> = <span class="ty">OpenApi31</span>, title~ : <span class="ty">String</span> = &quot;&quot;, api_version~ : <span class="ty">String</span> = &quot;0.1.0&quot;) <span class="op">-&gt;</span> <span class="ty">String</span></pre><p class="doc">Generate an OpenAPI / Swagger document from <code>spec</code>, stringified with two-space indentation. <code>version</code> picks the dialect (Swagger 2.0 / OpenAPI 3.0 / 3.1).</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> swagger_ui_stub( spec_url~ : <span class="ty">String</span> = &quot;/openapi.json&quot;, title~ : <span class="ty">String</span> = &quot;<span class="ty">API</span> <span class="ty">Docs</span>&quot;) <span class="op">-&gt;</span> <span class="ty">String</span></pre><p class="doc">A self-contained Swagger UI page for the document served at <code>spec_url</code>. The same stub moonapi ships, so a generated service and a live app render alike.</p></div>
-</section>
-<section class="pkg" id="datasource"><h2><span class="at">§</span>Live datasource reflection</h2><p class="pdesc">The model datasource front end - parse_dsn reads a sqlite: / postgres:// DSN, and tables_from_reflection / generate_crud_from_reflection fold a live schema&#x27;s ReflectedColumns into the same moonorm model + CRUD the .sql path produces. The schema reading itself lives in the native reflect sub-package.</p>
-<div class="item" data-k="struct"><span class="kind">struct</span><pre class="sig"><span class="k">struct</span> <span class="ty">PgTarget</span></pre><p class="doc">A PostgreSQL connection target parsed from a <code>postgres://</code> DSN.</p></div>
-<div class="item" data-k="enum"><span class="kind">enum</span><pre class="sig"><span class="k">enum</span> <span class="ty">DataSource</span></pre><p class="doc">A parsed datasource DSN: which backend to read, and how to reach it.</p></div>
-<div class="item" data-k="item"><span class="kind">item</span><pre class="sig">suberror <span class="ty">DataSourceError</span></pre><p class="doc">Raised when a DSN string cannot be parsed into a <code>DataSource</code>.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> parse_dsn(dsn : <span class="ty">String</span>) <span class="op">-&gt;</span> <span class="ty">DataSource</span> raise <span class="ty">DataSourceError</span></pre><p class="doc">Parse a datasource DSN into a <code>DataSource</code>. Recognised forms:  - SQLite: <code>sqlite:PATH</code>, <code>sqlite://PATH</code>, <code>sqlite3:PATH</code>, <code>file:PATH</code>, the literal <code>:memory:</code>, or a bare path ending in <code>.db</code> / <code>.sqlite</code> / <code>.sqlite3</code>. - PostgreSQL: <code>postgres://[user[:password]@]host[:port][/database][?…]</code> (and the <code>postgresql://</code> spelling). The port defaults to <code>5432</code>, the user to <code>postgres</code>; the database name is required.  Raises <code>BadDsn</code> on an unrecognised scheme or a PostgreSQL URL missing its host or database.</p></div>
-<div class="item" data-k="struct"><span class="kind">struct</span><pre class="sig"><span class="k">struct</span> <span class="ty">ReflectedColumn</span></pre><p class="doc">One column of a reflected database schema: the <code>table</code> it belongs to, its <code>name</code>, its raw SQL type text (<code>INTEGER</code>, <code>character varying</code>, <code>VARCHAR(255)</code>, …), and whether it is a primary key / accepts NULL. This is the neutral shape a live reader (SQLite <code>PRAGMA table_info</code>, PostgreSQL <code>information_schema.columns</code>) produces and <code>tables_from_reflection</code> folds into <code>DdlTable</code>s.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> tables_from_reflection(cols : <span class="ty">Array</span>[<span class="ty">ReflectedColumn</span>]) <span class="op">-&gt;</span> <span class="ty">Array</span>[<span class="ty">DdlTable</span>]</pre><p class="doc">Fold reflected columns into <code>DdlTable</code>s, grouping by table in first-seen order and mapping each raw SQL type onto its MoonBit scalar (the leading type keyword drives the mapping, so <code>character varying</code> and <code>VARCHAR(255)</code> both land on <code>String</code>). The result feeds <code>generate_crud</code>, so a live schema and a <code>.sql</code> file reach the same model generator.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> generate_crud_from_reflection(cols : <span class="ty">Array</span>[<span class="ty">ReflectedColumn</span>]) <span class="op">-&gt;</span> <span class="ty">String</span></pre><p class="doc">Generate a moonorm data-access layer (models + typed CRUD) straight from a live schema&#x27;s reflected columns — the in-memory counterpart of <code>generate_crud_from_ddl</code>. The <code>reflect</code> sub-package produces the <code>ReflectedColumn</code>s from a real connection.</p></div>
-</section>
-<section class="pkg" id="scaffold"><h2><span class="at">§</span>Project scaffolds</h2><p class="pdesc">goctl&#x27;s api new / rpc new, plus gql new - scaffold_api, scaffold_rpc and scaffold_gql write a service that passes its tests and serves on 12000; scaffold_model a moonorm data layer; scaffold_docker / scaffold_kube a Dockerfile and a Kubernetes deployment.</p>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> scaffold_api(name : <span class="ty">String</span>) <span class="op">-&gt;</span> <span class="ty">Array</span>[@plugin.<span class="ty">GenFile</span>]</pre><p class="doc">Scaffold a moonapi service under <code>&lt;name&gt;/</code>: goctl&#x27;s <code>api new</code>. The layered tree of <code>generate_tree</code> for a sample spec with <code>GET /ping</code>, a test calling it, and an entry point serving it on mooncat.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> scaffold_rpc(name : <span class="ty">String</span>) <span class="op">-&gt;</span> <span class="ty">Array</span>[@plugin.<span class="ty">GenFile</span>]</pre><p class="doc">Scaffold a moonrpc service under <code>&lt;name&gt;/</code>: goctl&#x27;s <code>rpc new</code>. The layered tree of <code>generate_rpc_tree</code> for a sample proto with a <code>Ping</code> that answers <code>pong</code>, and a test serving it and calling it through the typed client.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> scaffold_gql(name : <span class="ty">String</span>) <span class="op">-&gt;</span> <span class="ty">Array</span>[@plugin.<span class="ty">GenFile</span>]</pre><p class="doc">Scaffold a moongql service under <code>&lt;name&gt;/</code>: the layered tree of <code>generate_gql_tree</code> for a sample spec, with a <code>ping</code> resolver and a test querying it.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> scaffold_model(name : <span class="ty">String</span>) <span class="op">-&gt;</span> <span class="ty">Array</span>[@plugin.<span class="ty">GenFile</span>]</pre><p class="doc">Scaffold a moonorm data-layer project under <code>&lt;name&gt;/</code>: a <code>moon.mod</code> (depending on the published <code>moonorm</code> + <code>moondb</code>), a sample <code>schema.sql</code>, its generated models + CRUD in <code>src/model.mbt</code> (through the same <code>generate_crud_from_ddl</code> as <code>gen crud</code>), and a README. goctl&#x27;s <code>goctl model … new</code>.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> scaffold_docker( name : <span class="ty">String</span>, port~ : <span class="ty">Int32</span> = port) <span class="op">-&gt;</span> <span class="ty">Array</span>[@plugin.<span class="ty">GenFile</span>]</pre><p class="doc">Scaffold container files for a native <code>mctl</code>-generated service: a <code>Dockerfile</code> (a MoonBit build stage that produces the native binary, then a slim runtime stage that runs it) and a <code>.dockerignore</code>. <code>name</code> is the binary/image name, <code>port</code> the port the service listens on. goctl&#x27;s <code>goctl docker</code>.</p></div>
-<div class="item" data-k="let"><span class="kind">let</span><pre class="sig"><span class="k">let</span> port : <span class="ty">Int32</span> = 12000</pre><p class="doc">The port a scaffolded service listens on.  12000, the one every server in this family defaults to: HTTP, WebSocket and h2c share it because one listener tells them apart, so a generated manifest and a generated configuration name the same number without anyone saying which they meant.</p></div>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> scaffold_kube( name : <span class="ty">String</span>, port~ : <span class="ty">Int32</span> = port, replicas~ : <span class="ty">Int32</span> = 2) <span class="op">-&gt;</span> <span class="ty">Array</span>[@plugin.<span class="ty">GenFile</span>]</pre><p class="doc">Scaffold a Kubernetes deployment for the service under <code>deploy/</code>: a <code>Deployment</code> (<code>replicas</code> pods of the <code>&lt;name&gt;</code> image, a container port, and a liveness probe on <code>/ping</code>) and a <code>Service</code> exposing it. goctl&#x27;s <code>goctl kube deploy</code>.  The manifests are built as values and written by <code>moonyaml</code>, not joined out of string fragments. A generator that joins fragments has the indentation in its string literals, where a missed space is invisible, and quotes nothing — so the first service name with a colon in it emits a file Kubernetes reads as something else.</p></div>
-</section>
-<section class="pkg" id="rpctree"><h2><span class="at">§</span>gRPC project tree</h2><p class="pdesc">The layered tree for a .proto - pb/ with the messages, codecs and handler tables, internal/logic with one function per RPC, internal/server wiring them together, client/ with a typed client per service, and the entry point serving it all.</p>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> generate_rpc_tree( proto : @proto.<span class="ty">Proto</span>, style<span class="op">?</span> : @style.<span class="ty">Style</span>, dir~ : <span class="ty">String</span> = &quot;&quot;) <span class="op">-&gt;</span> <span class="ty">Array</span>[<span class="ty">TreeFile</span>]</pre><p class="doc">The layered gRPC tree goctl writes for a <code>.proto</code>, in MoonBit, under <code>dir</code>: <code>pb/</code> with the messages, codecs and handler tables (rewritten on every run), <code>internal/logic</code> with one function per RPC and <code>internal/config</code>/<code>internal/svc</code> (seeded once), <code>internal/server</code> wiring the logic into each service, <code>client/</code> with a typed client per service, and the entry point serving it all on 12000.  Hand the result to <code>tree_plan</code> to keep what the author has filled in.</p></div>
-</section>
-<section class="pkg" id="gqltree"><h2><span class="at">§</span>GraphQL project tree</h2><p class="pdesc">The layered tree for a GraphQL service - internal/schema generated from the spec, internal/logic with the author&#x27;s resolvers and a test, and the entry point serving graphql_app on mooncat.</p>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> generate_gql_tree( spec : @api.<span class="ty">Spec</span>, style<span class="op">?</span> : @style.<span class="ty">Style</span>, dir~ : <span class="ty">String</span> = &quot;&quot;) <span class="op">-&gt;</span> <span class="ty">Array</span>[<span class="ty">TreeFile</span>]</pre><p class="doc">The layered GraphQL tree for <code>spec</code> under <code>dir</code>: <code>internal/schema</code> with <code>build_schema()</code> (rewritten on every run), <code>internal/logic</code> with the resolvers and a test that queries <code>ping</code>, <code>internal/config</code>/<code>internal/svc</code> (seeded once), and the entry point serving <code>graphql_app</code> on 12000.  Hand the result to <code>tree_plan</code> to keep what the author has filled in.</p></div>
-</section>
-<section class="pkg" id="manifest"><h2><span class="at">§</span>Generated manifests</h2><p class="pdesc">The moon.mod and moon.pkg every generated project is written with, and pins - the version of each library they import, which CI builds every kind of scaffold against.</p>
-<div class="item" data-k="let"><span class="kind">let</span><pre class="sig"><span class="k">let</span> pins : <span class="ty">Map</span>[<span class="ty">String</span>, <span class="ty">String</span>] =</pre><p class="doc">The version of each library generated code imports.  These are the versions this repository&#x27;s CI scaffolds a project against and builds, so a generated project is promised to compile with them. A project that wants a later release edits its own <code>moon.mod</code>.</p></div>
-</section>
-<section class="pkg" id="gql"><h2><span class="at">§</span>GraphQL generator</h2><p class="pdesc">A moongql schema from the same .api spec the REST routes come from, so one description feeds both surfaces. The resolvers are the author&#x27;s code.</p>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> generate_gql(spec : @api.<span class="ty">Spec</span>) <span class="op">-&gt;</span> <span class="ty">String</span></pre><p class="doc">Generate a moongql code-first schema from <code>spec</code>&#x27;s <code>type</code> blocks. Each <code>type</code> becomes an object type with its fields mapped to GraphQL types, and the <code>Query</code> root has <code>ping: String!</code> plus a <code>&lt;type&gt;(id: ID!): &lt;Type&gt;</code> lookup per type.  Only the schema is generated: the resolvers are the author&#x27;s code. A root field needs one; an object field without one reads its parent&#x27;s member of that name.</p></div>
-</section>
-<section class="pkg" id="agentgen"><h2><span class="at">§</span>Agent scaffolding</h2><p class="pdesc">Generating a moonkoog tool registry from the spec&#x27;s types, so an .api description becomes tools an agent can call.</p>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> generate_agent(spec : @api.<span class="ty">Spec</span>) <span class="op">-&gt;</span> <span class="ty">String</span></pre><p class="doc">Generate a moonkoog agent scaffold from <code>spec</code>. Every route becomes a <code>Tool</code> whose descriptor advertises the operation (a single string <code>input</code> parameter to fill out) and whose <code>execute_raw</code> is a stub, and <code>build_agent</code> assembles them into an <code>AIAgent</code> with the service&#x27;s name in its system prompt. The output compiles against <code>moonbitstack/moonkoog</code>; fill in each <code>execute_raw</code> to make it run.</p></div>
-</section>
-<section class="pkg" id="reflect"><h2><span class="at">§</span>Reflection helper</h2><p class="pdesc">The small runtime the generated code leans on where MoonBit has no reflection: turning a declared descriptor into the JSON shape a caller sends.</p>
-<div class="item" data-k="fn"><span class="kind">fn</span><pre class="sig"><span class="k">fn</span> reflect_sqlite( db : @sqlite.<span class="ty">SqliteDriver</span>) <span class="op">-&gt;</span> <span class="ty">Array</span>[@moonctl.<span class="ty">ReflectedColumn</span>] raise @moondb.<span class="ty">DbError</span></pre><p class="doc">Read every user table&#x27;s columns from a live SQLite database and return them as <code>@moonctl.ReflectedColumn</code>s, ready for <code>@moonctl.generate_crud_from_reflection</code>. Tables are listed from <code>sqlite_master</code> (skipping SQLite&#x27;s own <code>sqlite_*</code> tables), and each table&#x27;s columns come from <code>PRAGMA table_info</code> — its <code>name</code>, declared <code>type</code>, <code>notnull</code> flag, and <code>pk</code> index. This is the SQLite half of goctl&#x27;s <code>model … datasource</code>.  The table name is interpolated into the <code>PRAGMA</code> (which cannot bind parameters); it comes from <code>sqlite_master</code>, i.e. the database&#x27;s own schema, not from user input.</p></div>
-<div class="item" data-k="item"><span class="kind">item</span><pre class="sig"><span class="k">async</span> <span class="k">fn</span> reflect_postgres( conn : @pg.<span class="ty">PgConn</span>) <span class="op">-&gt;</span> <span class="ty">Array</span>[@moonctl.<span class="ty">ReflectedColumn</span>] raise @moondb.<span class="ty">DbError</span></pre><p class="doc">Read every table in the <code>public</code> schema of a live PostgreSQL database and return its columns as <code>@moonctl.ReflectedColumn</code>s. The introspection joins <code>information_schema.columns</code> against the primary-key columns from <code>table_constraints</code> / <code>key_column_usage</code>, ordered by table and column position, so column order and primary keys survive. This is the PostgreSQL half of goctl&#x27;s <code>model pg datasource</code>; it runs over <code>@pg.PgConn</code>&#x27;s async wire protocol, so call it inside an event loop.</p></div>
-</section>
-<footer>Generated from source <code>///</code> doc-comments · <a href="https://mooncakes.io/docs/moonbitstack/moonctl">mooncakes</a> · <a href="https://github.com/moonbitstack/moonctl">GitHub</a> · Apache-2.0 &#169; Leo Cheng</footer>
-</main></div><script>
-document.addEventListener("DOMContentLoaded",()=>{
-  document.querySelectorAll("[data-copy]").forEach(btn=>btn.addEventListener("click",()=>{
-    navigator.clipboard.writeText(btn.getAttribute("data-copy")).then(()=>{
-      const t=btn.textContent;btn.textContent="copied";btn.classList.add("ok");
-      setTimeout(()=>{btn.textContent=t;btn.classList.remove("ok");},1100);});}));
-  const links=[...document.querySelectorAll(".side-nav a")];
-  const map=Object.fromEntries(links.map(a=>[a.getAttribute("href").slice(1),a]));
-  const spy=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){
-    links.forEach(a=>a.classList.remove("active"));const a=map[e.target.id];if(a)a.classList.add("active");}});},
-    {rootMargin:"-10% 0px -80% 0px"});
-  document.querySelectorAll("section.pkg").forEach(s=>spy.observe(s));
-  const tb=document.getElementById("theme");if(tb)tb.addEventListener("click",()=>{
-    const cur=document.documentElement.getAttribute("data-theme")
-      ||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");
-    document.documentElement.setAttribute("data-theme",cur==="dark"?"light":"dark");});
-});
-</script></body></html>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a class="brand" href="index.html">
+          <span class="mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6">
+              <rect x="2.6" y="2.6" width="18.8" height="18.8" rx="5.4"/>
+              <path d="M9.4 8.6 6.8 12l2.6 3.4M14.6 8.6 17.2 12l-2.6 3.4" stroke-linecap="square"/>
+            </svg>
+          </span>
+          moonctl
+        </a>
+        <p>A spec-driven code generator for MoonBit. Read a contract, write the code around it.</p>
+      </div>
+
+      <div class="footer-col">
+        <h4>Docs</h4>
+        <a href="getting-started/installation.html">Installation</a>
+        <a href="getting-started/quick-start.html">Quick start</a>
+        <a href="reference/commands.html">Commands</a>
+      </div>
+
+      <div class="footer-col">
+        <h4>Guides</h4>
+        <a href="guides/api-spec.html">The .api spec</a>
+        <a href="guides/clients.html">Clients</a>
+        <a href="guides/models.html">Models</a>
+        <a href="guides/gateway.html">Gateway</a>
+      </div>
+
+      <div class="footer-col">
+        <h4>Repository</h4>
+        <a href="https://github.com/moonbitstack/moonctl">GitHub</a>
+        <a href="https://mooncakes.io/docs/moonbitstack/moonctl">mooncakes</a>
+        <a href="https://github.com/moonbitstack/moonctl/issues">Issues</a>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <span>Apache-2.0</span>
+      <span>moonbitstack</span>
+      <span class="right">Generated code is yours.</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

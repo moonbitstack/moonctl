@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The .api spec — moonctl</title>
+<meta name="description" content="The .api language: types, tags, @server groups, routes, imports, validation rules and the canonical format.">
+<meta name="theme-color" content="#08080d">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<script src="../assets/site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="container">
+    <a class="brand" href="../index.html">
+      <span class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6">
+          <rect x="2.6" y="2.6" width="18.8" height="18.8" rx="5.4"/>
+          <path d="M9.4 8.6 6.8 12l2.6 3.4M14.6 8.6 17.2 12l-2.6 3.4" stroke-linecap="square"/>
+        </svg>
+      </span>
+      moonctl
+      <span class="sub">mctl</span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="../getting-started/installation.html">Docs</a>
+      <a href="../guides/api-spec.html" aria-current="true">Guides</a>
+      <a href="../reference/commands.html">Reference</a>
+      <a href="../getting-started/quick-start.html">Quick start</a>
+    </nav>
+    <div class="nav-right">
+      <button class="icon-btn" type="button" data-theme-toggle aria-label="Switch theme">
+        <svg class="i-moon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"/>
+        </svg>
+        <svg class="i-sun" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+          <circle cx="12" cy="12" r="4.2"/>
+          <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/>
+        </svg>
+      </button>
+      <a class="icon-btn" href="https://github.com/moonbitstack/moonctl" aria-label="Repository on GitHub">
+        <svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor" aria-hidden="true">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/>
+        </svg>
+      </a>
+      <button class="icon-btn nav-toggle" type="button" data-nav-toggle aria-label="Menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <path d="M4 7h16M4 12h16M4 17h16"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="docs-wrap">
+  <aside class="side" id="side">
+    <div class="side-group">
+      <span class="label">Getting started</span>
+      <a href="../getting-started/installation.html">Installation</a>
+      <a href="../getting-started/quick-start.html">Quick start</a>
+    </div>
+    <div class="side-group">
+      <span class="label">Guides</span>
+      <a href="../guides/api-spec.html" aria-current="page">The .api spec</a>
+      <a href="../guides/clients.html">Clients</a>
+      <a href="../guides/models.html">Models</a>
+      <a href="../guides/gateway.html">Gateway</a>
+    </div>
+    <div class="side-group">
+      <span class="label">Reference</span>
+      <a href="../reference/commands.html">Commands</a>
+    </div>
+  </aside>
+
+  <main class="doc" id="main">
+    <button class="side-toggle" type="button" data-side-toggle aria-expanded="false">Contents</button>
+    <h1>The .api spec</h1>
+    <p class="lede">
+      A spec file has three kinds of statement: a block of settings, type blocks, and a
+      service block of routes. This page is the whole language.
+    </p>
+
+    <div class="prose">
+      <h2 id="shape">The shape of a file <a class="anchor" href="#shape">#</a></h2>
+      <p>One file, read top to bottom:</p>
+      <div class="code">
+        <div class="code-head"><span class="file">shop.api</span><button class="copy" type="button" data-copy>Copy</button></div>
+<pre>syntax = "v1"
+
+info (
+  title:   "shop"
+  version: "v1.2"
+)
+
+type (
+  LoginReq {
+    Username string `json:"username"`
+    Password string `json:"password"`
+  }
+  Profile {
+    Id   int64  `path:"id"`
+    Name string `json:"name"`
+    Bio  string `json:"bio,optional"`
+    Tier string `json:"tier,options=free|pro"`
+    Age  int    `json:"age,range=[18:120]"`
+  }
+)
+
+@server (
+  prefix: /api/v1
+  group:  user
+)
+
+service shop {
+  @doc "log a user in"
+  @handler Login
+  post /login (LoginReq) returns (Profile)
+
+  @handler GetProfile
+  get /profile/:id returns (Profile)
+}</pre>
+      </div>
+      <p>
+        Block order between types and the service does not matter — a type may be declared
+        after the route that returns it. Inside a service it does: <code>@server</code> applies
+        to the service below it, and <code>@doc</code> and <code>@handler</code> to the route
+        below them.
+      </p>
+
+      <h2 id="types">Types <a class="anchor" href="#types">#</a></h2>
+      <p>
+        A type block is a name and a field per line, <code>Name type `tag`</code>. A
+        <code>type ( … )</code> group declares several at once.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Write</th><th>Means</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td><code>string</code>, <code>bool</code></td><td><code>String</code>, <code>Bool</code></td><td><code>Name string</code></td></tr>
+            <tr><td><code>int</code>, <code>int32</code>, <code>rune</code></td><td><code>Int32</code></td><td><code>Age int</code></td></tr>
+            <tr><td><code>int64</code></td><td><code>Int64</code></td><td><code>Id int64</code></td></tr>
+            <tr><td><code>uint</code>, <code>uint32</code></td><td><code>UInt32</code></td><td><code>Mask uint32</code></td></tr>
+            <tr><td><code>uint64</code></td><td><code>UInt64</code></td><td><code>Serial uint64</code></td></tr>
+            <tr><td><code>byte</code>, <code>bytes</code></td><td><code>Byte</code>, <code>Bytes</code></td><td><code>Body bytes</code></td></tr>
+            <tr><td><code>float32</code>, <code>float64</code>, <code>double</code></td><td><code>Float</code>, <code>Double</code></td><td><code>Price float64</code></td></tr>
+            <tr><td><code>[]T</code></td><td><code>Array[T]</code></td><td><code>Tags []string</code></td></tr>
+            <tr><td><code>map[K]V</code></td><td><code>Map[K, V]</code></td><td><code>Meta map[string]string</code></td></tr>
+            <tr><td><code>T?</code> or <code>*T</code></td><td><code>T?</code></td><td><code>Bio string?</code></td></tr>
+            <tr><td>any other name</td><td>that type</td><td><code>Owner User</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        A line that is only a type name embeds that type, fields first. This is how a spec
+        shares the columns every row has:
+      </p>
+      <div class="code">
+        <div class="code-head"><span class="file">base.api</span><button class="copy" type="button" data-copy>Copy</button></div>
+<pre>type Base {
+  Id   int64  `json:"id"`
+  Kind string `json:"kind"`
+}</pre>
+      </div>
+      <div class="code">
+        <div class="code-head"><span class="file">user.api</span><button class="copy" type="button" data-copy>Copy</button></div>
+<pre>type User {
+  Base
+  Name string `json:"name"`
+}</pre>
+      </div>
+      <p>
+        <code>User</code> documents and validates as <code>id</code>, <code>kind</code>,
+        <code>name</code> — the embedded fields come first, and a nested embed is flattened the
+        same way.
+      </p>
+
+      <h2 id="tags">Tags <a class="anchor" href="#tags">#</a></h2>
+      <p>The back-tick tag says where a field's value comes from:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tag</th><th>Binds from</th></tr></thead>
+          <tbody>
+            <tr><td><code>json:"name"</code></td><td>the request body, under the wire name <code>name</code></td></tr>
+            <tr><td><code>form:"page"</code></td><td>the query string</td></tr>
+            <tr><td><code>path:"id"</code></td><td>a <code>:id</code> segment of the route</td></tr>
+            <tr><td><code>header:"X-Client-Id"</code></td><td>a request header</td></tr>
+            <tr><td>no tag</td><td>the request body, under the field's own name</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        Options follow the wire name, comma-separated, and become validation in the generated
+        service and a constraints column in the reference:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Option</th><th>What it says</th></tr></thead>
+          <tbody>
+            <tr><td><code>optional</code></td><td>the field may be absent; it becomes <code>T?</code></td></tr>
+            <tr><td><code>omitempty</code></td><td>leave it out of the body when it is empty</td></tr>
+            <tr><td><code>default=v</code></td><td>the value when the client sends none</td></tr>
+            <tr><td><code>options=a|b</code></td><td>one of a fixed set — rendered as <code>one of `a`, `b`</code></td></tr>
+            <tr><td><code>range=[18:120]</code></td><td>a numeric bound; <code>[</code> and <code>]</code> include, <code>(</code> and <code>)</code> exclude</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>
+        A field may carry one binding and any number of options —
+        <code>`json:"bio,optional"`</code>. The tag is kept as written, so anything the tool
+        does not read is still in the file after a <code>format</code>.
+      </p>
+
+      <h2 id="groups">Groups <a class="anchor" href="#groups">#</a></h2>
+      <p><code>@server ( … )</code> applies to the service under it. Every route in that block belongs to the group:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Setting</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td><code>group: user</code></td><td>names the group; handlers and logic land in <code>internal/handler/user/</code> and <code>internal/logic/user/</code></td></tr>
+            <tr><td><code>prefix: /api/v1</code></td><td>put in front of every route's path</td></tr>
+            <tr><td><code>jwt: Auth</code></td><td>recorded on the route; carried into the documentation</td></tr>
+            <tr><td><code>middleware: Log,Trace</code></td><td>recorded on the route, in order</td></tr>
+            <tr><td><code>maxBytes: 1048576</code></td><td>a body limit, kept in the generated route comment</td></tr>
+            <tr><td><code>timeout: 3s</code></td><td>a per-route timeout, kept the same way</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout warn">
+        <span class="t">Recorded, not wired</span>
+        <p>
+          <code>jwt</code>, <code>middleware</code>, <code>maxBytes</code> and
+          <code>timeout</code> have no call in the generated server to hand them to. They are
+          written into the route table as a comment rather than dropped in silence, so the
+          generated file still says what the spec asked for.
+        </p>
+      </div>
+
+      <h2 id="routes">Routes <a class="anchor" href="#routes">#</a></h2>
+      <p>A route is a verb, a path, a request type and a response type:</p>
+      <div class="code">
+        <div class="code-head"><span class="file">route forms</span><button class="copy" type="button" data-copy>Copy</button></div>
+<pre>@doc "log a user in"
+@handler Login
+post /login (LoginReq) returns (LoginResp)
+
+@handler GetProfile
+get /profile/:id returns (Profile)
+
+@handler Ping
+get /ping</pre>
+      </div>
+      <ul>
+        <li><code>(LoginReq)</code> is the request type; without one the route takes no body.</li>
+        <li><code>returns (LoginResp)</code> is the response type; without one the route answers with what the handler writes.</li>
+        <li><code>:id</code> is a path parameter. The request type must declare it, tagged <code>path:"id"</code>.</li>
+        <li><code>@doc</code> becomes the route summary — the OpenAPI description, the Markdown column, and the comment on the generated handler.</li>
+        <li><code>@handler</code> names the two generated functions; two routes may not share one.</li>
+      </ul>
+      <p>
+        A route may name its handler inline instead — <code>get /ping ping "health check"</code>
+        — which is the older one-line spelling. Both parse; <code>format</code> keeps whichever
+        the file used.
+      </p>
+
+      <h2 id="imports">More than one file <a class="anchor" href="#imports">#</a></h2>
+      <p>A spec may pull in another, or a group of them:</p>
+      <div class="code">
+        <div class="code-head"><span class="file">user.api</span><button class="copy" type="button" data-copy>Copy</button></div>
+<pre>import "base.api"
+
+import (
+  "shared/types.api"
+  "shared/errors.api"
+)</pre>
+      </div>
+      <p>
+        Paths resolve relative to the file that wrote them. The merged spec is what every
+        command works on: <code>api validate</code> checks the composed spec, not the entry file
+        alone, so a type imported from <code>base.api</code> is in scope for a route in
+        <code>user.api</code>.
+      </p>
+
+      <h2 id="validate">Checking <a class="anchor" href="#validate">#</a></h2>
+      <p>
+        <code>mctl api validate</code> prints every finding as
+        <code>severity [rule] at: message</code>, then a count. It checks the routes, the types
+        and the references between them:
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Rule</th><th>Finding</th></tr></thead>
+          <tbody>
+            <tr><td><code>syntax</code></td><td>a line the parser cannot read, with its line number</td></tr>
+            <tr><td><code>import</code></td><td>an imported file that is not there</td></tr>
+            <tr><td><code>duplicate-handler</code></td><td>two routes name the same handler</td></tr>
+            <tr><td><code>duplicate-route</code></td><td>the same verb and path twice</td></tr>
+            <tr><td><code>reserved-handler</code></td><td>a handler name MoonBit will not take as a function</td></tr>
+            <tr><td><code>unknown-type</code></td><td>a request, response, field or embed names a type that does not exist</td></tr>
+            <tr><td><code>path-param</code></td><td>a route and its request type disagree about a path parameter</td></tr>
+            <tr><td><code>empty-service</code></td><td>a service block with no route</td></tr>
+            <tr><td><code>unused-group</code></td><td>a group no route belongs to</td></tr>
+            <tr><td><code>duplicate-type</code></td><td>two type blocks with the same name</td></tr>
+            <tr><td><code>empty-type</code></td><td>a type block with no field</td></tr>
+            <tr><td><code>duplicate-field</code></td><td>two fields with the same wire name</td></tr>
+            <tr><td><code>unused-type</code></td><td>a type no route and no other type refers to</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The count line is what a script checks; the findings are what a person reads:</p>
+      <div class="term">
+        <div class="term-bar"><span class="dots"><i></i><i></i><i></i></span>terminal</div>
+<pre><span class="p">$</span> mctl api validate user.api
+<span class="out">mctl: user.api is valid</span>
+
+<span class="p">$</span> mctl api validate broken.api
+<span class="err">error [syntax] line 16: route get /orders/:id has no handler; name one with `@handler`</span>
+mctl: broken.api: 1 error(s), 0 warning(s)</pre>
+      </div>
+      <div class="callout">
+        <span class="t">Nothing is skipped</span>
+        <p>
+          A line the parser cannot read stops the parse and is reported. It is never dropped,
+          because a spec that quietly loses a route generates a service that quietly lacks it.
+        </p>
+      </div>
+
+      <h2 id="format">Formatting <a class="anchor" href="#format">#</a></h2>
+      <p>
+        <code>mctl api format</code> writes the one layout the tool calls canonical: two spaces
+        per nesting level, a space after the colon in a group setting, one blank line between
+        blocks, <code>type ( … )</code> and <code>@server ( … )</code> indented like any other
+        block, and one newline at the end.
+      </p>
+      <div class="code">
+        <div class="code-head"><span class="file">before</span><button class="copy" type="button" data-copy>Copy</button></div>
+<pre>type (
+LoginReq {
+Username string `json:"username"`
+}
+)
+@server(group:user,prefix:/api/v1)
+service   greet{
+get /profile/:id   (Profile)
+}</pre>
+      </div>
+      <div class="code">
+        <div class="code-head"><span class="file">after</span><button class="copy" type="button" data-copy>Copy</button></div>
+<pre>type (
+  LoginReq {
+    Username string `json:"username"`
+  }
+)
+
+@server (group: user, prefix: /api/v1)
+service greet {
+  get /profile/:id (Profile)
+}</pre>
+      </div>
+      <p>
+        Comments, struct tags and the order of statements survive; only the layout changes. The
+        result is idempotent — formatting a formatted file returns it unchanged — so a
+        <code>format --write</code> in a hook produces a diff exactly when someone wrote
+        something that was not canonical.
+      </p>
+    </div>
+    <nav class="pager" aria-label="Pages">
+      <a href="../getting-started/quick-start.html">
+        <span class="dir">Previous</span>
+        Quick start
+      </a>
+      <a class="next" href="../guides/clients.html">
+        <span class="dir">Next</span>
+        Clients
+      </a>
+    </nav>
+  </main>
+
+  <nav class="toc" aria-label="On this page">
+    <span class="label">On this page</span>
+    <a href="#shape">The shape of a file</a>
+    <a href="#types">Types</a>
+    <a href="#tags">Tags</a>
+    <a href="#groups">Groups</a>
+    <a href="#routes">Routes</a>
+    <a href="#imports">More than one file</a>
+    <a href="#validate">Checking</a>
+    <a href="#format">Formatting</a>
+  </nav>
+</div>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-bottom" style="margin-top:0;border-top:0;padding-top:0">
+      <span><a href="../index.html">moonctl</a></span>
+      <span>Apache-2.0</span>
+      <span>moonbitstack</span>
+      <span class="right"><a href="https://github.com/moonbitstack/moonctl">Edit this page on GitHub</a></span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
