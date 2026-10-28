@@ -8,15 +8,31 @@ import {
 // Values
 pub fn commas(Array[String]) -> String
 
+pub fn default_routes(Proto) -> Array[GatewayRoute]
+
+pub fn gateway_file_name(String) -> String
+
+pub fn generate_gateway(Proto, Array[GatewayRoute]) -> String
+
 pub fn generate_grpc(Proto) -> String
 
+pub fn has_method(Proto, String) -> Bool
+
 pub fn parse_proto(String) -> Proto
+
+pub fn parse_route_map(Proto, String) -> (Array[GatewayRoute], Array[String])
 
 pub fn proto_reserved_conflicts(ProtoMessage) -> Array[String]
 
 // Errors
 
 // Types and methods
+pub(all) struct GatewayRoute {
+  verb : String
+  path : String
+  rpc : String
+}
+
 pub(all) enum Label {
   Single
   Repeated

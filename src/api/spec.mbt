@@ -125,6 +125,11 @@ fn map_type(raw : String) -> String {
   if @text.starts_with(t, "*") {
     return map_type(t[1:].to_owned()) + "?"
   }
+  // a `?` a spec writes by hand — `string?` — marks the whole type optional, so it
+  // is peeled off first and put back around whatever the type maps to
+  if @text.ends_with(t, "?") && t.length() > 1 {
+    return map_type(t[0:t.length() - 1].to_owned()) + "?"
+  }
   if @text.starts_with(t, "[]") {
     return "Array[" + map_type(t[2:].to_owned()) + "]"
   }

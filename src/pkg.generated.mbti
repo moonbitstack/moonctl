@@ -17,6 +17,8 @@ import {
 // Values
 pub fn bug_report(String, String, Array[(String, String)]) -> String
 
+pub fn cache_file_name(String) -> String
+
 pub fn client_file(@api.Spec, @client.Lang) -> (String, String)
 
 pub fn client_file_name(@client.Lang, String) -> String
@@ -37,6 +39,8 @@ pub fn config_text(@cli.Config) -> String
 
 pub fn default_config() -> @cli.Config
 
+pub fn default_routes(@proto.Proto) -> Array[@proto.GatewayRoute]
+
 pub fn deps(String, from? : String) -> Array[String]
 
 pub fn env_report(String, Array[(String, String)]) -> String
@@ -45,11 +49,15 @@ pub fn find_template(String) -> @cli.TemplateEntry?
 
 pub fn format(String) -> String
 
+pub fn gateway_file_name(String) -> String
+
 pub fn gen_files_to_json(Array[@plugin.GenFile]) -> Json
 
 pub fn generate(@api.Spec, template? : String) -> String raise @template.TemplateError
 
 pub fn generate_agent(@api.Spec) -> String
+
+pub fn generate_cached(@api.Spec) -> String
 
 pub fn generate_client(@api.Spec, @client.Lang) -> String
 
@@ -60,6 +68,8 @@ pub fn generate_crud_from_ddl(String) -> String
 pub fn generate_crud_from_reflection(Array[@model.ReflectedColumn]) -> String
 
 pub fn generate_doc(@api.Spec, version? : @doc.DocVersion, title? : String, api_version? : String) -> String
+
+pub fn generate_gateway(@proto.Proto, Array[@proto.GatewayRoute]) -> String
 
 pub fn generate_gql(@api.Spec) -> String
 
@@ -75,6 +85,8 @@ pub fn generate_migrations(@api.Spec) -> String
 
 pub fn generate_model(@api.Spec) -> String
 
+pub fn generate_mongo(@api.Spec) -> String
+
 pub fn generate_rpc_tree(@proto.Proto, style? : @style.Style, dir? : String) -> Array[@scaffold.TreeFile]
 
 pub fn generate_tree(@api.Spec, style? : @style.Style, dir? : String) -> Array[@scaffold.TreeFile]
@@ -83,6 +95,8 @@ pub fn generate_with(@api.Spec, String) -> String raise @template.TemplateError
 
 pub fn has_errors(Array[@api.Diagnostic]) -> Bool
 
+pub fn has_method(@proto.Proto, String) -> Bool
+
 pub fn markdown_file_name(String) -> String
 
 pub fn migrate_config(String) -> (String, Array[String])
@@ -90,6 +104,8 @@ pub fn migrate_config(String) -> (String, Array[String])
 pub fn migrate_file_name(String) -> String
 
 pub fn mod_pins(String) -> Array[(String, String)]
+
+pub fn mongo_file_name(String) -> String
 
 pub fn openapi_document(@api.Spec, version? : @doc.DocVersion, title? : String, api_version? : String) -> Json
 
@@ -109,6 +125,8 @@ pub fn parse_lenient(String) -> @api.Spec
 
 pub fn parse_proto(String) -> @proto.Proto
 
+pub fn parse_route_map(@proto.Proto, String) -> (Array[@proto.GatewayRoute], Array[String])
+
 pub fn pin_module(String, String, String) -> (String, String?)
 
 pub fn pinned_version(String, String) -> String?
@@ -119,6 +137,8 @@ pub fn plugin_argv(String) -> (String, Array[String])
 
 pub fn plugin_from_json(Json) -> @plugin.Plugin
 
+pub fn plugin_plan(Array[@plugin.GenFile]) -> (Array[@plugin.GenFile], Array[String])
+
 pub fn plugin_request(@api.Spec, api_file_path? : String, style? : String, dir? : String) -> String
 
 pub let port : Int32
@@ -128,6 +148,8 @@ pub fn proto_reserved_conflicts(@proto.ProtoMessage) -> Array[String]
 pub fn render(String, @template.Value) -> String raise @template.TemplateError
 
 pub fn resolve_import(String, String) -> String
+
+pub fn safe_path(String) -> Bool
 
 pub fn scaffold_api(String) -> Array[@plugin.GenFile]
 
@@ -199,6 +221,8 @@ pub using @doc {type DocVersion}
 pub using @api {type Field}
 
 pub type FuncFn = (Array[@template.Value]) -> @template.Value raise @template.TemplateError
+
+pub using @proto {type GatewayRoute}
 
 pub using @plugin {type GenFile}
 

@@ -6,6 +6,10 @@ import {
 }
 
 // Values
+pub fn cache_file_name(String) -> String
+
+pub fn generate_cached(@api.Spec) -> String
+
 pub fn generate_crud(Array[DdlTable]) -> String
 
 pub fn generate_crud_from_ddl(String) -> String
@@ -16,7 +20,11 @@ pub fn generate_migrations(@api.Spec) -> String
 
 pub fn generate_model(@api.Spec) -> String
 
+pub fn generate_mongo(@api.Spec) -> String
+
 pub fn migrate_file_name(String) -> String
+
+pub fn mongo_file_name(String) -> String
 
 pub fn parse_ddl(String) -> Array[DdlTable]
 

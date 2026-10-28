@@ -28,7 +28,7 @@ pub fn commands() -> Array[Command] {
     },
     {
       name: "model",
-      usage: "mctl model <new|datasource|mysql|pg|mongo> …",
+      usage: "mctl model <new|datasource|mysql|pg|mongo|cache> …",
       summary: "read a schema — DDL, a live database, a spec — and write moonorm models",
     },
     {
@@ -112,7 +112,7 @@ pub fn subcommands(name : String) -> Array[String] {
   match name {
     "gen" => ["api", "rpc", "model", "crud", "doc", "gql", "agent"]
     "api" => ["format", "validate", "doc", "ts", "dart", "kt", "java", "new"]
-    "model" => ["new", "datasource", "mysql", "pg", "mongo"]
+    "model" => ["new", "datasource", "mysql", "pg", "mongo", "cache"]
     "rpc" => ["new"]
     "gql" => ["new"]
     "mcp" => ["new"]

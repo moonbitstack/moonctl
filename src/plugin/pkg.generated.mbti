@@ -14,7 +14,11 @@ pub fn plugin_argv(String) -> (String, Array[String])
 
 pub fn plugin_from_json(Json) -> Plugin
 
+pub fn plugin_plan(Array[GenFile]) -> (Array[GenFile], Array[String])
+
 pub fn plugin_request(@api.Spec, api_file_path? : String, style? : String, dir? : String) -> String
+
+pub fn safe_path(String) -> Bool
 
 pub fn spec_from_json(Json) -> @api.Spec
 

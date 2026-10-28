@@ -396,3 +396,66 @@ pub fn gen_files_to_json(files : Array[GenFile]) -> Json {
   let doc : Map[String, Json] = Map([("files", Json(arr))])
   Json(doc)
 }
+
+///|
+/// Whether a path a plugin supplies lands inside the directory mctl writes to. A
+/// plugin runs as its own process and its reply is arbitrary text, so the one thing
+/// mctl must not do is believe it: `../../.ssh/authorized_keys`, `/etc/passwd` and
+/// `C:/Windows/system32/…` are all accepted by a naive writer, and all three write
+/// where a code generator has no business writing. Only a relative path with no `..`
+/// segment is allowed; a path with one is refused and named in the run's report.
+pub fn safe_path(path : String) -> Bool {
+  let p = @text.trim(path)
+  if p == "" {
+    return false
+  }
+  // an absolute path: a leading separator, or a drive letter
+  if p[0] == '/' || p[0] == '\\' {
+    return false
+  }
+  if p.length() > 1 && p[1] == ':' {
+    return false
+  }
+  let mut start = 0
+  for i = 0; i <= p.length(); i = i + 1 {
+    let at_end = i == p.length()
+    let c = if at_end { '/' } else { p[i].to_char().unwrap_or('/') }
+    if c == '/' || c == '\\' || at_end {
+      let seg = p[start:i].to_owned()
+      if seg == ".." {
+        return false
+      }
+      start = i + 1
+    }
+  }
+  true
+}
+
+///|
+/// What a plugin run will actually write: the files whose path is safe, and a note
+/// per file that was refused or superseded. A later file for a path an earlier one
+/// already claimed is refused rather than silently overwriting it — a plugin that
+/// emits the same file twice has a bug, and the report should say so rather than
+/// leave a coin-flip in the output.
+pub fn plugin_plan(files : Array[GenFile]) -> (Array[GenFile], Array[String]) {
+  let kept : Array[GenFile] = []
+  let refused : Array[String] = []
+  let seen : Map[String, Bool] = Map([])
+  for f in files {
+    if safe_path(f.path) == false {
+      refused.push(
+        "refused " +
+        f.path +
+        ": a plugin may only write inside the output directory",
+      )
+      continue
+    }
+    if seen.contains(f.path) {
+      refused.push("refused " + f.path + ": the plugin wrote it twice")
+      continue
+    }
+    seen[f.path] = true
+    kept.push(f)
+  }
+  (kept, refused)
+}

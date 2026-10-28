@@ -278,7 +278,12 @@ async fn run_plugin(plugin : String, input : String, opts : Opts) -> Unit {
       )
       return
     }
-    let files = @moonctl.parse_gen_files(out.json())
+    let (files, refused) = @moonctl.plugin_plan(
+      @moonctl.parse_gen_files(out.json()),
+    )
+    for note in refused {
+      println("mctl: " + note)
+    }
     for f in files {
       write_gen_file(f)
     }
@@ -287,7 +292,12 @@ async fn run_plugin(plugin : String, input : String, opts : Opts) -> Unit {
       plugin +
       " produced " +
       files.length().to_string() +
-      " file(s)",
+      " file(s)" +
+      (if refused.length() == 0 {
+        ""
+      } else {
+        ", " + refused.length().to_string() + " refused"
+      }),
     )
   } catch {
     e => println("mctl: plugin error: " + e.to_string())
@@ -465,6 +475,9 @@ async fn dispatch(what : String, file : String, opts : Opts) -> Unit {
     "api" => gen_api(file, opts.style, opts.dir, opts.flat)
     "proto" | "rpc" => gen_rpc(file, opts)
     "model" => gen_model(file)
+    "mongo" => model_mongo(file)
+    "cache" => model_cache(file)
+    "gateway" => gateway(file)
     "crud" => gen_crud(file)
     "doc" => gen_doc(file)
     "gql" => gen_gql(file, opts)
@@ -520,6 +533,12 @@ async fn main {
     args[1] == "pg" &&
     args[2] == "datasource" {
     gen_datasource_for("pg", args[3])
+  } else if n >= 3 && args[0] == "model" && args[1] == "mongo" {
+    model_mongo(args[2])
+  } else if n >= 3 && args[0] == "model" && args[1] == "cache" {
+    model_cache(args[2])
+  } else if n >= 2 && args[0] == "gateway" {
+    gateway(args[1])
   } else if n >= 3 && args[0] == "api" && args[1] == "format" {
     api_format(args[2], write)
   } else if n >= 3 && args[0] == "api" && args[1] == "validate" {

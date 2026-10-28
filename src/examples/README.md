@@ -26,6 +26,10 @@ moon run examples/00-greet
 | 11 | [`gql`](11-gql/) | `.api` `type` → moongql code-first schema + resolver stubs | `generate_gql` |
 | 12 | [`tags`](12-tags/) | Struct tags → where a field binds from (`json`/`form`/`path`/`header`), the name it binds under, and the `optional`/`default=`/`options=`/`range=` that constrain it | `Field::bind`, `Field::json_name`, `Field::default_`, `openapi_document` |
 | 13 | [`tree`](13-tree/) | Multi-file `import`, the `--style` naming template, the layered project tree, and what a second run rewrites | `deps`, `parse_all`, `Style::parse`, `generate_tree`, `tree_plan` |
+| 14 | [`clients`](14-clients/) | One spec, four typed clients (TypeScript, Dart, Kotlin, Java) + a Markdown reference | `client_file`, `generate_client`, `Lang`, `generate_markdown` |
+| 15 | [`mongo`](15-mongo/) | `.api` `type` → a document model and a typed repository over a collection port | `generate_mongo`, `mongo_file_name` |
+| 16 | [`gateway`](16-gateway/) | `.proto` → an HTTP gateway: default routes, a route mapping, and the status codes | `default_routes`, `parse_route_map`, `generate_gateway` |
+| 17 | [`cache`](17-cache/) | Cache-aside CRUD: read-through `find`, invalidating `write`, `evict`, over a generic cache port | `generate_cached`, `cache_file_name` |
 
 Each `main.mbt` calls the real API and prints the actual generated artefact — a
 moonapi scaffold, an OpenAPI document, moonorm SQL/CRUD, a moonrpc gRPC stub,

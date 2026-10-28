@@ -245,6 +245,9 @@ $ mctl api java  greet.api                 # -> GreetClient.java
 $ mctl migrate   greet.api                 # -> greet_migrate.sql (one table per type)
 $ mctl model mysql datasource root@tcp(db)/shop       # -> mysql_model.mbt
 $ mctl model pg    datasource postgres://u:p@db/shop  # -> pg_model.mbt
+$ mctl model mongo greet.api               # -> greet_mongo.mbt   (documents + repositories)
+$ mctl model cache greet.api               # -> greet_cache.mbt   (cache-aside CRUD)
+$ mctl gateway greet.proto                 # -> greet_gateway.mbt (HTTP front door)
 $ mctl quickstart blog                     # scaffold an api project, then say what to run
 $ mctl template  list                      # the bundled template library
 $ mctl upgrade   0.13.0                    # move the moonbitstack pins in moon.mod
@@ -461,6 +464,58 @@ its foreign keys.
 let sql = @moonctl.generate_migrations(spec)
 ```
 
+## Document models: `model mongo`
+
+A document store is not a table with a different name, and a Mongo driver is not a
+dependency generated code should have to carry. So `mctl model mongo` writes each
+`type` block as a document — a struct with `derive(FromJson, ToJson)`, so a value
+round-trips without a hand-written field walker — and a typed repository over a
+three-call port:
+
+```moonbit
+pub(all) struct Collection {
+  name : String
+  run : (MongoOp, Json, Json) -> Json raise MongoError   // op, filter, document
+}
+```
+
+A driver binds `run` to `insertOne` / `findOne` / `find` / `replaceOne` /
+`deleteOne`, and every repository is typed from there: `insert`, `all`, and — when
+the spec has a field to look a record up by — `find`, `replace` and `delete`. A
+nested type nests that type's document, so `owner: User` is stored as a `UserDoc`.
+The generated file needs `moonbitlang/core/json` and nothing else.
+
+## An HTTP front door: `gateway`
+
+`mctl gateway` turns a `.proto` into an HTTP gateway: a route table, the status
+codes a client cares about (`200`, `400` for a body that is not JSON, `404` for a
+path no route answers, `502` for an upstream failure), and a `Caller` port that
+takes a gRPC method's full path and a request document. Routes default to
+`POST /<Service>/<Method>` — generated before anyone has decided on URLs — and come
+from a sibling mapping file when there is one:
+
+```
+# greet.routes
+post /v1/users   /shop.UserService/Create
+get  /v1/stock   /shop.StockService/Count
+```
+
+A line naming a method the `.proto` does not declare is reported and skipped, and a
+streaming RPC is left out of the table with a comment saying which one, because an
+HTTP response is one body with one end.
+
+## Cache-aside CRUD: `model cache`
+
+`mctl model cache` writes the layer in front of a table's CRUD: read-through on
+`find`, invalidate on `write` and on `evict`. The port is generic, so a cache holds
+records rather than the text they serialise to, and an in-memory implementation is
+a `Map` — which is what the generated `memory_cache` is, and what a test drives the
+layer with.
+
+A broken cache never fails a request: a failed read is a miss and a failed
+invalidation is swallowed, because a cache that can take a service down is worse
+than no cache at all.
+
 ## Template library, config, and the housekeeping
 
 The command surface is data, not code: `src/cli` holds one table that `mctl help`
@@ -479,6 +534,9 @@ completable and documented by being added once.
 | `mctl quickstart <name>` | scaffold an api project, then print what to run next |
 | `mctl migrate <file.api>` | the SQL a spec's types imply |
 | `mctl model mysql|pg datasource <dsn>` | live-database reflection, written under the engine's name |
+| `mctl model mongo <file.api>` | documents and typed repositories over a collection port |
+| `mctl model cache <file.api>` | cache-aside CRUD: read-through, then invalidate on write |
+| `mctl gateway <file.proto>` | an HTTP gateway over the proto's RPCs, routes from `<stem>.routes` when present |
 
 The template library is reached three ways, as in goctl: the bundled defaults, a
 `--home <dir>` of your own, or `--remote <url> --branch <name>` for a shared one.
@@ -558,8 +616,20 @@ clients (`api ts`, `api dart`, `api kt`, `api java` — each compiled once with 
 compiler, and snapshotted by the tests), `migrate` (a spec's types as SQL), the
 `model mysql|pg datasource` spellings, and the command surface that makes the rest
 discoverable (`help`, `completion`, `template`, `config`, `env`, `bug`, `upgrade`,
-`quickstart`). Still open from goctl's list: the `model mongo` document model, the
-`gateway` scaffold, and the cached-CRUD and plugin-fault-injection variants.
+`quickstart`). The latest round closed the rest of goctl's list: `model mongo`
+(a document model and a typed repository over a collection port, compiled and driven
+through a fake driver in the tests), `model cache` (cache-aside CRUD over a generic
+cache port, driven against the generated in-memory cache), `gateway` (a `.proto` as
+an HTTP front door, with a route mapping and the 200/400/404/502 answers exercised
+end to end), and the plugin fault coverage mctl was missing — a plugin may not write
+outside the output directory, and a path it claims twice is refused rather than
+silently overwritten. Each of the three generators' output is compiled under
+`moon check --target all --deny-warn` as part of that work.
+
+Still open: the template library is catalogued and configurable (`--home`,
+`--remote`, `--branch`), but no template directory is read from disk yet — the
+bundled catalogue is what generation uses — and `mctl template init` is advertised
+in the usage line without an implementation behind it.
 
 ## License
 
