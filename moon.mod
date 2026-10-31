@@ -1,6 +1,6 @@
 name = "moonbitstack/moonctl"
 
-version = "0.12.3"
+version = "0.12.4"
 
 readme = "README.md"
 
@@ -26,7 +26,7 @@ import {
   "moonbitstack/moonyaml@0.1.3",
   "moonbitstack/moondb@0.2.4",
   "moonbitstack/moonsqlite@0.3.3",
-  "moonbitstack/moonpostgres@0.6.6",
+  "moonbitstack/moonpostgres@0.6.7",
 }
 
 source = "src"
