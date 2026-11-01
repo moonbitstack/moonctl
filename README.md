@@ -20,6 +20,18 @@
 
 `moonctl` parses a `.api` service spec and emits **compilable [`moonapi`](https://github.com/moonbitstack/moonapi) scaffolding** — the role `goctl` plays for Go. It's pure logic (parse → generate text), so it has no runtime dependencies and runs on every backend.
 
+## Serving, and reloading on a save
+
+`mctl serve` builds a package and runs it. With `--reload` it does so again whenever a source changes, which is what `uvicorn --reload` does for a language that can re-import its modules:
+
+```
+$ mctl serve --reload                              # the package in this directory
+$ mctl serve src/main --reload --reload-dir src    # watch only src
+$ mctl serve --reload -- --port 9000               # what follows -- goes to the server
+```
+
+Sources are `.mbt` and `.mbti` files, `moon.pkg` and `moon.mod`, looked at every `--reload-delay` seconds (0.25, as in uvicorn) under each `--reload-dir` (this directory by default). The server gets a graceful stop before the build, since Windows will not overwrite a running executable. A build that fails shows its errors and waits for the next save. Stopping `mctl` stops the server.
+
 ## From spec to code
 
 Given this `.api` spec:

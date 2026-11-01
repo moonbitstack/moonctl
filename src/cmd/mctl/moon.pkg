@@ -4,6 +4,7 @@
 // itself stays dependency-free and all-backend.
 import {
   "moonbitstack/moonctl",
+  "moonbitstack/moonctl/cli",
   "moonbitstack/moonctl/reflect",
   "moonbitstack/moonctl/internal/text",
   "moonbitstack/moonsqlite" @sqlite,

@@ -132,3 +132,75 @@ test "env and bug reports carry the environment" {
   assert_eq(has(report, "| mctl | 0.12.1 |"), true)
   assert_eq(has(report, "| moon | 0.6.20 |"), true)
 }
+
+///|
+test "serve takes a package, its reload flags, and passes the rest to the server" {
+  let plan = parse_serve([
+    "src/main", "--reload", "--reload-dir", "src", "--reload-dir", "etc", "--reload-delay",
+    "0.5", "--", "--port", "9000", "--reload",
+  ])
+  assert_eq(plan.pkg, "src/main")
+  assert_true(plan.reload)
+  assert_eq(plan.dirs, ["src", "etc"])
+  assert_eq(plan.delay, 500)
+  assert_eq(plan.args, ["--port", "9000", "--reload"])
+}
+
+///|
+test "serve starts from uvicorn's defaults, without reloading" {
+  let plan = parse_serve([])
+  assert_eq(plan.pkg, ".")
+  assert_false(plan.reload)
+  assert_eq(plan.dirs, reload_dirs)
+  assert_eq(plan.delay, reload_delay)
+  assert_eq(plan.args, [])
+}
+
+///|
+test "serve refuses what it does not understand" {
+  for
+    bad in [
+      ["--nope"],
+      ["a", "b"],
+      ["--reload-delay"],
+      ["--reload-delay", "soon"],
+      ["--reload-delay", "0"],
+      ["--reload-dir"],
+    ] {
+    let refused = try {
+      parse_serve(bad) |> ignore
+      false
+    } catch {
+      _ => true
+    }
+    assert_true(refused)
+  }
+}
+
+///|
+test "serve watches sources and manifests, and skips what the build writes" {
+  for name in ["main.mbt", "pkg.generated.mbti", "moon.pkg", "moon.mod"] {
+    assert_true(is_watched(name))
+  }
+  for name in ["README.md", "main.o", "moon.lock"] {
+    assert_false(is_watched(name))
+  }
+  for dir in ["_build", "a/_build", "target", "./.git", ".mooncakes"] {
+    assert_true(is_skipped(dir))
+  }
+  for dir in [".", "..", "src", "./src/main"] {
+    assert_false(is_skipped(dir))
+  }
+}
+
+///|
+test "serve finds the executable in what moon run prints" {
+  assert_eq(
+    built_binary(
+      "{\"artifacts_path\":[\"_build/native/debug/build/main/main.exe\"]}",
+    ),
+    Some("_build/native/debug/build/main/main.exe"),
+  )
+  assert_eq(built_binary("{\"artifacts_path\":[]}"), None)
+  assert_eq(built_binary("not json"), None)
+}

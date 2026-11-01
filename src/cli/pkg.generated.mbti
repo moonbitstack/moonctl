@@ -4,6 +4,8 @@ package "moonbitstack/moonctl/cli"
 // Values
 pub fn bug_report(String, String, Array[(String, String)]) -> String
 
+pub fn built_binary(String) -> String?
+
 pub fn command_names() -> Array[String]
 
 pub fn commands() -> Array[Command]
@@ -24,15 +26,25 @@ pub fn env_report(String, Array[(String, String)]) -> String
 
 pub fn find_template(String) -> TemplateEntry?
 
+pub fn is_skipped(String) -> Bool
+
+pub fn is_watched(String) -> Bool
+
 pub fn migrate_config(String) -> (String, Array[String])
 
 pub fn mod_pins(String) -> Array[(String, String)]
 
 pub fn parse_config(String) -> Config
 
+pub fn parse_serve(ArrayView[String]) -> Serve raise
+
 pub fn pin_module(String, String, String) -> (String, String?)
 
 pub fn pinned_version(String, String) -> String?
+
+pub let reload_delay : Int32
+
+pub let reload_dirs : Array[String]
 
 pub fn subcommands(String) -> Array[String]
 
@@ -64,6 +76,14 @@ pub(all) struct Config {
   branch : String
   style : String
   templates : Array[String]
+}
+
+pub(all) struct Serve {
+  pkg : String
+  reload : Bool
+  dirs : Array[String]
+  delay : Int32
+  args : Array[String]
 }
 
 pub(all) struct TemplateEntry {

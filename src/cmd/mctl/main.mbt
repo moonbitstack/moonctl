@@ -504,6 +504,9 @@ async fn main {
   for i = 1; i < argv.length(); i = i + 1 {
     rest.push(argv[i])
   }
+  if rest.length() > 0 && rest[0] == "serve" {
+    return cmd_serve(tail(rest, 1))
+  }
   let (rest, write) = take_write_flag(rest)
   let (args, opts) = split_flags(rest)
   let n = args.length()

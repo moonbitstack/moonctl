@@ -17,6 +17,11 @@ pub(all) struct Command {
 pub fn commands() -> Array[Command] {
   [
     {
+      name: "serve",
+      usage: "mctl serve [package] [--reload] [--reload-dir dir] [--reload-delay seconds] [-- args]",
+      summary: "build a server and run it, and with --reload do it again whenever a source changes",
+    },
+    {
       name: "gen",
       usage: "mctl gen <api|rpc|model|crud|doc|gql|agent> <file>",
       summary: "generate a project tree, models or a document from a spec",
