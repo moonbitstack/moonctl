@@ -6,7 +6,7 @@ pub fn route_path(path : String) -> String {
   .split("/")
   .map(seg => {
     if seg.has_prefix(":") {
-      "{" + seg.view(start_offset=1).to_owned() + "}"
+      "{" + seg.exact_view(start=1).to_owned() + "}"
     } else {
       seg.to_owned()
     }
