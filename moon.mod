@@ -1,6 +1,6 @@
 name = "moonbitstack/moonctl"
 
-version = "0.12.5"
+version = "0.12.6"
 
 readme = "README.md"
 
@@ -11,11 +11,26 @@ license = "Apache-2.0"
 keywords = [
   "goctl",
   "codegen",
+  "code-generator",
+  "generator",
   "scaffold",
-  "api",
-  "moonapi",
-  "moonbit",
+  "scaffolding",
   "cli",
+  "api",
+  "dsl",
+  "openapi",
+  "grpc",
+  "protobuf",
+  "graphql",
+  "model",
+  "orm",
+  "sql",
+  "plugin",
+  "template",
+  "microservice",
+  "moonapi",
+  "moonzero",
+  "moonbit",
 ]
 
 description = "Project and code generator for MoonBit services."
