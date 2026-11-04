@@ -93,6 +93,8 @@ def collect_docs(directory):
                 pending.append(content.rstrip())
                 in_doc = True
                 continue
+            if line.startswith("#"):
+                continue
             if in_doc and pending:
                 m = DECL_RE.match(line)
                 if m:
@@ -121,6 +123,10 @@ def parse_value(block):
 
 
 def parse_type(block):
+    derive = ""
+    if block[0].startswith("#derive("):
+        derive = block[0][len("#derive("):].rstrip(")").strip()
+        block = block[1:]
     head = block[0]
     m = TYPE_OPEN_RE.match(head)
     if not m:
@@ -133,9 +139,6 @@ def parse_type(block):
             close = i
     body = block[1:close] if close else []
     tail = block[close:] if close else []
-    derive = ""
-    if tail and "derive(" in tail[0]:
-        derive = tail[0].split("derive(", 1)[1].rstrip(")").strip()
     methods, impls = [], []
     for line in tail[1:]:
         if line.startswith("pub fn"):
@@ -191,7 +194,7 @@ def parse_package(path):
     for block in blocks(sections.get("Types and methods", [])):
         if not block:
             continue
-        if TYPE_OPEN_RE.match(block[0]):
+        if TYPE_OPEN_RE.match(block[0]) or block[0].startswith("#derive("):
             item = parse_type(block)
             if item:
                 types.append(item)
