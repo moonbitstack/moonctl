@@ -486,7 +486,7 @@ let sql = @moonctl.generate_migrations(spec)
 
 A document store is not a table with a different name, and a Mongo driver is not a
 dependency generated code should have to carry. So `mctl model mongo` writes each
-`type` block as a document — a struct with `derive(FromJson, ToJson)`, so a value
+`type` block as a document — a struct with `#derive(FromJson, ToJson)`, so a value
 round-trips without a hand-written field walker — and a typed repository over a
 three-call port:
 

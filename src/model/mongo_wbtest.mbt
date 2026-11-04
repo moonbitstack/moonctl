@@ -23,7 +23,7 @@ test "a type block becomes a document and a typed repository" {
   // the document, derived both ways, with the explicit extends that keep the
   // derived methods off the struct
   assert_eq(has(out, "pub(all) struct UserDoc {"), true)
-  assert_eq(has(out, "} derive(FromJson, ToJson)"), true)
+  assert_eq(has(out, "#derive(FromJson, ToJson)\npub(all) struct"), true)
   assert_eq(
     has(out, "pub extend UserDoc with @json.FromJson::{from_json}"),
     true,

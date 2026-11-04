@@ -229,10 +229,11 @@ pub fn orders_delete_by_id(sess : @moonorm.Session, id : Int64) -&gt; @moondb.Ex
   run : (MongoOp, Json, Json) -&gt; Json raise MongoError
 }
 
+#derive(FromJson, ToJson)
 pub(all) struct LoginReqDoc {
   username : String
   password : String
-} derive(FromJson, ToJson)
+}
 
 pub fn LoginReqRepo::find(
   self : LoginReqRepo,

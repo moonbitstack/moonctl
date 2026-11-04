@@ -8,7 +8,7 @@
 // A driver binds it in a dozen lines, and everything above it is generated and
 // typed.
 //
-// The document itself is a `struct` with `derive(FromJson, ToJson)`, which is what
+// The document itself is a `struct` with `#derive(FromJson, ToJson)`, which is what
 // makes a value round-trip through the store without a hand-written field walker
 // per type. Its keys are the MoonBit field names — the spec's names in
 // `snake_case` — so a `json:"…"` tag renames the wire form, not the stored one.
@@ -154,14 +154,14 @@ fn emit_document(
     name +
     "` as the `" +
     collection +
-    "` collection stores it.\npub(all) struct " +
+    "` collection stores it.\n#derive(FromJson, ToJson)\npub(all) struct " +
     doc +
     " {\n"
   for f in fields {
     out = out + "  " + f.mbt_name() + " : " + doc_field(f, names) + "\n"
   }
   out = out +
-    "} derive(FromJson, ToJson)\n\n" +
+    "}\n\n" +
     "///|\n/// `" +
     doc +
     "` reads (and writes) itself as a document; the explicit `extend` is what keeps\n/// the derived method from being promoted onto the struct as well.\npub extend " +

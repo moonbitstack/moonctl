@@ -86,9 +86,10 @@ fn client_src(proto : @proto.Proto) -> String {
     #|
     #|///|
     #|/// A call the server ended with a non-OK gRPC status.
+    #|#derive(Debug)
     #|pub(all) suberror CallError {
     #|  CallError(code~ : Int32, message~ : String)
-    #|} derive(Debug)
+    #|}
     #|
     #|///|
     #|pub extend CallError with Debug::{to_repr}
