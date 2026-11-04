@@ -2,6 +2,7 @@
 package "moonbitstack/moonctl"
 
 import {
+  "moonbitlang/core/json",
   "moonbitstack/moonctl/api",
   "moonbitstack/moonctl/cli",
   "moonbitstack/moonctl/client",
@@ -51,7 +52,7 @@ pub fn format(String) -> String
 
 pub fn gateway_file_name(String) -> String
 
-pub fn gen_files_to_json(Array[@plugin.GenFile]) -> Json
+pub fn gen_files_to_json(Array[@plugin.GenFile]) -> @json.Json
 
 pub fn generate(@api.Spec, template? : String) -> String raise @template.TemplateError
 
@@ -107,7 +108,7 @@ pub fn mod_pins(String) -> Array[(String, String)]
 
 pub fn mongo_file_name(String) -> String
 
-pub fn openapi_document(@api.Spec, version? : @doc.DocVersion, title? : String, api_version? : String) -> Json
+pub fn openapi_document(@api.Spec, version? : @doc.DocVersion, title? : String, api_version? : String) -> @json.Json
 
 pub fn parse(String) -> @api.Spec raise @api.SpecError
 
@@ -119,7 +120,7 @@ pub fn parse_ddl(String) -> Array[@model.DdlTable]
 
 pub fn parse_dsn(String) -> @model.DataSource raise @model.DataSourceError
 
-pub fn parse_gen_files(Json) -> Array[@plugin.GenFile]
+pub fn parse_gen_files(@json.Json) -> Array[@plugin.GenFile]
 
 pub fn parse_lenient(String) -> @api.Spec
 
@@ -135,7 +136,7 @@ pub let pins : Map[String, String]
 
 pub fn plugin_argv(String) -> (String, Array[String])
 
-pub fn plugin_from_json(Json) -> @plugin.Plugin
+pub fn plugin_from_json(@json.Json) -> @plugin.Plugin
 
 pub fn plugin_plan(Array[@plugin.GenFile]) -> (Array[@plugin.GenFile], Array[String])
 
@@ -165,9 +166,9 @@ pub fn scaffold_model(String) -> Array[@plugin.GenFile]
 
 pub fn scaffold_rpc(String) -> Array[@plugin.GenFile]
 
-pub fn spec_from_json(Json) -> @api.Spec
+pub fn spec_from_json(@json.Json) -> @api.Spec
 
-pub fn spec_to_json(@api.Spec) -> Json
+pub fn spec_to_json(@api.Spec) -> @json.Json
 
 pub fn spec_to_value(@api.Spec) -> @template.Value
 

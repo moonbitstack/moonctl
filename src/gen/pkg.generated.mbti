@@ -2,6 +2,7 @@
 package "moonbitstack/moonctl/gen"
 
 import {
+  "moonbitlang/core/json",
   "moonbitstack/moonctl/api",
   "moonbitstack/moonctl/template",
 }
@@ -15,7 +16,7 @@ pub fn generate_with(@api.Spec, String) -> String raise @template.TemplateError
 
 pub fn group_note(@api.Group) -> String
 
-pub fn number_json(String) -> Json
+pub fn number_json(String) -> @json.Json
 
 pub fn render_structs(Array[@api.TypeDef]) -> String
 

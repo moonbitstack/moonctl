@@ -2,11 +2,12 @@
 /// Target OpenAPI / Swagger document version. mctl emits every mainstream version
 /// from one `.api` spec — the same shape moonapi's runtime emitter takes, so a
 /// generated service and a hand-built moonapi app document the same way.
+#derive(Eq)
 pub(all) enum DocVersion {
   Swagger20
   OpenApi30
   OpenApi31
-} derive(Eq)
+}
 
 ///|
 pub extend DocVersion with Eq::{equal, not_equal}

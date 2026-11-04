@@ -40,10 +40,11 @@ pub fn tree_plan(Array[TreeFile], (String) -> Bool) -> Array[@plugin.GenFile]
 // Errors
 
 // Types and methods
+#derive(Eq)
 pub(all) enum Regen {
   Always
   Once
-} derive(Eq)
+}
 pub fn Regen::equal(Self, Self) -> Bool
 pub fn Regen::not_equal(Self, Self) -> Bool
 

@@ -51,11 +51,12 @@ fn last_segment(s : String) -> String {
 ///|
 /// Whether a field holds one value, a list, or a map with proto key and value
 /// types.
+#derive(Eq, Debug)
 pub(all) enum Label {
   Single
   Repeated
   MapOf(key~ : String, value~ : String)
-} derive(Eq, Debug)
+}
 
 ///|
 pub extend Label with Debug::{to_repr}

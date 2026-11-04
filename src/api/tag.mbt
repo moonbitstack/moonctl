@@ -9,12 +9,13 @@
 /// Where a field's value is bound from (← goctl's struct tags): the request body
 /// (`json:`, and an untagged field), the query string (`form:`), a URL segment
 /// (`path:`), or a request header (`header:`).
+#derive(Eq)
 pub(all) enum Bind {
   Body
   Query
   Path
   Header
-} derive(Eq)
+}
 
 ///|
 pub extend Bind with Eq::{equal, not_equal}
@@ -23,12 +24,13 @@ pub extend Bind with Eq::{equal, not_equal}
 /// A `range=` constraint, e.g. `range=[1:120]` or `range=(0:]`. Each bound is
 /// written as the spec wrote it and is empty when that end is open; `lo_inc` /
 /// `hi_inc` say whether the bracket was inclusive (`[` `]`) or exclusive (`(` `)`).
+#derive(Eq)
 pub(all) struct Range {
   lo : String
   hi : String
   lo_inc : Bool
   hi_inc : Bool
-} derive(Eq)
+}
 
 ///|
 pub extend Range with Eq::{equal, not_equal}

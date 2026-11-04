@@ -9,10 +9,11 @@
 /// How bad a finding is: `Error` means the generated code would not compile or
 /// would not match the spec, `Warning` means it would compile but probably is not
 /// what the author meant.
+#derive(Eq)
 pub(all) enum Severity {
   Error
   Warning
-} derive(Eq)
+}
 
 ///|
 pub extend Severity with Eq::{equal, not_equal}

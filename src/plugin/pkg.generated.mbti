@@ -2,17 +2,18 @@
 package "moonbitstack/moonctl/plugin"
 
 import {
+  "moonbitlang/core/json",
   "moonbitstack/moonctl/api",
 }
 
 // Values
-pub fn gen_files_to_json(Array[GenFile]) -> Json
+pub fn gen_files_to_json(Array[GenFile]) -> @json.Json
 
-pub fn parse_gen_files(Json) -> Array[GenFile]
+pub fn parse_gen_files(@json.Json) -> Array[GenFile]
 
 pub fn plugin_argv(String) -> (String, Array[String])
 
-pub fn plugin_from_json(Json) -> Plugin
+pub fn plugin_from_json(@json.Json) -> Plugin
 
 pub fn plugin_plan(Array[GenFile]) -> (Array[GenFile], Array[String])
 
@@ -20,9 +21,9 @@ pub fn plugin_request(@api.Spec, api_file_path? : String, style? : String, dir? 
 
 pub fn safe_path(String) -> Bool
 
-pub fn spec_from_json(Json) -> @api.Spec
+pub fn spec_from_json(@json.Json) -> @api.Spec
 
-pub fn spec_to_json(@api.Spec) -> Json
+pub fn spec_to_json(@api.Spec) -> @json.Json
 
 // Errors
 

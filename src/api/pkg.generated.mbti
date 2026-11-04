@@ -39,12 +39,13 @@ pub suberror SpecError {
 }
 
 // Types and methods
+#derive(Eq)
 pub(all) enum Bind {
   Body
   Query
   Path
   Header
-} derive(Eq)
+}
 pub fn Bind::equal(Self, Self) -> Bool
 pub fn Bind::not_equal(Self, Self) -> Bool
 
@@ -82,12 +83,13 @@ pub(all) struct Group {
   extra : Array[(String, String)]
 }
 
+#derive(Eq)
 pub(all) struct Range {
   lo : String
   hi : String
   lo_inc : Bool
   hi_inc : Bool
-} derive(Eq)
+}
 pub fn Range::equal(Self, Self) -> Bool
 pub fn Range::not_equal(Self, Self) -> Bool
 
@@ -101,10 +103,11 @@ pub(all) struct Route {
   group : Group?
 }
 
+#derive(Eq)
 pub(all) enum Severity {
   Error
   Warning
-} derive(Eq)
+}
 pub fn Severity::equal(Self, Self) -> Bool
 pub fn Severity::not_equal(Self, Self) -> Bool
 

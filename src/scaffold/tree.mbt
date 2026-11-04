@@ -16,10 +16,11 @@
 /// Whether a regeneration may replace a file that is already on disk. `Always` is
 /// for what moonctl owns — the routes and the types, which must follow the spec —
 /// and `Once` for what it only seeds: handlers, logic, configuration, manifests.
+#derive(Eq)
 pub(all) enum Regen {
   Always
   Once
-} derive(Eq)
+}
 
 ///|
 pub extend Regen with Eq::{equal, not_equal}
