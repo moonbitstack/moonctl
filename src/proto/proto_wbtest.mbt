@@ -153,7 +153,7 @@ test "parse a proto enum and generate a MoonBit enum with its int mapping" {
   let code = generate_grpc(proto)
   assert_eq(contains(code, "pub(all) enum Light {"), true)
   assert_eq(contains(code, "  RED\n"), true)
-  assert_eq(contains(code, "} derive(Eq, Debug)"), true)
+  assert_eq(contains(code, "#derive(Eq, Debug)\npub(all) enum Light {"), true)
   assert_eq(
     contains(code, "pub fn Light::to_int(self : Light) -> Int32 {"),
     true,

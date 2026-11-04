@@ -665,9 +665,9 @@ fn rpc_out(r : Rpc) -> String {
 }
 
 ///|
-/// The close of a generated type with `Eq` and `Debug`, exported as methods.
+/// The close of a generated type, with its `Eq` and `Debug` exported as methods.
 fn derived(name : String) -> String {
-  "} derive(Eq, Debug)\n\n///|\npub extend " +
+  "}\n\n///|\npub extend " +
   name +
   " with Debug::{to_repr}\n\n///|\npub extend " +
   name +
@@ -687,7 +687,7 @@ pub fn generate_grpc(proto : Proto) -> String {
     out = out +
       "///|\n/// `" +
       e.name +
-      "` enum (generated from the `.proto` `enum` block).\npub(all) enum " +
+      "` enum (generated from the `.proto` `enum` block).\n#derive(Eq, Debug)\npub(all) enum " +
       e.name +
       " {\n"
     for v in e.values {
@@ -735,7 +735,7 @@ pub fn generate_grpc(proto : Proto) -> String {
         m.name +
         "." +
         o.name +
-        "` oneof: exactly one variant is set.\npub(all) enum " +
+        "` oneof: exactly one variant is set.\n#derive(Eq, Debug)\npub(all) enum " +
         ename +
         " {\n"
       for v in o.variants {
@@ -746,7 +746,7 @@ pub fn generate_grpc(proto : Proto) -> String {
     out = out +
       "///|\n/// `" +
       m.name +
-      "` message (generated from the `.proto` `message` block).\npub(all) struct " +
+      "` message (generated from the `.proto` `message` block).\n#derive(Eq, Debug)\npub(all) struct " +
       m.name +
       " {\n"
     for f in m.fields {
