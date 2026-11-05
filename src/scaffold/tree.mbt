@@ -291,13 +291,14 @@ pub fn generate_tree(
 /// text parsers when it also holds binders.
 fn types_imports(spec : @api.Spec, binders : String) -> Array[(String, String)] {
   let out : Array[(String, String)] = []
+  // A struct carries derived JSON impls, and nothing else, when no route binds it:
+  // the framework and the text parsers are imported only by the binders.
   if spec.types.length() > 0 {
-    out.push(("moonbitstack/moonapi", ""))
     out.push(("moonbitlang/core/json", ""))
   }
   if binders != "" {
+    out.push(("moonbitstack/moonapi", ""))
     if spec.types.length() == 0 {
-      out.push(("moonbitstack/moonapi", ""))
       out.push(("moonbitlang/core/json", ""))
     }
     out.push(("moonbitlang/core/string", ""))

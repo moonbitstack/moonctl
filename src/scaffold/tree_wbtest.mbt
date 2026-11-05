@@ -528,3 +528,24 @@ test "a request type nobody binds is not imported" {
     false,
   )
 }
+
+///|
+test "a types package with no binder imports only JSON" {
+  let spec = @api.parse(
+    (
+      #|type Unused {
+      #|  id: int
+      #|}
+      #|
+      #|service greet {
+      #|  get /ping ping
+      #|}
+    ),
+  )
+  let pkg = tree_at(generate_tree(spec), "internal/types/moon.pkg")
+  // the structs need the derived JSON impls and nothing else; an unused import
+  // fails `moon check --deny-warn` in a generated project
+  assert_eq(contains(pkg, "\"moonbitlang/core/json\","), true)
+  assert_eq(contains(pkg, "moonbitstack/moonapi"), false)
+  assert_eq(contains(pkg, "moonbitlang/core/string"), false)
+}
