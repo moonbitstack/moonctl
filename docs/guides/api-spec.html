@@ -269,6 +269,49 @@ get /ping</pre>
         — which is the older one-line spelling. Both parse; <code>format</code> keeps whichever
         the file used.
       </p>
+      <p>
+        The generated handler reads the request the way the type's tags say: a
+        <code>path</code> field out of a URL segment, <code>form</code> off the query string,
+        <code>header</code> off the request, everything else out of the JSON body. What it
+        could not read answers <code>400</code> with the field named; a route that declares
+        <code>returns (T)</code> has its logic return <code>Result[T, String]</code>, and the
+        handler writes the value as JSON.
+      </p>
+
+      <h2 id="services">More than one service <a class="anchor" href="#services">#</a></h2>
+      <p>
+        A file may hold several <code>service</code> blocks. Each is a service of its own, and
+        the generated route table registers them one at a time, in the order the spec declared
+        them:
+      </p>
+      <div class="code">
+        <div class="code-head"><span class="file">two services</span><button class="copy" type="button" data-copy>Copy</button></div>
+<pre>service catalog {
+  @handler list
+  get /items
+}
+
+service admin {
+  @handler purge
+  delete /items/:id
+}</pre>
+      </div>
+      <div class="code">
+        <div class="code-head"><span class="file">internal/handler/routes.mbt</span><button class="copy" type="button" data-copy>Copy</button></div>
+<pre>pub fn register_catalog(app : @moonapi.App, svc : @svc.ServiceContext) -> @moonapi.App { … }
+pub fn register_admin(app : @moonapi.App, svc : @svc.ServiceContext) -> @moonapi.App { … }
+
+pub fn register_handlers(app : @moonapi.App, svc : @svc.ServiceContext) -> @moonapi.App {
+  let app = register_catalog(app, svc)
+  register_admin(app, svc)
+}</pre>
+      </div>
+      <p>
+        Two blocks declaring the same name are one service — that is how a spec gives each part
+        of a service its own <code>@server</code> annotations. <code>services</code> on the
+        parsed spec keeps the blocks apart; <code>routes</code> is the same routes flattened in
+        file order.
+      </p>
 
       <h2 id="imports">More than one file <a class="anchor" href="#imports">#</a></h2>
       <p>A spec may pull in another, or a group of them:</p>

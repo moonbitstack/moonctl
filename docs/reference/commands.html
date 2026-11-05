@@ -155,9 +155,13 @@
         </table>
       </div>
       <p>
-        The three library flags reach the configuration and the <code>env</code> report, but the
-        generator still reads the bundled catalogue; see
-        <a href="../getting-started/installation.html#configuration">Configuration</a>.
+        The three library flags choose where <code>gen api</code> reads its templates from: a
+        directory laid out like the catalogue for <code>--home</code>, a checkout of
+        <code>--remote</code> at <code>--branch</code> for a shared one. A file's path and its
+        text are both rendered over the parsed spec, so <code>{{.service}}.mbt</code> becomes
+        the entry point of the service the spec describes. <code>--home</code> wins when both
+        are given, and the <code>home</code> in the configuration file is used when neither is;
+        see <a href="../getting-started/installation.html#configuration">Configuration</a>.
       </p>
 
       <h2 id="templates">The template catalogue <a class="anchor" href="#templates"></a></h2>
@@ -182,7 +186,19 @@
         </table>
       </div>
       <p class="note-line">The command prints the same rows as a Markdown table.</p>
-      <p><code>mctl template show api-service</code> prints one entry; <code>mctl template init</code> writes the library into a directory to edit, and is not implemented yet.</p>
+      <p>
+        <code>mctl template show api-service</code> prints one entry;
+        <code>mctl template init &lt;dir&gt;</code> writes a starter library into a directory to
+        edit — a <code>moon.mod</code>, a <code>moon.pkg</code> and one file per service that
+        generates, compiles and answers every route with <code>200</code> until the bodies are
+        filled in.
+      </p>
+      <div class="term">
+        <div class="term-bar"><span class="dots"><i></i><i></i><i></i></span>terminal</div>
+<pre><span class="p">$</span> mctl template init my-templates
+<span class="p">$</span> mctl gen api greet.api --home my-templates --dir out
+<span class="o">mctl: wrote 4 file(s) from greet.api through the template library at my-templates</span></pre>
+      </div>
 
       <h2 id="library">The library behind it <a class="anchor" href="#library"></a></h2>
       <p>
@@ -201,6 +217,7 @@
           <tbody>
             <tr><td><code>parse</code>, <code>parse_all</code></td><td>a <code>Spec</code> from one file, or from a file and the sources it imports</td></tr>
             <tr><td><code>generate</code>, <code>generate_tree</code></td><td>a scaffold as text, or as a tree of files</td></tr>
+            <tr><td><code>render_template_dir</code>, <code>render_template_file</code></td><td>a template library's files, rendered over a spec</td></tr>
             <tr><td><code>format</code>, <code>validate</code>, <code>validate_files</code></td><td>the canonical text, and the findings for a spec</td></tr>
             <tr><td><code>generate_client</code>, <code>client_file</code></td><td>a typed client in one of four languages</td></tr>
             <tr><td><code>generate_markdown</code>, <code>generate_migrations</code></td><td>the Markdown reference, the migration SQL</td></tr>

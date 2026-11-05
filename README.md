@@ -111,6 +111,37 @@ pub fn login(_ctx : @moonapi.Context) -> @moonasgi.Response {
 
 `group`, `prefix`, `jwt`, `middleware`, `maxBytes`, `timeout` and `signature` are read into a `Group`; any other annotation the block carried is kept in `Group::extra`, for a template or plugin to use.
 
+## More than one service
+
+A file may hold several `service` blocks. Each one is a service of its own: its routes stay together, and the generated route table registers them one service at a time, in the order the spec declared them.
+
+```
+service catalog {
+  @handler list
+  get /items
+
+  @handler create
+  post /items (CreateReq) returns (ItemResp)
+}
+
+service admin {
+  @handler purge
+  delete /items/:id
+}
+```
+
+```moonbit
+pub fn register_catalog(app : @moonapi.App, svc : @svc.ServiceContext) -> @moonapi.App { … }
+pub fn register_admin(app : @moonapi.App, svc : @svc.ServiceContext) -> @moonapi.App { … }
+
+pub fn register_handlers(app : @moonapi.App, svc : @svc.ServiceContext) -> @moonapi.App {
+  let app = register_catalog(app, svc)
+  register_admin(app, svc)
+}
+```
+
+Two blocks declaring the same name are one service: that is how a spec splits a service so each part gets its own `@server` annotations. `Spec::services` lists the blocks; `Spec::routes` is the same routes flattened in file order, for the generators that do not care which block a route came from.
+
 ## Struct tags
 
 A field's back-tick tag says where its value comes from and what it has to look like, the way goctl borrowed it from Go:
@@ -131,6 +162,30 @@ type ListReq {
 pub fn ListReq::with_defaults(self : ListReq) -> ListReq { … }  // fills in every default=
 pub fn ListReq::check(self : ListReq) -> String? { … }          // the first field that fails
 ```
+
+### The handler reads the request
+
+The generated handler fills the request type in from exactly the places its tags name, and hands it to the logic:
+
+```moonbit
+pub fn createhandler(
+  svc : @svc.ServiceContext,
+  ctx : @moonapi.Context,
+) -> @moonasgi.Response {
+  let req = match @types.bind_create_req(ctx) {
+    Ok(req) => req
+    Err(why) => return @moonapi.text(400, why)
+  }
+  match @logic.createlogic(svc, req) {
+    Ok(reply) => @moonapi.json(200, ToJson::to_json(reply)),
+    Err(why) => @moonapi.text(501, why),
+  }
+}
+```
+
+`bind_create_req` is generated beside the struct, in `internal/types`: a `path` field comes from the URL segment, `form` from the query string, `header` from the request, and everything else from the JSON body. It returns the first thing it could not read — `missing header "X-Trace"`, `form "page": want Int32` — so a bad request answers `400` with the field named instead of reaching the logic half-filled. A field declared `optional` (or written `note?: string`) stays absent rather than failing the request.
+
+A route that declares `returns (T)` gets a logic function returning `Result[T, String]`: the handler writes `T` as JSON, or answers `501` with the message while the body is still `TODO`. A route with no response type keeps the plain `@moonasgi.Response` shape, which is what a handler writing its own status and body wants.
 
 A block can inline another by naming it on a line of its own (`Base`), and a nested `Inner { … }` becomes a type of its own named `OuterInner` — MoonBit has neither embedding nor anonymous structs, so an inlined block's fields are written out where they belong. A field is spelled `snake_case` in every generated MoonBit name, because `UserName` is not a MoonBit struct field; `json_name` is the wire side of the same field.
 
@@ -238,6 +293,8 @@ As the `mctl` command-line tool (native binary):
 $ mctl gen api   greet.api                 # -> a moonapi project tree (etc/, internal/…)
 $ mctl gen api   greet.api --style go_zero --dir out
 $ mctl gen api   greet.api --flat          # -> greet.mbt (one file, as before)
+$ mctl gen api   greet.api --home my/templates --dir out   # -> through your own template library
+$ mctl gen api   greet.api --remote https://… --branch main --dir out
 $ mctl gen rpc   greet.proto               # -> a moonrpc project tree (pb/, internal/…, client/)
 $ mctl gen rpc   greet.proto --flat        # -> greet_grpc.mbt (messages, codecs, handler tables)
 $ mctl gen gql   greet.api                 # -> a moongql project tree (internal/schema, …)
@@ -375,6 +432,14 @@ The four services share goctl's layout. Files marked `DO NOT EDIT` belong to mct
 | generated | `internal/types`, `internal/handler/routes.mbt` | `pb/`, `internal/server`, `client/<name>client.mbt` | `internal/schema` |
 | the author's | `internal/handler/*`, `internal/logic/*` | `internal/logic/*` | `internal/logic/resolvers.mbt` |
 | test | the routes through `TestClient` | `Ping` over a real socket | a `{ ping }` query |
+
+Every client call comes in two forms. A unary RPC is one function; a server-streaming RPC also gets `<call>_take`, which reads `count` messages and returns as soon as they are on the wire instead of waiting for the server to close the stream — the form a subscription that never ends needs:
+
+```moonbit
+let client = @client.CatalogClient::new(@net.Channel::connect("127.0.0.1", 12000))
+let page = client.list(@pb.ListReq::{ page: 1 })          // every message, then return
+let first = client.list_take(@pb.ListReq::{ page: 1 }, 1) // one message, at once
+```
 
 For every message, `pb/` has `encode` and `decode` in protobuf wire form, checked against Google's runtime in both directions. Every service gets a record with one function per RPC and `handlers()`, its RPCs keyed by `:path` for `GrpcServer`. A request that does not decode ends the call with `INVALID_ARGUMENT`.
 
@@ -544,7 +609,7 @@ completable and documented by being added once.
 | --- | --- |
 | `mctl help` | the command table, with the flags every generator shares |
 | `mctl completion <shell>` | a completion script for bash, zsh, fish or pwsh, generated from the table |
-| `mctl template list` / `show <name>` | the bundled template library, and what one entry produces |
+| `mctl template list` / `show <name>` / `init <dir>` | the bundled template library, what one entry produces, and a starter library to edit |
 | `mctl config list|get|set|path|migrate` | the `key = value` file mctl reads before it starts |
 | `mctl env` | what mctl resolved — home, remote, branch, style — and where from |
 | `mctl bug [title]` | a bug report pre-filled with the environment |
@@ -558,8 +623,14 @@ completable and documented by being added once.
 
 The template library is reached three ways, as in goctl: the bundled defaults, a
 `--home <dir>` of your own, or `--remote <url> --branch <name>` for a shared one.
-`config` keeps the choice between runs, and `--home` / `--remote` / `--branch` win
-over it for a single run.
+A library is a directory of files with `{{.…}}` holes in them, at the same paths the
+catalogue names — `api/service/moon.mod`, `api/service/{{.service}}.mbt` — and both
+the path and the text are rendered over the parsed spec. `mctl template init <dir>`
+writes a starter that generates and compiles, to edit from there.
+
+`config` keeps the `home` between runs, so a team sets it once; a flag on the
+command line wins over it. `--remote` is never taken from the config — checking a
+repository out is a decision, not a default.
 
 ```console
 $ mctl config set home ~/templates
