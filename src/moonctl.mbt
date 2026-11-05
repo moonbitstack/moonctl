@@ -117,7 +117,12 @@ pub using @doc {
 pub using @gql {generate_gql}
 
 ///|
-pub using @scaffold {generate_mcp_from_spec, mcp_skipped}
+pub using @scaffold {
+  generate_mcp_from_spec,
+  generate_orm_tree,
+  generate_orm_tree_from_ddl,
+  mcp_skipped,
+}
 
 ///|
 pub using @model {

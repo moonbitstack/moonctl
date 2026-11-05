@@ -216,12 +216,27 @@ async fn gen_rpc(input : String, opts : Opts) -> Unit {
 ///|
 /// Read a `.api` spec, parse its `type` blocks, and write moonorm models +
 /// `@moonorm.Table` descriptors to `<stem>_model.mbt`.
-async fn gen_model(input : String) -> Unit {
-  let out = replace_ext(input, ".api", "_model.mbt")
+async fn gen_model(input : String, opts : Opts) -> Unit {
   try {
-    let code = @moonctl.generate_model(read_spec(input))
-    @fs.write_file(out, code, create_mode=CreateOrTruncate)
-    println("mctl: generated " + out + " from " + input)
+    let spec = read_spec(input)
+    if opts.flat {
+      let out = replace_ext(input, ".api", "_model.mbt")
+      @fs.write_file(
+        out,
+        @moonctl.generate_model(spec),
+        create_mode=CreateOrTruncate,
+      )
+      println("mctl: generated " + out + " from " + input)
+      return
+    }
+    write_tree(
+      input,
+      @moonctl.generate_orm_tree(
+        spec,
+        style=@moonctl.Style::parse(opts.style),
+        dir=opts.dir,
+      ),
+    )
   } catch {
     e => println("mctl: error generating from " + input + ": " + e.to_string())
   }
@@ -300,15 +315,54 @@ async fn gen_agent(input : String) -> Unit {
 ///|
 /// Read a SQL DDL file, parse its `CREATE TABLE` statements, and write a moonorm
 /// data-access layer (models + typed CRUD) to `<stem>_model.mbt`.
-async fn gen_crud(input : String) -> Unit {
-  let out = replace_ext(input, ".sql", "_model.mbt")
+async fn gen_crud(input : String, opts : Opts) -> Unit {
   try {
     let source = @fs.read_file(input).text()
-    let code = @moonctl.generate_crud_from_ddl(source)
-    @fs.write_file(out, code, create_mode=CreateOrTruncate)
-    println("mctl: generated " + out + " from " + input)
+    if opts.flat {
+      let out = replace_ext(input, ".sql", "_model.mbt")
+      @fs.write_file(
+        out,
+        @moonctl.generate_crud_from_ddl(source),
+        create_mode=CreateOrTruncate,
+      )
+      println("mctl: generated " + out + " from " + input)
+      return
+    }
+    // The module is named after the schema file: a `.sql` file carries no name of
+    // its own the way a `.api` spec carries its service.
+    let tables = @moonctl.parse_ddl(source)
+    write_tree(
+      input,
+      @moonctl.generate_orm_tree_from_ddl(
+        tables,
+        @text.to_snake(file_stem(input)),
+        style=@moonctl.Style::parse(opts.style),
+        dir=opts.dir,
+      ),
+    )
   } catch {
     e => println("mctl: error generating from " + input + ": " + e.to_string())
+  }
+}
+
+///|
+/// `path` without its directory or its extension: `a/b/c.sql` is `c`.
+fn file_stem(path : String) -> String {
+  let mut start = 0
+  let mut i = 0
+  while i < path.length() {
+    let c = path[i]
+    if c == '/' || c == '\\' {
+      start = i + 1
+    }
+    i = i + 1
+  }
+  let name = path[start:].to_owned()
+  let dot = @text.index_of_str(name, ".")
+  if dot > 0 {
+    name[0:dot].to_owned()
+  } else {
+    name
   }
 }
 
@@ -685,11 +739,11 @@ async fn dispatch(what : String, file : String, opts : Opts) -> Unit {
   match what {
     "api" => gen_api(file, opts)
     "proto" | "rpc" => gen_rpc(file, opts)
-    "model" => gen_model(file)
+    "model" => gen_model(file, opts)
     "mongo" => model_mongo(file)
     "cache" => model_cache(file)
     "gateway" => gateway(file)
-    "crud" => gen_crud(file)
+    "crud" => gen_crud(file, opts)
     "doc" => gen_doc(file)
     "gql" => gen_gql(file, opts)
     "mcp" => gen_mcp(file, opts)

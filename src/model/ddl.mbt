@@ -405,14 +405,14 @@ fn emit_ddl_model(
 ///|
 /// Emit the `<vp>_up` / `<vp>_down` migration pair: create the table idempotently
 /// through the model, drop it by name.
-fn emit_ddl_migration(vp : String, sql : String) -> String {
+fn emit_ddl_migration(vp : String, sql : String, model_expr : String) -> String {
   "///|\n/// Migration up: create the `" +
   sql +
   "` table (idempotent).\npub fn " +
   vp +
   "_up(sess : @moonorm.Session) -> @moondb.ExecResult raise @moondb.DbError {\n  sess.create_table(" +
-  vp +
-  "_model, if_not_exists=true)\n}\n\n" +
+  model_expr +
+  ", if_not_exists=true)\n}\n\n" +
   "///|\n/// Migration down: drop the `" +
   sql +
   "` table.\npub fn " +
@@ -432,7 +432,22 @@ fn emit_ddl_crud(
   struct_name : String,
   vp : String,
   sql : String,
+  model_expr : String,
+  nullable_aware~ : Bool = false,
 ) -> String {
+  let bind = (c : DdlColumn, expr : String) => {
+    if nullable_aware && c.nullable && !c.primary_key {
+      // The annotated form declares a nullable column optional, so `None` has to
+      // travel as SQL `NULL` rather than as a value of the column's type.
+      "match " +
+      expr +
+      " {\n      Some(v) => " +
+      value_ctor(c.type_, "v") +
+      ",\n      None => @moondb.Null,\n    }"
+    } else {
+      value_ctor(c.type_, expr)
+    }
+  }
   let mut out = "///|\n/// Insert a `" +
     struct_name +
     "` record.\npub fn " +
@@ -440,8 +455,8 @@ fn emit_ddl_crud(
     "_insert(sess : @moonorm.Session, record : " +
     struct_name +
     ") -> @moondb.ExecResult raise @moondb.DbError {\n  sess.insert_record(" +
-    vp +
-    "_model, record)\n}\n\n"
+    model_expr +
+    ", record)\n}\n\n"
   out = out +
     "///|\n/// Every `" +
     sql +
@@ -450,8 +465,8 @@ fn emit_ddl_crud(
     "_all(sess : @moonorm.Session) -> Array[" +
     struct_name +
     "] raise @moondb.DbError {\n  sess.all(" +
-    vp +
-    "_model)\n}\n\n"
+    model_expr +
+    ")\n}\n\n"
   match single_pk(t) {
     None => out
     Some(pk) => {
@@ -468,10 +483,10 @@ fn emit_ddl_crud(
         ") -> " +
         struct_name +
         "? raise @moondb.DbError {\n  let rows = sess.fetch_as(" +
-        vp +
-        "_model, " +
-        vp +
-        "_model.select().where_(" +
+        model_expr +
+        ", " +
+        model_expr +
+        ".select().where_(" +
         @text.quote(pk.name) +
         ", \"=\", " +
         id_ctor +
@@ -499,7 +514,7 @@ fn emit_ddl_crud(
             ".set(" +
             @text.quote(c.name) +
             ", " +
-            value_ctor(c.type_, "record." + c.name) +
+            bind(c, "record." + c.name) +
             ")",
           )
         }
@@ -513,7 +528,7 @@ fn emit_ddl_crud(
           ".where_(" +
           @text.quote(pk.name) +
           ", \"=\", " +
-          value_ctor(pk.type_, "record." + pk.name) +
+          bind(pk, "record." + pk.name) +
           ")"
         out = out +
           "///|\n/// Update the `" +
@@ -547,10 +562,37 @@ pub fn generate_crud(tables : Array[DdlTable]) -> String {
     let sql = t.name
     out = out + emit_ddl_struct(t, struct_name)
     out = out + emit_ddl_model(t, struct_name, vp, sql)
-    out = out + emit_ddl_migration(vp, sql)
-    out = out + emit_ddl_crud(t, struct_name, vp, sql)
+    let model_expr = vp + "_model"
+    out = out + emit_ddl_migration(vp, sql, model_expr)
+    out = out + emit_ddl_crud(t, struct_name, vp, sql, model_expr)
   }
   out
+}
+
+///|
+/// The typed CRUD helpers for one table, against the model `model_expr` names.
+/// `nullable_aware` binds an optional field of a nullable column as SQL `NULL`,
+/// which is what the annotated form's optional types need.
+pub fn crud_for(
+  t : DdlTable,
+  model_expr : String,
+  nullable_aware~ : Bool = false,
+) -> String {
+  emit_ddl_crud(
+    t,
+    @text.to_pascal(t.name),
+    @text.to_snake(t.name),
+    t.name,
+    model_expr,
+    nullable_aware~,
+  )
+}
+
+///|
+/// The `<table>_up` / `<table>_down` migration pair for one table, against the
+/// model `model_expr` names.
+pub fn migration_for(t : DdlTable, model_expr : String) -> String {
+  emit_ddl_migration(@text.to_snake(t.name), t.name, model_expr)
 }
 
 ///|

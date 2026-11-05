@@ -4,7 +4,7 @@
 /// ints — none map onto one `@moondb.Value`). Only a type in this set gets a
 /// declared column, a `from_row` read, and a `to_columns` bind, so a model is only
 /// generated when every field is storable.
-fn storage_class(type_ : String) -> String? {
+pub fn storage_class(type_ : String) -> String? {
   match type_ {
     "Int32" => Some("IntType")
     "Int64" => Some("IntType")
@@ -90,7 +90,9 @@ pub fn generate_model(spec : @api.Spec) -> String {
     out = out + "}\n\n"
     let table = @text.to_snake(t.name)
     if all_storable(fields) {
-      out = out + emit_model(t.name, fields, table) + emit_migration(table)
+      out = out +
+        emit_model(t.name, fields, table) +
+        emit_migration(table, table + "_model")
     } else {
       let cols : Array[String] = []
       for f in fields {
@@ -172,17 +174,24 @@ fn emit_model(
 }
 
 ///|
+/// The `<table>_up` / `<table>_down` migration pair, against the model `model_expr`
+/// names — `user_model` for the flat generator, `User::model()` for an annotated one.
+pub fn migration_updown(table : String, model_expr : String) -> String {
+  emit_migration(table, model_expr)
+}
+
+///|
 /// Emit the `<table>_up` / `<table>_down` migration pair for a storable model:
 /// create the table idempotently, drop it. This is the explicit equivalent of an
 /// Alembic `upgrade()` / `downgrade()` revision.
-fn emit_migration(table : String) -> String {
+fn emit_migration(table : String, model_expr : String) -> String {
   "///|\n/// Migration up: create the `" +
   table +
   "` table (idempotent).\npub fn " +
   table +
   "_up(sess : @moonorm.Session) -> @moondb.ExecResult raise @moondb.DbError {\n  sess.create_table(" +
-  table +
-  "_model, if_not_exists=true)\n}\n\n" +
+  model_expr +
+  ", if_not_exists=true)\n}\n\n" +
   "///|\n/// Migration down: drop the `" +
   table +
   "` table.\npub fn " +

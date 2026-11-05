@@ -157,28 +157,20 @@ pub fn scaffold_gql(name : String) -> Array[@plugin.GenFile] {
 /// `generate_crud_from_ddl` as `gen crud`), and a README. goctl's `goctl model … new`.
 pub fn scaffold_model(name : String) -> Array[@plugin.GenFile] {
   let sql = sample_sql(name)
-  let model = @model.generate_crud_from_ddl(sql)
-  [
-    {
-      path: name + "/moon.mod",
-      content: mod_file(name, ["moonbitstack/moonorm", "moonbitstack/moondb"]),
-    },
-    { path: name + "/schema.sql", content: sql, },
-    {
-      path: name + "/src/moon.pkg",
-      content: pkg_file([
-        ("moonbitstack/moonorm", ""),
-        ("moonbitstack/moondb", ""),
-      ]),
-    },
-    { path: name + "/src/model.mbt", content: model, },
-    {
-      path: name + "/README.md",
-      content: "# " +
+  fresh(
+    name,
+    generate_orm_tree_from_ddl(@model.parse_ddl(sql), name, dir=name),
+    spec_path="schema.sql",
+    spec=sql,
+    readme="# " +
       name +
-      "\n\nA moonorm data layer scaffolded by `mctl model new`. Edit `schema.sql`, regenerate with `mctl gen crud schema.sql`.\n",
-    },
-  ]
+      "\n\nA moonorm data layer scaffolded by `mctl model new`." +
+      "\n\n`internal/model/models.mbt` holds the tables as `#orm` annotations;" +
+      " the `@moonorm.Model` beside them is generated on build by the `orm` rule" +
+      " in `moon.mod`. Edit `schema.sql`, then regenerate with" +
+      " `mctl gen crud schema.sql --dir .`; `crud.mbt` is kept as it is." +
+      "\n",
+  )
 }
 
 ///|

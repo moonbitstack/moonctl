@@ -215,17 +215,41 @@ test "scaffold_gql is the GraphQL tree with a ping resolver and its test" {
 }
 
 ///|
-test "scaffold_model emits a moonorm project tree" {
+test "scaffold_model emits an annotated moonorm project tree" {
   let files = scaffold_model("account")
-  assert_eq(files.length(), 5)
+  assert_eq(files.length(), 7)
   let m = file_at(files, "account/moon.mod")
   assert_eq(contains(m, pinned("moonbitstack/moonorm")), true)
   assert_eq(contains(m, pinned("moonbitstack/moondb")), true)
+  // the rule that turns the annotations into `Account::model()`
+  assert_eq(contains(m, "moonx moonbitstack/moonorm/cmd/orm@"), true)
   let sql = file_at(files, "account/schema.sql")
   assert_eq(contains(sql, "CREATE TABLE account"), true)
-  let model = file_at(files, "account/src/model.mbt")
-  assert_eq(contains(model, "account_model : @moonorm.Model[Account]"), true)
-  assert_eq(contains(model, "pub fn account_insert("), true)
+  // the table is an annotation, and the model is generated from it on build
+  let models = file_at(files, "account/internal/model/models.mbt")
+  assert_eq(contains(models, "#orm.table(name=\"account\")"), true)
+  assert_eq(contains(models, "pub(all) struct Account {"), true)
+  assert_eq(contains(models, "Account::model()"), false)
+  let pkg = file_at(files, "account/internal/model/moon.pkg")
+  assert_eq(
+    contains(
+      pkg, "dev_build(rule: \"orm\", input: \"models.mbt\", output: \"models.g.mbt\")",
+    ),
+    true,
+  )
+  assert_eq(contains(pkg, "formatter(ignore: [ \"models.g.mbt\" ])"), true)
+  // the migrations and the CRUD helpers read through the generated model
+  let migrate = file_at(files, "account/internal/model/migrate.mbt")
+  assert_eq(
+    contains(migrate, "sess.create_table(Account::model(), if_not_exists=true)"),
+    true,
+  )
+  let crud = file_at(files, "account/internal/model/crud.mbt")
+  assert_eq(contains(crud, "pub fn account_insert("), true)
+  assert_eq(
+    contains(crud, "sess.insert_record(Account::model(), record)"),
+    true,
+  )
 }
 
 ///|
