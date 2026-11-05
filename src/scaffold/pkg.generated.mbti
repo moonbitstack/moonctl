@@ -11,11 +11,21 @@ import {
 // Values
 pub fn generate_gql_tree(@api.Spec, style? : @style.Style, dir? : String) -> Array[TreeFile]
 
-pub fn generate_mcp_tree(String, style? : @style.Style, dir? : String) -> Array[TreeFile]
+pub fn generate_mcp_from_spec(@api.Spec, style? : @style.Style, dir? : String) -> Array[TreeFile]
+
+pub fn generate_mcp_tree(String, style? : @style.Style, dir? : String, tools? : String, registration? : String, checks? : String) -> Array[TreeFile]
 
 pub fn generate_rpc_tree(@proto.Proto, style? : @style.Style, dir? : String) -> Array[TreeFile]
 
 pub fn generate_tree(@api.Spec, style? : @style.Style, dir? : String) -> Array[TreeFile]
+
+pub fn mcp_checks_for(@api.Spec) -> String
+
+pub fn mcp_registration_for(@api.Spec) -> String
+
+pub fn mcp_skipped(@api.Spec) -> Array[String]
+
+pub fn mcp_tools_for(@api.Spec) -> String
 
 pub let pins : Map[String, String]
 

@@ -23,7 +23,7 @@ pub fn commands() -> Array[Command] {
     },
     {
       name: "gen",
-      usage: "mctl gen <api|rpc|model|crud|doc|gql|agent> <file>",
+      usage: "mctl gen <api|rpc|model|crud|doc|gql|mcp|agent> <file>",
       summary: "generate a project tree, models or a document from a spec",
     },
     {
@@ -115,7 +115,7 @@ pub fn command_names() -> Array[String] {
 /// that completes two levels deep.
 pub fn subcommands(name : String) -> Array[String] {
   match name {
-    "gen" => ["api", "rpc", "model", "crud", "doc", "gql", "agent"]
+    "gen" => ["api", "rpc", "model", "crud", "doc", "gql", "mcp", "agent"]
     "api" => ["format", "validate", "doc", "ts", "dart", "kt", "java", "new"]
     "model" => ["new", "datasource", "mysql", "pg", "mongo", "cache"]
     "rpc" => ["new"]

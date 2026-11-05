@@ -117,6 +117,9 @@ pub using @doc {
 pub using @gql {generate_gql}
 
 ///|
+pub using @scaffold {generate_mcp_from_spec, mcp_skipped}
+
+///|
 pub using @model {
   type DataSource,
   type DdlColumn,

@@ -302,6 +302,7 @@ $ mctl gen api   greet.api --remote https://… --branch main --dir out
 $ mctl gen rpc   greet.proto               # -> a moonrpc project tree (pb/, internal/…, client/)
 $ mctl gen rpc   greet.proto --flat        # -> greet_grpc.mbt (messages, codecs, handler tables)
 $ mctl gen gql   greet.api                 # -> a moongql project tree (internal/schema, …)
+$ mctl gen mcp   greet.api                 # -> an MCP server whose tools are the routes
 $ mctl gen model user.api                  # -> user_model.mbt     (moonorm model + migration)
 $ mctl gen crud  schema.sql                # -> schema_model.mbt   (moonorm model + typed CRUD)
 $ mctl gen doc   greet.api                 # -> greet_openapi.json + greet_swagger.html

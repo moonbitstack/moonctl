@@ -122,8 +122,14 @@ pub fn generate_mcp_tree(
   module_ : String,
   style? : @style.Style,
   dir~ : String = "",
+  tools? : String,
+  registration? : String,
+  checks? : String,
 ) -> Array[TreeFile] {
   let st = style.unwrap_or(@style.Style::gozero())
+  let tools = tools.unwrap_or(mcp_tools_src)
+  let registration = registration.unwrap_or(mcp_generated_src)
+  let checks = checks.unwrap_or(mcp_test_src)
   let tools_pkg = module_ + "/internal/tools"
   let mcp = ("moonbitstack/moonmcp", "")
   let out = base_tree(
@@ -169,17 +175,17 @@ pub fn generate_mcp_tree(
   })
   out.push({
     path: at(dir, "internal/tools/tools.mbt"),
-    content: mcp_tools_src + "\n",
+    content: tools + "\n",
     regen: Once,
   })
   out.push({
     path: at(dir, "internal/tools/tools.g.mbt"),
-    content: mcp_generated_src + "\n",
+    content: registration + "\n",
     regen: Once,
   })
   out.push({
     path: at(dir, "internal/tools/tools_test.mbt"),
-    content: mcp_test_src + "\n",
+    content: checks + "\n",
     regen: Once,
   })
   out

@@ -257,6 +257,33 @@ async fn gen_gql(input : String, opts : Opts) -> Unit {
 }
 
 ///|
+/// Read a `.api` spec and write an MCP server tree whose tools are its routes: one
+/// `#mcp.tool` function per route, the request type's fields as the tool's
+/// arguments, and the registration moonmcp rebuilds from them.
+async fn gen_mcp(input : String, opts : Opts) -> Unit {
+  try {
+    let spec = read_spec(input)
+    for route in @moonctl.mcp_skipped(spec) {
+      println(
+        "mctl: " +
+        route +
+        " declares no request type; an MCP tool needs at least one argument, so it is not offered",
+      )
+    }
+    write_tree(
+      input,
+      @moonctl.generate_mcp_from_spec(
+        spec,
+        style=@moonctl.Style::parse(opts.style),
+        dir=opts.dir,
+      ),
+    )
+  } catch {
+    e => println("mctl: error generating from " + input + ": " + e.to_string())
+  }
+}
+
+///|
 /// Read a `.api` spec, and write a moonkoog agent scaffold (one `Tool` per service
 /// operation plus a `build_agent` assembly) to `<stem>_agent.mbt`.
 async fn gen_agent(input : String) -> Unit {
@@ -665,6 +692,7 @@ async fn dispatch(what : String, file : String, opts : Opts) -> Unit {
     "crud" => gen_crud(file)
     "doc" => gen_doc(file)
     "gql" => gen_gql(file, opts)
+    "mcp" => gen_mcp(file, opts)
     "agent" => gen_agent(file)
     "datasource" => gen_datasource(file, "datasource_model.mbt")
     _ => usage()

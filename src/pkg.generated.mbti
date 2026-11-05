@@ -87,7 +87,9 @@ pub fn generate_grpc(@proto.Proto) -> String
 
 pub fn generate_markdown(@api.Spec, title? : String) -> String
 
-pub fn generate_mcp_tree(String, style? : @style.Style, dir? : String) -> Array[@scaffold.TreeFile]
+pub fn generate_mcp_from_spec(@api.Spec, style? : @style.Style, dir? : String) -> Array[@scaffold.TreeFile]
+
+pub fn generate_mcp_tree(String, style? : @style.Style, dir? : String, tools? : String, registration? : String, checks? : String) -> Array[@scaffold.TreeFile]
 
 pub fn generate_migrations(@api.Spec) -> String
 
@@ -110,6 +112,8 @@ pub fn is_bundled(@cli.Library) -> Bool
 pub fn library(home? : String, remote? : String, branch? : String) -> @cli.Library
 
 pub fn markdown_file_name(String) -> String
+
+pub fn mcp_skipped(@api.Spec) -> Array[String]
 
 pub fn migrate_config(String) -> (String, Array[String])
 
