@@ -186,29 +186,31 @@ test "scaffold_rpc is the layered gRPC tree with a Ping that answers" {
 }
 
 ///|
-test "scaffold_gql is the GraphQL tree with a ping resolver and its test" {
+test "scaffold_gql is the annotated GraphQL tree and its seeded test" {
   let files = scaffold_gql("books")
   let paths = files.map(f => f.path)
   for
     path in [
-      "books/books.api", "books/README.md", "books/internal/schema/schema.mbt", "books/internal/logic/resolvers_test.mbt",
+      "books/books.api", "books/README.md", "books/internal/schema/schema.mbt", "books/internal/schema/schema_test.mbt",
     ] {
     assert_eq(paths.contains(path), true, msg=path)
   }
   let m = file_at(files, "books/moon.mod")
   assert_eq(contains(m, pinned("moonbitstack/moongql")), true)
   assert_eq(contains(m, pinned("moonbitstack/mooncat")), true)
+  // the rule that turns the annotations into `register`
+  assert_eq(contains(m, "moonx moonbitstack/moongql/cmd/gql@"), true)
   assert_eq(
     contains(
       file_at(files, "books/books.mbt"),
-      "@moongql.graphql_app(@schema.build_schema(), @logic.resolvers(svc))",
+      "@moongql.graphql_app(schema, resolvers)",
     ),
     true,
   )
   assert_eq(
     contains(
-      file_at(files, "books/internal/logic/resolvers.mbt"),
-      "resolvers.field(\"Query\", \"ping\", _ => Json::string(\"pong\"))",
+      file_at(files, "books/internal/schema/schema.mbt"),
+      "#gql.type\npub struct CreateReq {",
     ),
     true,
   )

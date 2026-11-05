@@ -161,12 +161,7 @@ fn orm_pkg_file(imports : Array[(String, String)]) -> String {
 fn orm_mod_file(module_ : String) -> String {
   mod_file(module_, ["moonbitstack/moonorm", "moonbitstack/moondb"]) +
   "\n" +
-  rule_line(
-    "orm",
-    "moonx moonbitstack/moonorm/cmd/orm@" +
-    pins.get("moonbitstack/moonorm").unwrap() +
-    " -C \\\"$mod_dir\\\" \\\"$input\\\" -o \\\"$output\\\"",
-  )
+  rule_line("orm", generator_command("moonbitstack/moonorm", "orm"))
 }
 
 ///|

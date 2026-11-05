@@ -97,11 +97,17 @@ pub fn generate_model(@api.Spec) -> String
 
 pub fn generate_mongo(@api.Spec) -> String
 
+pub fn generate_orm_tree(@api.Spec, style? : @style.Style, dir? : String) -> Array[@scaffold.TreeFile]
+
+pub fn generate_orm_tree_from_ddl(Array[@model.DdlTable], String, style? : @style.Style, dir? : String) -> Array[@scaffold.TreeFile]
+
 pub fn generate_rpc_tree(@proto.Proto, style? : @style.Style, dir? : String) -> Array[@scaffold.TreeFile]
 
 pub fn generate_tree(@api.Spec, style? : @style.Style, dir? : String) -> Array[@scaffold.TreeFile]
 
 pub fn generate_with(@api.Spec, String) -> String raise @template.Refused
+
+pub fn gql_dropped_fields(@api.Spec) -> Array[String]
 
 pub fn has_errors(Array[@api.Diagnostic]) -> Bool
 

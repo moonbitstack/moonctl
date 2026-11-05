@@ -13,6 +13,8 @@ fn base_tree(
   deps~ : Array[String],
   imports~ : Array[(String, String)],
   main~ : String,
+  context~ : Bool = true,
+  rules~ : Array[(String, String)] = [],
 ) -> Array[TreeFile] {
   let file = st.format(module_)
   let config_pkg = module_ + "/internal/config"
@@ -22,7 +24,9 @@ fn base_tree(
   let main_imports = imports.copy()
   main_imports.push(("moonbitlang/async", ""))
   main_imports.push((config_pkg, ""))
-  main_imports.push((svc_pkg, ""))
+  if context {
+    main_imports.push((svc_pkg, ""))
+  }
   let config =
     #|///|
     #|/// What the %svc service reads out of `etc/%file.yaml`.
@@ -36,7 +40,7 @@ fn base_tree(
     #|pub fn Config::new(host~ : String = "0.0.0.0", port~ : Int32 = %port) -> Config {
     #|  { host, port }
     #|}
-  let context =
+  let service_context =
     #|///|
     #|/// What the author's code is given besides its input: the loaded configuration,
     #|/// and whatever else the service depends on. Add those here.
@@ -55,10 +59,10 @@ fn base_tree(
     .replace_all(old="%port", new=port.to_string()) +
     "\n"
   }
-  [
+  let out : Array[TreeFile] = [
     {
       path: at(dir, "moon.mod"),
-      content: mod_file(module_, mod_deps),
+      content: mod_file_with_rules(module_, mod_deps, rules),
       regen: Once,
     },
     {
@@ -86,17 +90,23 @@ fn base_tree(
       content: fill(config),
       regen: Once,
     },
-    {
+  ]
+  // The service context is handed to the author's code. A tree whose resolvers are
+  // `#gql`-annotated functions has nowhere to pass it, so it is left out rather
+  // than generated and unused.
+  if context {
+    out.push({
       path: at(dir, "internal/svc/moon.pkg"),
       content: pkg_file([(config_pkg, "")]),
       regen: Once,
-    },
-    {
+    })
+    out.push({
       path: at(dir, "internal/svc/" + st.format("service_context") + ".mbt"),
-      content: fill(context),
+      content: fill(service_context),
       regen: Once,
-    },
-  ]
+    })
+  }
+  out
 }
 
 ///|

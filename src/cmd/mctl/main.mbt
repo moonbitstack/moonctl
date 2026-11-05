@@ -243,8 +243,10 @@ async fn gen_model(input : String, opts : Opts) -> Unit {
 }
 
 ///|
-/// Read a `.api` spec, parse its `type` blocks, and write a moongql code-first
-/// schema + resolver stubs to `<stem>_schema.mbt`.
+/// Read a `.api` spec and write a moongql service tree: the `type` blocks as
+/// `#gql.type` structs, the routes as root fields, and the rule that turns them
+/// into `register(schema, resolvers)`. With `--flat`, the code-first schema
+/// builder to `<stem>_schema.mbt`.
 async fn gen_gql(input : String, opts : Opts) -> Unit {
   try {
     let spec = read_spec(input)
@@ -257,6 +259,13 @@ async fn gen_gql(input : String, opts : Opts) -> Unit {
       )
       println("mctl: generated " + out + " from " + input)
       return
+    }
+    for field in @moonctl.gql_dropped_fields(spec) {
+      println(
+        "mctl: " +
+        field +
+        " has no GraphQL type; the field is left out of the schema",
+      )
     }
     write_tree(
       input,

@@ -136,9 +136,9 @@ pub fn scaffold_rpc(name : String) -> Array[@plugin.GenFile] {
 }
 
 ///|
-/// Scaffold a moongql service under `<name>/`: the layered tree of
-/// `generate_gql_tree` for a sample spec, with a `ping` resolver and a test
-/// querying it.
+/// Scaffold a moongql service under `<name>/`: the annotated tree of
+/// `generate_gql_tree` for a sample spec — the types as `#gql.type`, the routes as
+/// root fields — and a test that asks the schema what it is.
 pub fn scaffold_gql(name : String) -> Array[@plugin.GenFile] {
   let api = sample_api(name)
   fresh(
@@ -151,10 +151,10 @@ pub fn scaffold_gql(name : String) -> Array[@plugin.GenFile] {
 }
 
 ///|
-/// Scaffold a moonorm data-layer project under `<name>/`: a `moon.mod`
-/// (depending on the published `moonorm` + `moondb`), a sample `schema.sql`, its
-/// generated models + CRUD in `src/model.mbt` (through the same
-/// `generate_crud_from_ddl` as `gen crud`), and a README. goctl's `goctl model … new`.
+/// Scaffold a moonorm data-layer project under `<name>/`: a `moon.mod` carrying
+/// the `orm` rule, a sample `schema.sql`, the tables as `#orm` annotations under
+/// `internal/model` (through the same `generate_orm_tree_from_ddl` as
+/// `gen crud`), and a README. goctl's `goctl model … new`.
 pub fn scaffold_model(name : String) -> Array[@plugin.GenFile] {
   let sql = sample_sql(name)
   fresh(

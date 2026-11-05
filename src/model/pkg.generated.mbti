@@ -8,6 +8,8 @@ import {
 // Values
 pub fn cache_file_name(String) -> String
 
+pub fn crud_for(DdlTable, String, nullable_aware? : Bool) -> String
+
 pub fn generate_cached(@api.Spec) -> String
 
 pub fn generate_crud(Array[DdlTable]) -> String
@@ -24,11 +26,17 @@ pub fn generate_mongo(@api.Spec) -> String
 
 pub fn migrate_file_name(String) -> String
 
+pub fn migration_for(DdlTable, String) -> String
+
+pub fn migration_updown(String, String) -> String
+
 pub fn mongo_file_name(String) -> String
 
 pub fn parse_ddl(String) -> Array[DdlTable]
 
 pub fn parse_dsn(String) -> DataSource raise Refused
+
+pub fn storage_class(String) -> String?
 
 pub fn tables_from_reflection(Array[ReflectedColumn]) -> Array[DdlTable]
 

@@ -121,6 +121,7 @@ pub using @scaffold {
   generate_mcp_from_spec,
   generate_orm_tree,
   generate_orm_tree_from_ddl,
+  gql_dropped_fields,
   mcp_skipped,
 }
 

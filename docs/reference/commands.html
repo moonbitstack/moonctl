@@ -96,9 +96,9 @@
           <tbody>
             <tr id="gen-api"><td><code>mctl gen api &lt;file.api&gt;</code></td><td>a spec</td><td>a moonapi project tree — or one file with <code>--flat</code></td></tr>
             <tr id="gen-rpc"><td><code>mctl gen rpc &lt;file.proto&gt;</code></td><td>a proto</td><td>a moonrpc project tree: messages, codecs, handler table, client</td></tr>
-            <tr><td><code>mctl gen gql &lt;file.api&gt;</code></td><td>a spec</td><td>a moongql schema and resolvers</td></tr>
-            <tr><td><code>mctl gen model &lt;file.api&gt;</code></td><td>a spec</td><td><code>&lt;stem&gt;_model.mbt</code> — models and migrations</td></tr>
-            <tr><td><code>mctl gen crud &lt;file.sql&gt;</code></td><td>DDL</td><td><code>&lt;stem&gt;_model.mbt</code> — models and typed CRUD</td></tr>
+            <tr><td><code>mctl gen gql &lt;file.api&gt;</code></td><td>a spec</td><td>a moongql tree — the types as <code>#gql.type</code>, the routes as root fields</td></tr>
+            <tr><td><code>mctl gen model &lt;file.api&gt;</code></td><td>a spec</td><td>a moonorm tree — the tables as <code>#orm</code> annotations, plus migrations</td></tr>
+            <tr><td><code>mctl gen crud &lt;file.sql&gt;</code></td><td>DDL</td><td>the same tree, plus the typed CRUD helpers</td></tr>
             <tr><td><code>mctl gen doc &lt;file.api&gt;</code></td><td>a spec</td><td>an OpenAPI document and a Swagger page</td></tr>
             <tr><td><code>mctl gen agent &lt;file.api&gt;</code></td><td>a spec</td><td>a moonkoog agent skeleton</td></tr>
             <tr id="api-format"><td><code>mctl api format &lt;file.api&gt;</code></td><td>a spec</td><td>the canonical text, on stdout, or in place with <code>--write</code></td></tr>

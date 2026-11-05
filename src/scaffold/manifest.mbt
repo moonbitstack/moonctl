@@ -41,6 +41,34 @@ fn mod_file(name : String, deps : Array[String]) -> String {
 }
 
 ///|
+/// A `moon.mod` for module `name` importing `deps`, with the `moonx` rules `rules`
+/// names — the build step that turns annotations into code.
+fn mod_file_with_rules(
+  name : String,
+  deps : Array[String],
+  rules : Array[(String, String)],
+) -> String {
+  let mut out = mod_file(name, deps)
+  for r in rules {
+    out = out + "\n" + rule_line(r.0, r.1)
+  }
+  out
+}
+
+///|
+/// The `moonx` command that runs one of a library's generators, for the `rule(...)`
+/// that wires it into `moon.mod`.
+pub fn generator_command(library : String, cmd : String) -> String {
+  "moonx " +
+  library +
+  "/cmd/" +
+  cmd +
+  "@" +
+  pins.get(library).unwrap() +
+  " -C \\\"$mod_dir\\\" \\\"$input\\\" -o \\\"$output\\\""
+}
+
+///|
 /// The `rule(...)` entry that wires a `moonx` generator into `moon.mod`, on one line
 /// when it fits in the width `moon fmt` breaks at and one argument per line when it
 /// does not — the two shapes the formatter leaves it in, so a generated `moon.mod`

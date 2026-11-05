@@ -301,10 +301,13 @@ $ mctl gen api   greet.api --home my/templates --dir out   # -> through your own
 $ mctl gen api   greet.api --remote https://… --branch main --dir out
 $ mctl gen rpc   greet.proto               # -> a moonrpc project tree (pb/, internal/…, client/)
 $ mctl gen rpc   greet.proto --flat        # -> greet_grpc.mbt (messages, codecs, handler tables)
-$ mctl gen gql   greet.api                 # -> a moongql project tree (internal/schema, …)
+$ mctl gen gql   greet.api                 # -> a moongql tree, the types as `#gql.type`
+$ mctl gen gql   greet.api --flat          # -> greet_schema.mbt (the code-first schema builder)
 $ mctl gen mcp   greet.api                 # -> an MCP server whose tools are the routes
-$ mctl gen model user.api                  # -> user_model.mbt     (moonorm model + migration)
-$ mctl gen crud  schema.sql                # -> schema_model.mbt   (moonorm model + typed CRUD)
+$ mctl gen model user.api                  # -> a moonorm tree, the tables as `#orm` annotations
+$ mctl gen model user.api --flat           # -> user_model.mbt   (the hand-built model + migration)
+$ mctl gen crud  schema.sql                # -> a moonorm tree with the typed CRUD helpers
+$ mctl gen crud  schema.sql --flat         # -> schema_model.mbt (the hand-built model + typed CRUD)
 $ mctl gen doc   greet.api                 # -> greet_openapi.json + greet_swagger.html
 $ mctl model datasource sqlite:shop.db     # -> datasource_model.mbt (read a live DB's schema)
 $ mctl api  new  blog                      # scaffold a moonapi service project under blog/
@@ -414,6 +417,12 @@ so the library itself stays dependency-free. The pipeline is verified end to end
 against a real in-memory SQLite database (create tables → reflect → generate → the
 generated models compile against `moonorm` + `moondb`).
 
+### Annotations instead of hand-built mappings
+
+The model and GraphQL generators write the declaration, and the library writes the plumbing. `gen model` and `gen crud` emit `#orm.table`/`#orm.column` structs; the `orm` rule in `moon.mod` runs moonorm's generator over them at build time and produces `T::model()` — the columns, the row decoder and the insert projection. `gen gql` emits `#gql.type` structs and `#gql.query`/`#gql.mutation` root fields; the `gql` rule produces `register(schema, resolvers)`.
+
+Both come with the module they need, because an annotation is only a declaration inside a module that carries its rule. `--flat` still writes the hand-built single file, for a project with no module of its own.
+
 ## Project scaffolds
 
 `api new`, `rpc new`, `gql new` and `mcp new` write a service that runs as it stands: `moon test --target native` passes, `moon run --target native .` serves it on port 12000.
@@ -432,11 +441,13 @@ The four services share goctl's layout. Files marked `DO NOT EDIT` belong to mct
 
 | Path | api | rpc | gql |
 |:--:|:--:|:--:|:--:|
-| `<name>.mbt` | serve the app on mooncat | serve the handler tables on `GrpcServer` | serve `graphql_app` on mooncat |
-| `etc/`, `internal/config`, `internal/svc` | ✓ | ✓ | ✓ |
-| generated | `internal/types`, `internal/handler/routes.mbt` | `pb/`, `internal/server`, `client/<name>client.mbt` | `internal/schema` |
-| the author's | `internal/handler/*`, `internal/logic/*` | `internal/logic/*` | `internal/logic/resolvers.mbt` |
-| test | the routes through `TestClient` | `Ping` over a real socket | a `{ ping }` query |
+| `<name>.mbt` | serve the app on mooncat | serve the handler tables on `GrpcServer` | build the schema and serve `graphql_app` |
+| `etc/`, `internal/config` | ✓ | ✓ | ✓ |
+| `internal/svc` | ✓ | ✓ | — the resolvers are free functions, so there is no context to pass |
+| generated | `internal/types`, `internal/handler/routes.mbt` | `pb/`, `internal/server`, `client/<name>client.mbt` | `internal/schema/schema.g.mbt` |
+| the author's | `internal/handler/*`, `internal/logic/*` | `internal/logic/*` | `internal/schema/schema.mbt` |
+| build rule | — | — | `dev_build(rule: "gql", …)` in `internal/schema/moon.pkg` |
+| test | the routes through `TestClient` | `Ping` over a real socket | `{ __typename }` through the built schema |
 
 Every client call comes in two forms. A unary RPC is one function; a server-streaming RPC also gets `<call>_take`, which reads `count` messages and returns as soon as they are on the wire instead of waiting for the server to close the stream — the form a subscription that never ends needs:
 
