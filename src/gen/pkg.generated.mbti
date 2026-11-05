@@ -8,17 +8,27 @@ import {
 }
 
 // Values
-pub fn generate(@api.Spec, template? : String) -> String raise @template.TemplateError
+pub fn bound_types(@api.Spec) -> Array[(String, Array[@api.Field])]
+
+pub fn generate(@api.Spec, template? : String) -> String raise @template.Refused
 
 pub fn generate_builtin(@api.Spec) -> String
 
-pub fn generate_with(@api.Spec, String) -> String raise @template.TemplateError
+pub fn generate_with(@api.Spec, String) -> String raise @template.Refused
 
 pub fn group_note(@api.Group) -> String
 
 pub fn number_json(String) -> @json.Json
 
-pub fn render_structs(Array[@api.TypeDef]) -> String
+pub fn render_binder(String, Array[@api.Field]) -> String
+
+pub fn render_binders(@api.Spec) -> String
+
+pub fn render_structs(Array[@api.TypeDef], derive_json? : Bool) -> String
+
+pub fn render_template_dir(@api.Spec, Array[TemplateFile]) -> Array[(String, String)] raise @template.Refused
+
+pub fn render_template_file(@api.Spec, TemplateFile) -> (String, String) raise @template.Refused
 
 pub fn route_path(String) -> String
 
@@ -27,6 +37,10 @@ pub fn spec_to_value(@api.Spec) -> @template.Value
 // Errors
 
 // Types and methods
+pub(all) struct TemplateFile {
+  path : String
+  text : String
+}
 
 // Type aliases
 

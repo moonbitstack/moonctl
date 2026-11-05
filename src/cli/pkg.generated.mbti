@@ -20,15 +20,21 @@ pub fn config_set(Config, String, String) -> Config
 
 pub fn config_text(Config) -> String
 
+pub let default_branch : String
+
 pub fn default_config() -> Config
 
 pub fn env_report(String, Array[(String, String)]) -> String
 
 pub fn find_template(String) -> TemplateEntry?
 
+pub fn is_bundled(Library) -> Bool
+
 pub fn is_skipped(String) -> Bool
 
 pub fn is_watched(String) -> Bool
+
+pub fn library(home? : String, remote? : String, branch? : String) -> Library
 
 pub fn migrate_config(String) -> (String, Array[String])
 
@@ -49,6 +55,10 @@ pub let reload_dirs : Array[String]
 pub fn subcommands(String) -> Array[String]
 
 pub fn template_detail(TemplateEntry) -> String
+
+pub fn template_dir(String, TemplateEntry) -> String
+
+pub fn template_starter(Map[String, String]) -> Array[(String, String)]
 
 pub fn template_table() -> String
 
@@ -76,6 +86,12 @@ pub(all) struct Config {
   branch : String
   style : String
   templates : Array[String]
+}
+
+pub(all) struct Library {
+  home : String
+  remote : String
+  branch : String
 }
 
 pub(all) struct Serve {

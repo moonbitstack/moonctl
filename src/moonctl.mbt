@@ -2,16 +2,10 @@
 // where each name now lives, so `@moonctl.parse` and the rest keep working.
 
 ///|
-pub using @template {
-  type FuncFn,
-  type Template,
-  type TemplateError,
-  type Value,
-  render,
-}
+pub using @template {type FuncFn, type Template, type Value, render}
 
 ///|
-pub using @style {type Style, type StyleError}
+pub using @style {type Style}
 
 ///|
 pub using @api {
@@ -21,7 +15,6 @@ pub using @api {
   type Range,
   type Route,
   type Spec,
-  type SpecError,
   type TypeDef,
   type Diagnostic,
   type Severity,
@@ -44,7 +37,12 @@ pub using @client {type Lang, client_file, client_file_name, generate_client}
 pub using @cli {
   type Command,
   type Config,
+  type Library,
   type TemplateEntry,
+  default_branch,
+  is_bundled,
+  library,
+  template_dir,
   bug_report,
   command_names,
   commands,
@@ -63,6 +61,7 @@ pub using @cli {
   pinned_version,
   subcommands,
   template_detail,
+  template_starter,
   template_table,
   templates,
   templates_of,
@@ -71,7 +70,14 @@ pub using @cli {
 }
 
 ///|
-pub using @gen {generate, generate_with, spec_to_value}
+pub using @gen {
+  type TemplateFile,
+  generate,
+  generate_with,
+  render_template_dir,
+  render_template_file,
+  spec_to_value,
+}
 
 ///|
 pub using @proto {
@@ -111,7 +117,6 @@ pub using @gql {generate_gql}
 ///|
 pub using @model {
   type DataSource,
-  type DataSourceError,
   type DdlColumn,
   type DdlTable,
   type PgTarget,

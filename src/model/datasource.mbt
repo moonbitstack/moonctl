@@ -27,12 +27,12 @@ pub(all) enum DataSource {
 
 ///|
 /// Raised when a DSN string cannot be parsed into a `DataSource`.
-pub suberror DataSourceError {
+pub(all) suberror Refused {
   BadDsn(String)
 }
 
 ///|
-impl Show for DataSourceError with fn output(self, logger) {
+impl Show for Refused with fn output(self, logger) {
   match self {
     BadDsn(m) => logger.write_string("bad datasource DSN: " + m)
   }
@@ -94,7 +94,7 @@ fn parse_uint(s : String, dflt : Int32) -> Int32 {
 ///
 /// Raises `BadDsn` on an unrecognised scheme or a PostgreSQL URL missing its host or
 /// database.
-pub fn parse_dsn(dsn : String) -> DataSource raise DataSourceError {
+pub fn parse_dsn(dsn : String) -> DataSource raise Refused {
   let d = @text.trim(dsn)
   if d == "" {
     raise BadDsn("empty DSN")
@@ -129,7 +129,7 @@ pub fn parse_dsn(dsn : String) -> DataSource raise DataSourceError {
 
 ///|
 /// Parse the authority of a `postgres://` DSN (everything after the scheme).
-fn parse_pg(rest : String) -> DataSource raise DataSourceError {
+fn parse_pg(rest : String) -> DataSource raise Refused {
   let q = @api.index_of(rest, '?', 0)
   let body = if q >= 0 { rest[0:q].to_owned() } else { rest }
   let at = rindex_of(body, '@')

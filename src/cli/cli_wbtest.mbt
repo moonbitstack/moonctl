@@ -204,3 +204,63 @@ test "serve finds the executable in what moon run prints" {
   assert_eq(built_binary("{\"artifacts_path\":[]}"), None)
   assert_eq(built_binary("not json"), None)
 }
+
+///|
+test "the template library a run reads from is the bundled one by default" {
+  let lib = library()
+  assert_eq(is_bundled(lib), true)
+  assert_eq(lib.branch, "main")
+  // --home wins over --remote, and --branch names the branch to check out
+  let local_lib = library(home="lib", remote="r.git", branch="dev")
+  assert_eq(is_bundled(local_lib), false)
+  assert_eq(local_lib.home, "lib")
+  assert_eq(local_lib.branch, "dev")
+  let remote = library(remote="r.git")
+  assert_eq(is_bundled(remote), false)
+  assert_eq(remote.branch, "main")
+}
+
+///|
+test "a template entry is read from under the library root" {
+  let t = match find_template("api-service") {
+    Some(t) => t
+    None => fail("api-service is in the bundled library")
+  }
+  inspect(template_dir("", t), content="api/service")
+  inspect(template_dir("lib/", t), content="lib/api/service")
+  inspect(template_dir("lib", t), content="lib/api/service")
+}
+
+///|
+test "the starter library is a template home mctl can read back" {
+  let pins : Map[String, String] = Map([
+    ("moonbitstack/moonapi", "1.2.3"),
+    ("moonbitstack/moonasgi", "4.5.6"),
+    ("moonbitstack/mooncat", "7.8.9"),
+  ])
+  let files = template_starter(pins)
+  let mut main = ""
+  let mut mod = ""
+  let mut pkg = ""
+  for f in files {
+    if f.0 == "api/service/{{.service}}.mbt" {
+      main = f.1
+    }
+    if f.0 == "api/service/moon.mod" {
+      mod = f.1
+    }
+    if f.0 == "api/service/moon.pkg" {
+      pkg = f.1
+    }
+  }
+  // every entry sits under the path the api-service catalogue entry names
+  for f in files {
+    assert_eq(has(f.0, "api/service/"), true)
+  }
+  assert_eq(main != "", true)
+  assert_eq(has(main, "app.{{.verb}}(\"{{.route}}\""), true)
+  // the release is pinned in moon.mod and only named in moon.pkg
+  assert_eq(has(mod, "\"moonbitstack/moonapi@1.2.3\""), true)
+  assert_eq(has(pkg, "\"moonbitstack/moonapi\","), true)
+  assert_eq(has(pkg, "@1.2.3"), false)
+}

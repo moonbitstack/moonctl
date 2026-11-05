@@ -59,7 +59,14 @@ test "a plugin run hands over the program, its argv and goctl's four keys" {
     "mctl-plugin --out docs",
     spec,
     "api/greet.api",
-    { style: "go_zero", dir: "out", flat: false, },
+    {
+      style: "go_zero",
+      dir: "out",
+      flat: false,
+      home: "",
+      remote: "",
+      branch: "main",
+    },
   )
   // the invocation is split, so a plugin taking arguments is run with them
   assert_eq(bin, "mctl-plugin")
@@ -83,4 +90,32 @@ test "a known extension is replaced, an unknown one is kept" {
     replace_ext("api/greet.api", ".api", "_openapi.json"),
     content="api/greet_openapi.json",
   )
+}
+
+///|
+test "the library flags are read in both spellings, and nothing else is" {
+  let (words, opts) = split_flags([
+    "gen", "api", "x.api", "--home", "lib", "--remote=r.git", "--branch", "dev",
+    "--style", "go_zero", "--dir=out", "--flat",
+  ])
+  assert_eq(words, ["gen", "api", "x.api"])
+  assert_eq(opts.home, "lib")
+  assert_eq(opts.remote, "r.git")
+  assert_eq(opts.branch, "dev")
+  assert_eq(opts.style, "go_zero")
+  assert_eq(opts.dir, "out")
+  assert_eq(opts.flat, true)
+  // an unknown flag stays a word rather than being swallowed with its value
+  let (words, opts) = split_flags(["--nope", "x", "gen"])
+  assert_eq(words, ["--nope", "x", "gen"])
+  assert_eq(opts.home, "")
+}
+
+///|
+test "a value flag with nothing after it keeps its default" {
+  // the flag stays a word, so a mistyped command line is refused rather than
+  // silently generating with one flag ignored
+  let (words, opts) = split_flags(["gen", "--branch"])
+  assert_eq(words, ["gen", "--branch"])
+  assert_eq(opts.branch, "main")
 }

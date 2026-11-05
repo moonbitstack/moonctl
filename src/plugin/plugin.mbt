@@ -120,9 +120,22 @@ pub fn spec_to_json(spec : @api.Spec) -> Json {
   for g in spec.groups {
     groups.push(group_to_json(g))
   }
+  let services : Array[Json] = []
+  for s in spec.services {
+    let paths : Array[Json] = []
+    for r in s.routes {
+      paths.push(Json(r.handler))
+    }
+    let m : Map[String, Json] = Map([
+      ("name", Json(s.name)),
+      ("handlers", Json(paths)),
+    ])
+    services.push(Json(m))
+  }
   let doc : Map[String, Json] = Map([
     ("service", Json(spec.service)),
     ("routes", Json(routes)),
+    ("services", Json(services)),
     ("types", Json(types)),
     ("info", Json(info)),
     ("groups", Json(groups)),
@@ -249,6 +262,7 @@ pub fn spec_from_json(j : Json) -> @api.Spec {
     _ => "app"
   }
   let routes : Array[@api.Route] = []
+  let services : Array[@api.Service] = []
   let types : Array[@api.TypeDef] = []
   let info : Array[(String, String)] = []
   let groups : Array[@api.Group] = []
@@ -278,6 +292,35 @@ pub fn spec_from_json(j : Json) -> @api.Spec {
                   resp: json_str(rm, "resp"),
                   group: group_from_json(rm.get("group")),
                 })
+              _ => ()
+            }
+          }
+        _ => ()
+      }
+      match m.get("services") {
+        Some(Array(arr)) =>
+          for item in arr {
+            match item {
+              Object(sm) => {
+                let name = json_str(sm, "name")
+                let mine : Array[@api.Route] = []
+                match sm.get("handlers") {
+                  Some(Array(hs)) =>
+                    for h in hs {
+                      match h {
+                        String(handler) =>
+                          for r in routes {
+                            if r.handler == handler {
+                              mine.push(r)
+                            }
+                          }
+                        _ => ()
+                      }
+                    }
+                  _ => ()
+                }
+                services.push({ name, routes: mine, })
+              }
               _ => ()
             }
           }
@@ -338,7 +381,12 @@ pub fn spec_from_json(j : Json) -> @api.Spec {
   }
   // A plugin is handed a spec whose imports have already been merged in, so the
   // request carries no import list to read back.
-  { service, routes, types, info, groups, imports: [], }
+  // A plugin request written before `services` existed carries only the flattened
+  // routes: they are one service, named as the request says.
+  if services.length() == 0 {
+    services.push({ name: service, routes, })
+  }
+  { service, routes, services, types, info, groups, imports: [], }
 }
 
 ///|

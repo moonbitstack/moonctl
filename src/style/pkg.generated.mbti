@@ -4,7 +4,7 @@ package "moonbitstack/moonctl/style"
 // Values
 
 // Errors
-pub suberror StyleError {
+pub(all) suberror Refused {
   BadStyle(String)
 }
 
@@ -20,7 +20,7 @@ pub struct Style {
 }
 pub fn Style::format(Self, String) -> String
 pub fn Style::gozero() -> Self
-pub fn Style::parse(String) -> Self raise StyleError
+pub fn Style::parse(String) -> Self raise Refused
 
 // Type aliases
 

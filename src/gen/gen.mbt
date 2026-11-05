@@ -67,7 +67,7 @@ pub fn group_note(g : @api.Group) -> String {
 pub fn generate(
   spec : @api.Spec,
   template? : String,
-) -> String raise @template.TemplateError {
+) -> String raise @template.Refused {
   match template {
     Some(src) => generate_with(spec, src)
     None => generate_builtin(spec)
@@ -77,20 +77,39 @@ pub fn generate(
 ///|
 /// A MoonBit struct for every `type` block, in the order the spec declared them,
 /// each followed by whatever its tags asked to be checked (see `render_checks`).
-pub fn render_structs(types : Array[@api.TypeDef]) -> String {
+pub fn render_structs(
+  types : Array[@api.TypeDef],
+  derive_json~ : Bool = false,
+) -> String {
   let mut out = ""
   for t in types {
     let fields = @api.flat_fields(t, types)
     out = out +
       "///|\n/// `" +
       t.name +
-      "` schema (generated from the `.api` `type` block).\npub(all) struct " +
+      "` schema (generated from the `.api` `type` block).\n" +
+      (if derive_json { "#derive(ToJson, FromJson)\n" } else { "" }) +
+      "pub(all) struct " +
       t.name +
       " {\n"
     for f in fields {
       out = out + "  " + f.mbt_name() + " : " + f.type_ + "\n"
     }
-    out = out + "}\n\n" + render_checks(t.name, fields)
+    out = out + "}\n\n"
+    if derive_json {
+      // The derive puts the impl in the type's own package, which promotes its
+      // methods onto the type; saying so explicitly is what keeps that a choice
+      // rather than a warning.
+      out = out +
+        "///|\n/// `" +
+        t.name +
+        "` as JSON, through the derived impls.\npub extend " +
+        t.name +
+        " with @json.ToJson::{to_json}\n\npub extend " +
+        t.name +
+        " with @json.FromJson::{from_json}\n\n"
+    }
+    out = out + render_checks(t.name, fields)
   }
   out
 }

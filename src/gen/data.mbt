@@ -32,8 +32,9 @@ fn group_to_value(g : @api.Group) -> @template.Value {
 
 ///|
 /// Expose a parsed `.api` `Spec` as template `Value` data: a `Dict` with
-/// `service` (string), `routes` (list of `{verb, path, handler, summary,
-/// hasSummary, group, hasGroup}`), `types` (list of `{name, fields:[{name,
+/// `service` (string), `services` (list of `{name, routes}`), `routes` (list of
+/// `{verb, path, route, handler, summary, hasSummary, group, hasGroup, req, resp,
+/// hasReq, hasResp}`, where `route` is `path` as the framework spells it), `types` (list of `{name, fields:[{name,
 /// type}]}`), `groups` (list of the `@server` blocks) and `hasTypes` (bool). This
 /// is what the template-driven generator ranges over.
 pub fn spec_to_value(spec : @api.Spec) -> @template.Value {
@@ -48,11 +49,16 @@ pub fn spec_to_value(spec : @api.Spec) -> @template.Value {
         Map([
           ("verb", @template.Str(r.verb)),
           ("path", @template.Str(r.path)),
+          ("route", @template.Str(route_path(r.path))),
           ("handler", @template.Str(r.handler)),
           ("summary", @template.Str(r.summary)),
           ("hasSummary", @template.Bool(r.summary != "")),
           ("group", @template.Str(name)),
           ("hasGroup", @template.Bool(name != "")),
+          ("req", @template.Str(r.req)),
+          ("resp", @template.Str(r.resp)),
+          ("hasReq", @template.Bool(r.req != "")),
+          ("hasResp", @template.Bool(r.resp != "")),
         ]),
       ),
     )
@@ -83,9 +89,25 @@ pub fn spec_to_value(spec : @api.Spec) -> @template.Value {
       ),
     )
   }
+  let services : Array[@template.Value] = []
+  for s in spec.services {
+    let handlers : Array[@template.Value] = []
+    for r in s.routes {
+      handlers.push(@template.Str(r.handler))
+    }
+    services.push(
+      Dict(
+        Map([
+          ("name", @template.Str(s.name)),
+          ("routes", @template.List(handlers)),
+        ]),
+      ),
+    )
+  }
   Dict(
     Map([
       ("service", @template.Str(spec.service)),
+      ("services", @template.List(services)),
       ("routes", @template.List(routes)),
       ("types", @template.List(types)),
       ("groups", @template.List(groups)),
@@ -101,6 +123,6 @@ pub fn spec_to_value(spec : @api.Spec) -> @template.Value {
 pub fn generate_with(
   spec : @api.Spec,
   template_source : String,
-) -> String raise @template.TemplateError {
+) -> String raise @template.Refused {
   @template.render(template_source, spec_to_value(spec))
 }

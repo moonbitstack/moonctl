@@ -1,7 +1,7 @@
 ///|
 /// The sample spec the tree tests generate from: a grouped route with middleware,
 /// an ungrouped one, and a type.
-fn sample_spec() -> @api.Spec raise @api.SpecError {
+fn sample_spec() -> @api.Spec raise @api.Refused {
   @api.parse(
     (
       #|type LoginReq {
@@ -47,7 +47,7 @@ fn tree_at(tree : Array[TreeFile], path : String) -> String {
 ///|
 /// A spec whose service, group, handler and middleware names are all several words,
 /// so a style that joins words differently shows up in every name the tree invents.
-fn worded_spec() -> @api.Spec raise @api.SpecError {
+fn worded_spec() -> @api.Spec raise @api.Refused {
   @api.parse(
     (
       #|@server(group: order_admin, prefix: /api, middleware: audit_log)
@@ -217,10 +217,11 @@ test "the style names every file and entry point the tree invents" {
   let routes = tree_at(tree, "internal/handler/routes.mbt")
   assert_eq(contains(routes, "@user.login_handler(svc, ctx)"), true)
   assert_eq(contains(routes, "get_one_handler(svc, ctx)"), true)
+  // the route declares a request type, so the handler hands the logic that struct
   assert_eq(
     contains(
       tree_at(tree, "internal/handler/user/login_handler.mbt"),
-      "@logic.login_logic(svc, ctx)",
+      "@logic.login_logic(svc, req)",
     ),
     true,
   )
@@ -398,4 +399,132 @@ test "a route added since the last run still gets its stub" {
       assert_eq(contains(f.content, "pinghandler(svc, ctx)"), true)
     }
   }
+}
+
+///|
+test "each service block registers its own routes" {
+  let spec = @api.parse(
+    (
+      #|service alpha {
+      #|  @handler ping
+      #|  get /ping
+      #|}
+      #|
+      #|service beta {
+      #|  @handler stats
+      #|  get /stats
+      #|}
+    ),
+  )
+  let routes = tree_at(generate_tree(spec), "internal/handler/routes.mbt")
+  // one registration per service, and one call that composes them in order
+  assert_eq(contains(routes, "pub fn register_alpha("), true)
+  assert_eq(contains(routes, "pub fn register_beta("), true)
+  assert_eq(contains(routes, "let app = register_alpha(app, svc)"), true)
+  assert_eq(contains(routes, "let app = register_beta(app, svc)"), true)
+  assert_eq(contains(routes, "pub fn register_handlers("), true)
+  // alpha's route is in alpha's function, not in the composed one
+  let alpha_at = @text.index_of_str(routes, "pub fn register_alpha(")
+  let beta_at = @text.index_of_str(routes, "pub fn register_beta(")
+  let ping_at = @text.index_of_str(routes, "app.get(\"/ping\"")
+  assert_eq(ping_at > alpha_at && ping_at < beta_at, true)
+}
+
+///|
+test "one service block still registers in one function" {
+  let routes = tree_at(
+    generate_tree(@api.parse("service greet {\n  get /ping ping\n}")),
+    "internal/handler/routes.mbt",
+  )
+  assert_eq(contains(routes, "pub fn register_handlers("), true)
+  assert_eq(contains(routes, "register_greet"), false)
+}
+
+///|
+test "a handler binds the request it declares and writes the reply it declares" {
+  let spec = @api.parse(
+    (
+      #|type CreateReq {
+      #|  name: string
+      #|}
+      #|
+      #|type ItemResp {
+      #|  id: int64
+      #|}
+      #|
+      #|service greet {
+      #|  @handler create
+      #|  post /items (CreateReq) returns (ItemResp)
+      #|}
+    ),
+  )
+  let tree = generate_tree(spec)
+  let handler = tree_at(tree, "internal/handler/createhandler.mbt")
+  assert_eq(contains(handler, "@types.bind_create_req(ctx)"), true)
+  assert_eq(contains(handler, "@logic.createlogic(svc, req)"), true)
+  assert_eq(
+    contains(handler, "@moonapi.json(200, ToJson::to_json(reply))"),
+    true,
+  )
+  assert_eq(contains(handler, "@moonapi.text(400, why)"), true)
+  // the logic takes the struct and returns the reply type
+  let logic = tree_at(tree, "internal/logic/createlogic.mbt")
+  assert_eq(contains(logic, "_req : @types.CreateReq"), true)
+  assert_eq(contains(logic, "-> Result[@types.ItemResp, String]"), true)
+  // the types package carries the binder and the imports it reads through
+  let types = tree_at(tree, "internal/types/types.mbt")
+  assert_eq(
+    contains(types, "pub fn bind_create_req(ctx : @moonapi.Context)"),
+    true,
+  )
+  assert_eq(contains(types, "#derive(ToJson, FromJson)"), true)
+  let pkg = tree_at(tree, "internal/types/moon.pkg")
+  assert_eq(contains(pkg, "\"moonbitstack/moonapi\","), true)
+  assert_eq(contains(pkg, "\"moonbitlang/core/string\","), true)
+  // and the handler's package imports the types package it calls into
+  assert_eq(
+    contains(
+      tree_at(tree, "internal/handler/moon.pkg"),
+      "\"greet/internal/types\",",
+    ),
+    true,
+  )
+}
+
+///|
+test "a route with no request type still hands the context through" {
+  let tree = generate_tree(@api.parse("service greet {\n  get /ping ping\n}"))
+  let handler = tree_at(tree, "internal/handler/pinghandler.mbt")
+  assert_eq(contains(handler, "@logic.pinglogic(svc, ctx)"), true)
+  assert_eq(contains(handler, "bind_"), false)
+  // nothing is bound, so the types package imports nothing
+  assert_eq(tree_at(tree, "internal/types/moon.pkg"), "")
+}
+
+///|
+test "a request type nobody binds is not imported" {
+  let spec = @api.parse(
+    (
+      #|type Unused {
+      #|  id: int
+      #|}
+      #|
+      #|service greet {
+      #|  get /ping ping
+      #|}
+    ),
+  )
+  let tree = generate_tree(spec)
+  // the struct is still generated, the binder is not
+  assert_eq(
+    contains(
+      tree_at(tree, "internal/types/types.mbt"),
+      "pub(all) struct Unused",
+    ),
+    true,
+  )
+  assert_eq(
+    contains(tree_at(tree, "internal/handler/moon.pkg"), "internal/types"),
+    false,
+  )
 }

@@ -11,12 +11,12 @@
 /// A `--style` template that is not `<before>GO<through>ZERO<after>`: either a
 /// marker is missing (`go`, `zero`), they are the wrong way round, or one is cased
 /// neither `go`/`GO`/`Go` nor `zero`/`ZERO`/`Zero` (`gOZero`, `goZEro`).
-pub suberror StyleError {
+pub(all) suberror Refused {
   BadStyle(String)
 }
 
 ///|
-impl Show for StyleError with fn output(self, logger) {
+impl Show for Refused with fn output(self, logger) {
   match self {
     BadStyle(s) =>
       logger.write_string(
@@ -140,8 +140,8 @@ pub fn Style::gozero() -> Style {
 /// spelled, `ZERO`'s says how every later word is, and what stands between the two
 /// markers is what stands between the words. A template missing a marker (`go`,
 /// `zero`), holding them in the wrong order, or casing one of them any other way
-/// (`gOZero`, `goZEro`) raises `StyleError`.
-pub fn Style::parse(s : String) -> Style raise StyleError {
+/// (`gOZero`, `goZEro`) raises `Refused`.
+pub fn Style::parse(s : String) -> Style raise Refused {
   let up = upper_all(s)
   let go = @text.index_of_str(up, "GO")
   let zero = @text.index_of_str(up, "ZERO")

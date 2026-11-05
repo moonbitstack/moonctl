@@ -193,13 +193,13 @@ pub fn tokens(s : String) -> Array[String] {
 /// A spec the parser could not read: `Syntax` is the 1-based `line` and what went
 /// wrong there, `Missing` an `import` whose `path` was not among the files handed to
 /// `parse_all`.
-pub suberror SpecError {
+pub(all) suberror Refused {
   Syntax(line~ : Int32, msg~ : String)
   Missing(file~ : String, path~ : String)
 }
 
 ///|
-impl Show for SpecError with fn output(self, logger) {
+impl Show for Refused with fn output(self, logger) {
   match self {
     Syntax(line~, msg~) =>
       logger.write_string("line " + line.to_string() + ": " + msg)
@@ -267,18 +267,46 @@ pub(all) struct TypeDef {
 }
 
 ///|
+/// One `service` block: the name it declares and the routes it holds, in the
+/// order they were written. Blocks that repeat a name are one service — a spec
+/// may split a service across several blocks to give each its own `@server`
+/// annotations — so a name appears at most once, at the place it first did.
+pub(all) struct Service {
+  name : String
+  routes : Array[Route]
+}
+
+///|
 /// A parsed `.api` service specification. `groups` lists the `@server( … )` blocks
 /// in the order they were declared; each route also points at the one it belongs
-/// to. `imports` holds the `import` paths exactly as the file wrote them — relative
-/// to the file itself, so resolving one needs the path it was read from; `deps` and
-/// `parse_all` do that.
+/// to. `services` keeps the `service` blocks apart — one entry per name — while
+/// `routes` is the same routes flattened in file order. `imports` holds the
+/// `import` paths exactly as the file wrote them — relative to the file itself,
+/// so resolving one needs the path it was read from; `deps` and `parse_all` do
+/// that.
 pub(all) struct Spec {
   service : String
   routes : Array[Route]
+  services : Array[Service]
   types : Array[TypeDef]
   info : Array[(String, String)]
   groups : Array[Group]
   imports : Array[String]
+}
+
+///|
+/// The `service` block called `name`, adding one when this is the first block to
+/// declare it. The returned record shares its `routes` with the one in `services`,
+/// so a route pushed onto either is seen by both.
+fn service_entry(services : Array[Service], name : String) -> Service {
+  for s in services {
+    if s.name == name {
+      return s
+    }
+  }
+  let s : Service = { name, routes: [], }
+  services.push(s)
+  s
 }
 
 ///|
@@ -364,6 +392,29 @@ priv enum Member {
 }
 
 ///|
+/// A field name with its trailing `?` taken off, and whether it carried one:
+/// `note?` is the field `note`, declared optional.
+fn split_optional(name : String) -> (String, Bool) {
+  let n = name.length()
+  if n > 0 && name[n - 1] == '?' {
+    (@text.trim(name[0:n - 1].to_owned()), true)
+  } else {
+    (name, false)
+  }
+}
+
+///|
+/// `type_` made optional when `optional` says the field was declared with a `?`,
+/// or when the type already spells it so.
+fn as_optional(type_ : String, optional : Bool) -> String {
+  if optional && @text.ends_with(type_, "?") == false {
+    type_ + "?"
+  } else {
+    type_
+  }
+}
+
+///|
 /// Read one `type`-block line. Accepts goctl's Go-struct field `Name Type` and
 /// moonctl's colon form `name: type` (each with an optional back-tick tag), a bare
 /// type name as an inline embed, and `Name {` as an anonymous nested struct.
@@ -387,16 +438,19 @@ fn read_member(line : String) -> Member? {
   }
   let colon = index_of(decl, ':', 0)
   if colon > 0 {
-    let name = @text.trim(decl[0:colon].to_owned())
-    let type_ = map_type(decl[colon + 1:].to_owned())
-    if type_ == "" {
+    let (name, optional) = split_optional(@text.trim(decl[0:colon].to_owned()))
+    let raw = map_type(decl[colon + 1:].to_owned())
+    if raw == "" {
       return None
     }
-    return Some(Plain({ name, type_, tag, }))
+    return Some(Plain({ name, type_: as_optional(raw, optional), tag, }))
   }
   let toks = tokens(decl)
   if toks.length() >= 2 {
-    return Some(Plain({ name: toks[0], type_: map_type(toks[1]), tag, }))
+    let (name, optional) = split_optional(toks[0])
+    return Some(
+      Plain({ name, type_: as_optional(map_type(toks[1]), optional), tag, }),
+    )
   }
   if toks.length() == 1 && is_name(toks[0]) {
     return Some(Inline(toks[0]))
@@ -630,6 +684,8 @@ fn read(source : String) -> (Spec, Array[(Int32, String)]) {
   let issues : Array[(Int32, String)] = []
   let mut service = "app"
   let routes : Array[Route] = []
+  let services : Array[Service] = []
+  let mut active : Service? = None
   let types : Array[TypeDef] = []
   let info : Array[(String, String)] = []
   let groups : Array[Group] = []
@@ -808,7 +864,7 @@ fn read(source : String) -> (Spec, Array[(Int32, String)]) {
       let name = if toks.length() >= 2 { drop_brace(toks[1]) } else { "" }
       if name == "" {
         issues.push((no, "service needs a name"))
-      } else {
+      } else if service == "app" {
         service = name
       }
       if index_of(s, '{', 0) < 0 {
@@ -816,6 +872,10 @@ fn read(source : String) -> (Spec, Array[(Int32, String)]) {
       } else {
         in_service = true
         service_line = no
+        // the block's own name, which the module name only follows the first time
+        active = Some(
+          service_entry(services, if name == "" { service } else { name }),
+        )
       }
     } else if @text.starts_with(s, "type ") || @text.starts_with(s, "type(") {
       let toks = tokens(s)
@@ -923,6 +983,7 @@ fn read(source : String) -> (Spec, Array[(Int32, String)]) {
           issues.push((no, "@handler " + pending_handler + " has no route"))
         }
         in_service = false
+        active = None
         group = None
         pending_handler = ""
         pending_doc = ""
@@ -980,7 +1041,7 @@ fn read(source : String) -> (Spec, Array[(Int32, String)]) {
           Some(g) => g.prefix
           None => ""
         }
-        routes.push({
+        let route = {
           verb,
           path: join_path(prefix, toks[1]),
           handler,
@@ -988,7 +1049,13 @@ fn read(source : String) -> (Spec, Array[(Int32, String)]) {
           req,
           resp,
           group,
-        })
+        }
+        routes.push(route)
+        let owner = match active {
+          Some(s) => s
+          None => service_entry(services, service)
+        }
+        owner.routes.push(route)
         pending_handler = ""
         pending_doc = ""
       } else if is_http_verb(toks[0]) {
@@ -1022,7 +1089,7 @@ fn read(source : String) -> (Spec, Array[(Int32, String)]) {
       (service_line, "service " + service + " is missing its closing `}`"),
     )
   }
-  ({ service, routes, types, info, groups, imports, }, issues)
+  ({ service, routes, services, types, info, groups, imports, }, issues)
 }
 
 ///|
@@ -1064,10 +1131,10 @@ fn read(source : String) -> (Spec, Array[(Int32, String)]) {
 /// it: the routes carry its `prefix` in their paths and its `Group` on their
 /// `group`. Verbs are lower-cased, blank lines and `//` comments are dropped.
 ///
-/// Any other line raises a `SpecError` naming it — a misspelt verb or a missing
+/// Any other line raises a `Refused` naming it — a misspelt verb or a missing
 /// brace would otherwise generate a quietly truncated program. Use `parse_lenient`
 /// for a best-effort read of a spec that is still being written.
-pub fn parse(source : String) -> Spec raise SpecError {
+pub fn parse(source : String) -> Spec raise Refused {
   let (spec, issues) = read(source)
   if issues.length() > 0 {
     let mut first = issues[0]

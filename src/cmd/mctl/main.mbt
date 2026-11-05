@@ -57,26 +57,101 @@ async fn read_spec(input : String) -> @moonctl.Spec {
 /// the types, which follow the spec and are rewritten every run. `flat` instead
 /// writes the whole scaffold to a single `<stem>.mbt`, as earlier versions did.
 /// All IO failures are caught and reported so `main` never propagates an error.
-async fn gen_api(
-  input : String,
-  style : String,
-  dir : String,
-  flat : Bool,
-) -> Unit {
+async fn gen_api(input : String, opts : Opts) -> Unit {
   try {
-    let spec = read_spec(input)
-    if flat {
+    if opts.flat {
+      let spec = read_spec(input)
       let out = replace_ext(input, ".api", ".mbt")
       @fs.write_file(out, @moonctl.generate(spec), create_mode=CreateOrTruncate)
       println("mctl: generated " + out + " from " + input)
       return
     }
+    // A library named on the command line wins; otherwise the `home` the config
+    // file carries is used, so a team sets it once. `--remote` is never taken from
+    // the config: checking a repository out is a decision, not a default.
+    let mut home = opts.home
+    if home == "" && opts.remote == "" && @fs.exists(config_path()) {
+      let cfg = read_config()
+      home = cfg.home
+    }
+    let lib = @cli.library(home~, remote=opts.remote, branch=opts.branch)
+    if @cli.is_bundled(lib) == false {
+      return gen_api_through_library(input, opts, lib)
+    }
+    let spec = read_spec(input)
     write_tree(
       input,
-      @moonctl.generate_tree(spec, style=@moonctl.Style::parse(style), dir~),
+      @moonctl.generate_tree(
+        spec,
+        style=@moonctl.Style::parse(opts.style),
+        dir=opts.dir,
+      ),
     )
   } catch {
     e => println("mctl: error generating from " + input + ": " + e.to_string())
+  }
+}
+
+///|
+/// `gen api` with a template library: check `--remote` out when that is what was
+/// asked for, read the library's service template, and write what it renders. The
+/// checkout is a temporary directory and is removed afterwards.
+async fn gen_api_through_library(
+  input : String,
+  opts : Opts,
+  lib : @cli.Library,
+) -> Unit {
+  let mut checkout = ""
+  try {
+    let root = if lib.home != "" {
+      lib.home
+    } else {
+      let dir = checkout_remote(lib.remote, lib.branch) catch {
+        e => return println("mctl: " + e.to_string())
+      }
+      checkout = dir
+      dir
+    }
+    let entry = match @cli.find_template("api-service") {
+      Some(t) => t
+      None =>
+        return println("mctl: the template library has no api-service entry")
+    }
+    let files : Array[@moonctl.TemplateFile] = []
+    read_template_dir(@cli.template_dir(root, entry), files)
+    if files.length() == 0 {
+      println("mctl: no template files under " + @cli.template_dir(root, entry))
+    } else {
+      gen_api_from_library(input, root, opts.dir, files)
+    }
+  } catch {
+    e => println("mctl: error reading the template library: " + e.to_string())
+  }
+  if checkout != "" {
+    remove_checkout(checkout)
+  }
+}
+
+///|
+/// Remove a cloned template library. `git` marks the files in its object store
+/// read-only on Windows, and a recursive remove refuses to delete those, so every
+/// entry is made writable first.
+async fn remove_checkout(dir : String) -> Unit {
+  let writable = async fn(parent : String, names : Array[String]) -> Unit {
+    for name in names {
+      @fs.chmod(parent + "/" + name, 0o700) catch {
+        _ => ()
+      }
+    }
+  }
+  @fs.walk(dir, writable, allow_failure=true) catch {
+    _ => ()
+  }
+  @fs.chmod(dir, 0o700) catch {
+    _ => ()
+  }
+  @fs.rmdir(dir, recursive=true) catch {
+    e => println("mctl: could not remove " + dir + ": " + e.to_string())
   }
 }
 
@@ -206,6 +281,87 @@ async fn gen_crud(input : String) -> Unit {
     println("mctl: generated " + out + " from " + input)
   } catch {
     e => println("mctl: error generating from " + input + ": " + e.to_string())
+  }
+}
+
+///|
+/// Every file under `root`, as a template library entry: its path relative to `root`
+/// and its text. Directories are descended into; a file that cannot be read as text
+/// is skipped, since a template library is source.
+async fn read_template_dir(
+  root : String,
+  out : Array[@moonctl.TemplateFile],
+) -> Unit {
+  let base = if @text.ends_with(root, "/") { root } else { root + "/" }
+  let read = async fn(dir : String, names : Array[String]) -> Unit {
+    for name in names {
+      let full = dir + "/" + name
+      if @fs.kind(full) is @fs.Regular {
+        let text = @fs.read_file(full).text() catch { _ => continue }
+        let rel = if @text.starts_with(full, base) {
+          full[base.length():].to_owned()
+        } else {
+          name
+        }
+        out.push({ path: rel, text, })
+      }
+    }
+  }
+  @fs.walk(root, read)
+}
+
+///|
+/// Check `remote` out at `branch` into a fresh temporary directory, and return it.
+/// A shallow single-branch checkout is all a template library needs.
+async fn checkout_remote(remote : String, branch : String) -> String {
+  let dir = @fs.tmpdir(prefix="mctl-templates")
+  let (code, _out, err) = @process.collect_output("git", [
+    "clone", "--depth", "1", "--branch", branch, remote, dir,
+  ])
+  if code != 0 {
+    abort("git clone " + remote + " failed: " + err.text())
+  }
+  dir
+}
+
+///|
+/// Generate from a template library instead of the built-in scaffolds: render every
+/// file under the library's `api/service` directory over the spec and write it under
+/// `dir`. `root` is the `--home` directory, or the checkout of `--remote`.
+async fn gen_api_from_library(
+  input : String,
+  root : String,
+  dir : String,
+  files : Array[@moonctl.TemplateFile],
+) -> Unit {
+  try {
+    let spec = read_spec(input)
+    let out = @moonctl.render_template_dir(spec, files)
+    for entry in out {
+      write_gen_file({ path: at_dir(dir, entry.0), content: entry.1, })
+    }
+    println(
+      "mctl: wrote " +
+      out.length().to_string() +
+      " file(s) from " +
+      input +
+      " through the template library at " +
+      root,
+    )
+  } catch {
+    e => println("mctl: error generating from " + input + ": " + e.to_string())
+  }
+}
+
+///|
+/// `path` under `dir`, or `path` itself when no output directory was named.
+fn at_dir(dir : String, path : String) -> String {
+  if dir == "" {
+    path
+  } else if @text.ends_with(dir, "/") {
+    dir + path
+  } else {
+    dir + "/" + path
   }
 }
 
@@ -406,20 +562,9 @@ struct Opts {
   style : String
   dir : String
   flat : Bool
-}
-
-///|
-/// `s` with `prefix` cut off, or `None` when it does not start with one.
-fn after_prefix(s : String, prefix : String) -> String? {
-  if s.length() < prefix.length() {
-    return None
-  }
-  for i = 0; i < prefix.length(); i = i + 1 {
-    if s[i] != prefix[i] {
-      return None
-    }
-  }
-  Some(s[prefix.length():].to_owned())
+  home : String
+  remote : String
+  branch : String
 }
 
 ///|
@@ -430,30 +575,61 @@ fn split_flags(argv : Array[String]) -> (Array[String], Opts) {
   let mut style = "gozero"
   let mut dir = ""
   let mut flat = false
+  let mut home = ""
+  let mut remote = ""
+  let mut branch = @moonctl.default_branch
   let mut i = 0
   while i < argv.length() {
     let a = argv[i]
     if a == "--flat" {
       flat = true
-    } else if a == "--style" && i + 1 < argv.length() {
-      style = argv[i + 1]
       i = i + 1
-    } else if a == "--dir" && i + 1 < argv.length() {
-      dir = argv[i + 1]
-      i = i + 1
-    } else {
-      match after_prefix(a, "--style=") {
-        Some(v) => style = v
-        None =>
-          match after_prefix(a, "--dir=") {
-            Some(v) => dir = v
-            None => words.push(a)
-          }
+    } else if @text.starts_with(a, "--") {
+      let rest = a[2:].to_owned()
+      let eq = @text.index_of_str(rest, "=")
+      let (name, inline) = if eq >= 0 {
+        (rest[0:eq].to_owned(), Some(rest[eq + 1:].to_owned()))
+      } else {
+        (rest, None)
       }
+      if name == "style" ||
+        name == "dir" ||
+        name == "home" ||
+        name == "remote" ||
+        name == "branch" {
+        // `--flag value` and `--flag=value` both read; a value flag with nothing
+        // after it keeps its default rather than swallowing the next command word.
+        let from_next = inline is None && i + 1 < argv.length()
+        let value = match inline {
+          Some(v) => Some(v)
+          None => if from_next { Some(argv[i + 1]) } else { None }
+        }
+        match value {
+          Some(v) =>
+            if name == "style" {
+              style = v
+            } else if name == "dir" {
+              dir = v
+            } else if name == "home" {
+              home = v
+            } else if name == "remote" {
+              remote = v
+            } else {
+              branch = v
+            }
+          None => words.push(a)
+        }
+        i = i + (if from_next { 2 } else { 1 })
+      } else {
+        words.push(a)
+        i = i + 1
+      }
+    } else {
+      words.push(a)
+      i = i + 1
     }
-    i = i + 1
   }
-  (words, { style, dir, flat, })
+  (words, { style, dir, flat, home, remote, branch, })
 }
 
 ///|
@@ -478,7 +654,7 @@ fn take_write_flag(argv : Array[String]) -> (Array[String], Bool) {
 /// (proto → moonrpc), so both spellings work.
 async fn dispatch(what : String, file : String, opts : Opts) -> Unit {
   match what {
-    "api" => gen_api(file, opts.style, opts.dir, opts.flat)
+    "api" => gen_api(file, opts)
     "proto" | "rpc" => gen_rpc(file, opts)
     "model" => gen_model(file)
     "mongo" => model_mongo(file)

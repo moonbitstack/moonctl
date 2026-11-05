@@ -118,7 +118,7 @@ fn cmd_completion(shell : String) -> Unit {
 
 ///|
 /// `mctl template <list|show> [name]` — the bundled library.
-fn cmd_template(args : Array[String]) -> Unit {
+async fn cmd_template(args : Array[String]) -> Unit {
   let what = if args.length() > 0 { args[0] } else { "list" }
   match what {
     "list" =>
@@ -142,7 +142,24 @@ fn cmd_template(args : Array[String]) -> Unit {
             )
         }
       }
-    _ => println("mctl: template <list|show> [name]")
+    "init" => {
+      let target = if args.length() > 1 { args[1] } else { "templates" }
+      try {
+        for entry in @moonctl.template_starter(@moonctl.pins) {
+          write_gen_file({ path: target + "/" + entry.0, content: entry.1, })
+        }
+        println(
+          "mctl: wrote a template library to " +
+          target +
+          "; edit it, then `mctl gen api <file.api> --home " +
+          target +
+          "`",
+        )
+      } catch {
+        e => println("mctl: template init error: " + e.to_string())
+      }
+    }
+    _ => println("mctl: template <list|show|init> [name]")
   }
 }
 

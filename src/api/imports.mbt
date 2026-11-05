@@ -110,7 +110,7 @@ fn walk(
   files : Map[String, String],
   seen : Map[String, Bool],
   out : Array[Scan],
-) -> Unit raise SpecError {
+) -> Unit raise Refused {
   seen[path] = true
   let (spec, issues) = read(source)
   for raw in spec.imports {
@@ -134,9 +134,9 @@ fn walk(
 /// one `Spec`. A file is scanned once however many times it is imported, so a cycle
 /// terminates.
 ///
-/// The service name is the last one declared, so the importing file's own `service`
-/// block wins and a spec that does nothing but import still takes the name from what
-/// it imported.
+/// The service name is the one the importing file declares, or else the last one its
+/// imports declared, so a spec that does nothing but import still takes the name
+/// from what it imported.
 ///
 /// An `import` naming a file that is not in `files` raises `Missing`; a file that
 /// does not parse raises its first complaint the way `parse` does, with the file it
@@ -145,7 +145,7 @@ pub fn parse_all(
   source : String,
   files : Map[String, String],
   from~ : String = "",
-) -> Spec raise SpecError {
+) -> Spec raise Refused {
   let units : Array[Scan] = []
   walk(from, source, files, Map([]), units)
   for u in units {
@@ -162,6 +162,7 @@ pub fn parse_all(
   }
   let mut service = "app"
   let routes : Array[Route] = []
+  let services : Array[Service] = []
   let types : Array[TypeDef] = []
   let info : Array[(String, String)] = []
   let groups : Array[Group] = []
@@ -172,6 +173,14 @@ pub fn parse_all(
     }
     for r in u.spec.routes {
       routes.push(r)
+    }
+    // A file may name a service another file already named: the two blocks are one
+    // service, so its routes gather under the entry that is already there.
+    for s in u.spec.services {
+      let entry = service_entry(services, s.name)
+      for r in s.routes {
+        entry.routes.push(r)
+      }
     }
     for t in u.spec.types {
       types.push(t)
@@ -186,5 +195,5 @@ pub fn parse_all(
       imports.push(u.path)
     }
   }
-  { service, routes, types, info, groups, imports, }
+  { service, routes, services, types, info, groups, imports, }
 }

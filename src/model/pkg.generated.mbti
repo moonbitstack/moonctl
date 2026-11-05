@@ -28,12 +28,12 @@ pub fn mongo_file_name(String) -> String
 
 pub fn parse_ddl(String) -> Array[DdlTable]
 
-pub fn parse_dsn(String) -> DataSource raise DataSourceError
+pub fn parse_dsn(String) -> DataSource raise Refused
 
 pub fn tables_from_reflection(Array[ReflectedColumn]) -> Array[DdlTable]
 
 // Errors
-pub suberror DataSourceError {
+pub(all) suberror Refused {
   BadDsn(String)
 }
 

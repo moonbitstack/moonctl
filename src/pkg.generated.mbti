@@ -7,6 +7,7 @@ import {
   "moonbitstack/moonctl/cli",
   "moonbitstack/moonctl/client",
   "moonbitstack/moonctl/doc",
+  "moonbitstack/moonctl/gen",
   "moonbitstack/moonctl/model",
   "moonbitstack/moonctl/plugin",
   "moonbitstack/moonctl/proto",
@@ -38,6 +39,8 @@ pub fn config_set(@cli.Config, String, String) -> @cli.Config
 
 pub fn config_text(@cli.Config) -> String
 
+pub let default_branch : String
+
 pub fn default_config() -> @cli.Config
 
 pub fn default_routes(@proto.Proto) -> Array[@proto.GatewayRoute]
@@ -54,7 +57,7 @@ pub fn gateway_file_name(String) -> String
 
 pub fn gen_files_to_json(Array[@plugin.GenFile]) -> @json.Json
 
-pub fn generate(@api.Spec, template? : String) -> String raise @template.TemplateError
+pub fn generate(@api.Spec, template? : String) -> String raise @template.Refused
 
 pub fn generate_agent(@api.Spec) -> String
 
@@ -92,11 +95,15 @@ pub fn generate_rpc_tree(@proto.Proto, style? : @style.Style, dir? : String) -> 
 
 pub fn generate_tree(@api.Spec, style? : @style.Style, dir? : String) -> Array[@scaffold.TreeFile]
 
-pub fn generate_with(@api.Spec, String) -> String raise @template.TemplateError
+pub fn generate_with(@api.Spec, String) -> String raise @template.Refused
 
 pub fn has_errors(Array[@api.Diagnostic]) -> Bool
 
 pub fn has_method(@proto.Proto, String) -> Bool
+
+pub fn is_bundled(@cli.Library) -> Bool
+
+pub fn library(home? : String, remote? : String, branch? : String) -> @cli.Library
 
 pub fn markdown_file_name(String) -> String
 
@@ -110,15 +117,15 @@ pub fn mongo_file_name(String) -> String
 
 pub fn openapi_document(@api.Spec, version? : @doc.DocVersion, title? : String, api_version? : String) -> @json.Json
 
-pub fn parse(String) -> @api.Spec raise @api.SpecError
+pub fn parse(String) -> @api.Spec raise @api.Refused
 
-pub fn parse_all(String, Map[String, String], from? : String) -> @api.Spec raise @api.SpecError
+pub fn parse_all(String, Map[String, String], from? : String) -> @api.Spec raise @api.Refused
 
 pub fn parse_config(String) -> @cli.Config
 
 pub fn parse_ddl(String) -> Array[@model.DdlTable]
 
-pub fn parse_dsn(String) -> @model.DataSource raise @model.DataSourceError
+pub fn parse_dsn(String) -> @model.DataSource raise @model.Refused
 
 pub fn parse_gen_files(@json.Json) -> Array[@plugin.GenFile]
 
@@ -146,7 +153,11 @@ pub let port : Int32
 
 pub fn proto_reserved_conflicts(@proto.ProtoMessage) -> Array[String]
 
-pub fn render(String, @template.Value) -> String raise @template.TemplateError
+pub fn render(String, @template.Value) -> String raise @template.Refused
+
+pub fn render_template_dir(@api.Spec, Array[@gen.TemplateFile]) -> Array[(String, String)] raise @template.Refused
+
+pub fn render_template_file(@api.Spec, @gen.TemplateFile) -> (String, String) raise @template.Refused
 
 pub fn resolve_import(String, String) -> String
 
@@ -180,6 +191,10 @@ pub fn tables_from_reflection(Array[@model.ReflectedColumn]) -> Array[@model.Ddl
 
 pub fn template_detail(@cli.TemplateEntry) -> String
 
+pub fn template_dir(String, @cli.TemplateEntry) -> String
+
+pub fn template_starter(Map[String, String]) -> Array[(String, String)]
+
 pub fn template_table() -> String
 
 pub fn templates() -> Array[@cli.TemplateEntry]
@@ -211,8 +226,6 @@ pub using @cli {type Config}
 
 pub using @model {type DataSource}
 
-pub using @model {type DataSourceError}
-
 pub using @model {type DdlColumn}
 
 pub using @model {type DdlTable}
@@ -223,7 +236,7 @@ pub using @doc {type DocVersion}
 
 pub using @api {type Field}
 
-pub type FuncFn = (Array[@template.Value]) -> @template.Value raise @template.TemplateError
+pub type FuncFn = (Array[@template.Value]) -> @template.Value raise @template.Refused
 
 pub using @proto {type GatewayRoute}
 
@@ -234,6 +247,8 @@ pub using @api {type Group}
 pub using @proto {type Label}
 
 pub using @client {type Lang}
+
+pub using @cli {type Library}
 
 pub using @model {type PgTarget}
 
@@ -267,17 +282,13 @@ pub using @api {type Severity}
 
 pub using @api {type Spec}
 
-pub using @api {type SpecError}
-
 pub using @style {type Style}
-
-pub using @style {type StyleError}
 
 pub using @template {type Template}
 
 pub using @cli {type TemplateEntry}
 
-pub using @template {type TemplateError}
+pub using @gen {type TemplateFile}
 
 pub using @scaffold {type TreeFile}
 

@@ -22,7 +22,7 @@ fn complaints(src : String) -> String {
 
 ///|
 /// The fields of the first `type` block `src` declares.
-fn fields_of(src : String) -> Array[Field] raise SpecError {
+fn fields_of(src : String) -> Array[Field] raise Refused {
   parse(src).types[0].fields
 }
 

@@ -23,13 +23,13 @@ pub(all) enum Value {
 
 ///|
 /// A template parse or execution failure, carrying a human-readable message.
-pub suberror TemplateError {
+pub(all) suberror Refused {
   ParseError(String)
   ExecError(String)
 }
 
 ///|
-impl Show for TemplateError with fn output(self, logger) {
+impl Show for Refused with fn output(self, logger) {
   match self {
     ParseError(m) => logger.write_string("template parse error: " + m)
     ExecError(m) => logger.write_string("template exec error: " + m)
@@ -39,7 +39,7 @@ impl Show for TemplateError with fn output(self, logger) {
 ///|
 /// A pipeline function: it receives the already-evaluated argument list (with the
 /// piped-in value, if any, appended last, mirroring Go) and returns a `Value`.
-pub type FuncFn = (Array[Value]) -> Value raise TemplateError
+pub type FuncFn = (Array[Value]) -> Value raise Refused
 
 // ── AST ──────────────────────────────────────────────────────────────────────
 
@@ -136,7 +136,7 @@ fn trim_right_ws(s : String) -> String {
 ///|
 /// Split `src` into literal-text and action pieces, honouring `{{- -}}`
 /// whitespace-trim markers and dropping `{{/* comments */}}`.
-fn scan(src : String) -> Array[Piece] raise TemplateError {
+fn scan(src : String) -> Array[Piece] raise Refused {
   let pieces : Array[Piece] = []
   let n = src.length()
   let mut i = 0
@@ -219,7 +219,7 @@ priv enum Tok {
 /// Tokenise one action body: identifiers/fields/variables/numbers become
 /// `TWord`, quoted and raw strings become `TStr`, and `|`, `(`, `)`, `,`, `:=`,
 /// `=` become their own tokens.
-fn lex_action(body : String) -> Array[Tok] raise TemplateError {
+fn lex_action(body : String) -> Array[Tok] raise Refused {
   let toks : Array[Tok] = []
   let n = body.length()
   let mut i = 0
@@ -336,7 +336,7 @@ fn is_value_word(w : String) -> Bool {
 }
 
 ///|
-fn parse_int_manual(w : String) -> Int64 raise TemplateError {
+fn parse_int_manual(w : String) -> Int64 raise Refused {
   let n = w.length()
   let mut i = 0
   let mut neg = false
@@ -364,7 +364,7 @@ fn parse_int_manual(w : String) -> Int64 raise TemplateError {
 }
 
 ///|
-fn parse_double_manual(w : String) -> Double raise TemplateError {
+fn parse_double_manual(w : String) -> Double raise Refused {
   let n = w.length()
   let mut i = 0
   let mut neg = false
@@ -420,7 +420,7 @@ fn parse_double_manual(w : String) -> Double raise TemplateError {
 }
 
 ///|
-fn parse_number(w : String) -> Arg raise TemplateError {
+fn parse_number(w : String) -> Arg raise Refused {
   let mut is_float = false
   for i = 0; i < w.length(); i = i + 1 {
     let c = w[i]
@@ -438,7 +438,7 @@ fn parse_number(w : String) -> Arg raise TemplateError {
 ///|
 /// Classify a value word into an `Arg`; raises when it is actually a bare
 /// function name (only valid as the first word of a command).
-fn classify_value(w : String) -> Arg raise TemplateError {
+fn classify_value(w : String) -> Arg raise Refused {
   if w.length() == 0 {
     raise ParseError("empty token")
   }
@@ -496,7 +496,7 @@ priv struct TokCursor {
 }
 
 ///|
-fn TokCursor::expect_rparen(self : TokCursor) -> Unit raise TemplateError {
+fn TokCursor::expect_rparen(self : TokCursor) -> Unit raise Refused {
   if self.pos < self.toks.length() {
     match self.toks[self.pos] {
       TRparen => self.pos += 1
@@ -508,7 +508,7 @@ fn TokCursor::expect_rparen(self : TokCursor) -> Unit raise TemplateError {
 }
 
 ///|
-fn TokCursor::parse_command(self : TokCursor) -> Command raise TemplateError {
+fn TokCursor::parse_command(self : TokCursor) -> Command raise Refused {
   if self.pos >= self.toks.length() {
     raise ParseError("expected a command")
   }
@@ -564,9 +564,7 @@ fn TokCursor::parse_command(self : TokCursor) -> Command raise TemplateError {
 }
 
 ///|
-fn TokCursor::parse_pipeline(
-  self : TokCursor,
-) -> Array[Command] raise TemplateError {
+fn TokCursor::parse_pipeline(self : TokCursor) -> Array[Command] raise Refused {
   let cmds : Array[Command] = []
   for ;; {
     cmds.push(self.parse_command())
@@ -588,7 +586,7 @@ fn TokCursor::parse_pipeline(
 fn pipeline_from(
   toks : Array[Tok],
   start : Int32,
-) -> Array[Command] raise TemplateError {
+) -> Array[Command] raise Refused {
   let tc = { toks, pos: start, }
   let cmds = tc.parse_pipeline()
   if tc.pos != toks.length() {
@@ -655,7 +653,7 @@ fn is_assignment(toks : Array[Tok]) -> Bool {
 }
 
 ///|
-fn build_assign(toks : Array[Tok]) -> Node raise TemplateError {
+fn build_assign(toks : Array[Tok]) -> Node raise Refused {
   let name = match toks[0] {
     TWord(w) => w[1:].to_owned()
     _ => raise ParseError("malformed variable assignment")
@@ -673,10 +671,7 @@ fn drop_first(toks : Array[Tok]) -> Array[Tok] {
 }
 
 ///|
-fn Parser::parse_if(
-  self : Parser,
-  toks : Array[Tok],
-) -> Node raise TemplateError {
+fn Parser::parse_if(self : Parser, toks : Array[Tok]) -> Node raise Refused {
   let pipe = pipeline_from(toks, 1)
   let (then_nodes, term) = self.parse_list()
   let tterm = lex_action(term)
@@ -700,10 +695,7 @@ fn Parser::parse_if(
 }
 
 ///|
-fn Parser::parse_range(
-  self : Parser,
-  toks : Array[Tok],
-) -> Node raise TemplateError {
+fn Parser::parse_range(self : Parser, toks : Array[Tok]) -> Node raise Refused {
   let assign_idx = find_tassign(toks)
   let mut key_var : String? = None
   let mut val_var : String? = None
@@ -750,10 +742,7 @@ fn Parser::parse_range(
 }
 
 ///|
-fn Parser::parse_with(
-  self : Parser,
-  toks : Array[Tok],
-) -> Node raise TemplateError {
+fn Parser::parse_with(self : Parser, toks : Array[Tok]) -> Node raise Refused {
   let pipe = pipeline_from(toks, 1)
   let (body, term) = self.parse_list()
   let kw = first_word(lex_action(term))
@@ -774,9 +763,7 @@ fn Parser::parse_with(
 ///|
 /// Parse a node list until a `{{end}}` or `{{else}}` (returned as the terminator
 /// body) or end of input (empty terminator).
-fn Parser::parse_list(
-  self : Parser,
-) -> (Array[Node], String) raise TemplateError {
+fn Parser::parse_list(self : Parser) -> (Array[Node], String) raise Refused {
   let nodes : Array[Node] = []
   for ;; {
     if self.pos >= self.pieces.length() {
@@ -918,7 +905,7 @@ fn to_output(v : Value) -> String {
 }
 
 ///|
-fn follow(v : Value, chain : Array[String]) -> Value raise TemplateError {
+fn follow(v : Value, chain : Array[String]) -> Value raise Refused {
   let mut cur = v
   for f in chain {
     cur = match cur {
@@ -941,7 +928,7 @@ fn eval_arg(
   a : Arg,
   dot : Value,
   vars : Map[String, Value],
-) -> Value raise TemplateError {
+) -> Value raise Refused {
   match a {
     Dot => dot
     Field(chain) => follow(dot, chain)
@@ -972,7 +959,7 @@ fn eval_command(
   dot : Value,
   vars : Map[String, Value],
   piped : Value?,
-) -> Value raise TemplateError {
+) -> Value raise Refused {
   let args : Array[Value] = []
   for a in cmd.args {
     args.push(eval_arg(env, a, dot, vars))
@@ -1007,7 +994,7 @@ fn eval_pipeline(
   cmds : Array[Command],
   dot : Value,
   vars : Map[String, Value],
-) -> Value raise TemplateError {
+) -> Value raise Refused {
   let mut acc : Value? = None
   for cmd in cmds {
     acc = Some(eval_command(env, cmd, dot, vars, acc))
@@ -1025,7 +1012,7 @@ fn render_nodes(
   dot : Value,
   vars : Map[String, Value],
   sb : StringBuilder,
-) -> Unit raise TemplateError {
+) -> Unit raise Refused {
   for node in nodes {
     match node {
       Text(t) => sb.write_string(t)
@@ -1102,11 +1089,7 @@ fn render_nodes(
 // ── Pipeline function library ────────────────────────────────────────────────
 
 ///|
-fn arg_at(
-  xs : Array[Value],
-  i : Int32,
-  name : String,
-) -> Value raise TemplateError {
+fn arg_at(xs : Array[Value], i : Int32, name : String) -> Value raise Refused {
   if i >= xs.length() {
     raise ExecError(name + ": missing argument")
   }
@@ -1215,7 +1198,7 @@ fn val_eq(a : Value, b : Value) -> Bool {
 }
 
 ///|
-fn val_cmp(a : Value, b : Value) -> Int32 raise TemplateError {
+fn val_cmp(a : Value, b : Value) -> Int32 raise Refused {
   match (a, b) {
     (Str(x), Str(y)) => str_cmp(x, y)
     _ =>
@@ -1469,7 +1452,7 @@ fn default_funcs() -> Map[String, FuncFn] {
 /// with `parse`, then `render` it against a `Value` any number of times. The
 /// parsed node tree stays private, captured inside `renderer`.
 pub struct Template {
-  mut renderer : (Value) -> String raise TemplateError
+  mut renderer : (Value) -> String raise Refused
   funcs : Map[String, FuncFn]
 }
 
@@ -1494,7 +1477,7 @@ pub fn Template::func(self : Template, name : String, f : FuncFn) -> Template {
 pub fn Template::parse(
   self : Template,
   source : String,
-) -> Template raise TemplateError {
+) -> Template raise Refused {
   let parser : Parser = { pieces: scan(source), pos: 0, }
   let (nodes, term) = parser.parse_list()
   if term != "" {
@@ -1516,16 +1499,13 @@ pub fn Template::parse(
 /// Render the template against `data`, producing the output string. Raises
 /// `ExecError` on an execution fault (undefined variable/function, bad range
 /// target, …).
-pub fn Template::render(
-  self : Template,
-  data : Value,
-) -> String raise TemplateError {
+pub fn Template::render(self : Template, data : Value) -> String raise Refused {
   (self.renderer)(data)
 }
 
 ///|
 /// Parse and render `source` against `data` in one call, with the default
 /// function library.
-pub fn render(source : String, data : Value) -> String raise TemplateError {
+pub fn render(source : String, data : Value) -> String raise Refused {
   Template::new().parse(source).render(data)
 }

@@ -164,6 +164,31 @@ fn client_src(proto : @proto.Proto) -> String {
         result +
         "\n}\n",
       )
+      // A server-streaming reply that never closes — a subscription — would hold the
+      // eager call above open forever. This one reads `count` messages and returns as
+      // soon as they are on the wire.
+      if r.server_streaming && r.client_streaming == false {
+        let one = @text.to_snake(r.name)
+        out.write_string(
+          "\n///|\n/// `" +
+          r.name +
+          "`, `count` messages at a time: returns as soon as that many have arrived\n/// instead of waiting for the server to close the stream, so a subscription that\n/// never ends can be read batch by batch. `stream_take` reports the messages only,\n/// so a status the server ends the stream with is not surfaced here.\npub async fn " +
+          client +
+          "::" +
+          one +
+          "_take(\n  self : " +
+          client +
+          ",\n  req : " +
+          pb(r.request, false) +
+          ",\n  count : Int32,\n) -> Array[@pb." +
+          r.response +
+          "] {\n  self.channel.stream_take(" +
+          path +
+          ", req.encode(), count).map(@pb." +
+          r.response +
+          "::decode)\n}\n",
+        )
+      }
     }
   }
   out.to_string()

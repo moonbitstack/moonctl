@@ -62,12 +62,11 @@ fn zero_lit(type_ : String) -> String? {
 /// The `if …` line refusing a value outside a field's `range=`, or "" when the
 /// field's type has no bounds to compare against. An open end contributes nothing,
 /// so `range=[1:]` only refuses what is below 1.
-fn range_check(f : @api.Field, r : @api.Range) -> String {
+fn range_check(f : @api.Field, r : @api.Range, field : String) -> String {
   if is_numeric(f.type_) == false {
     return ""
   }
   let tests : Array[String] = []
-  let field = "self." + f.mbt_name()
   match lit(f.type_, r.lo) {
     Some(v) =>
       if r.lo != "" {
@@ -104,11 +103,15 @@ fn range_check(f : @api.Field, r : @api.Range) -> String {
 ///|
 /// The `if …` line refusing a value the field's `options=` does not list, or "" when
 /// the field's type has no literal to compare against.
-fn options_check(f : @api.Field, allowed : Array[String]) -> String {
+fn options_check(
+  f : @api.Field,
+  allowed : Array[String],
+  field : String,
+) -> String {
   let tests : Array[String] = []
   for one in allowed {
     match lit(f.type_, one) {
-      Some(v) => tests.push("self." + f.mbt_name() + " != " + v)
+      Some(v) => tests.push(field + " != " + v)
       None => return ""
     }
   }
@@ -136,6 +139,7 @@ fn options_check(f : @api.Field, allowed : Array[String]) -> String {
 fn check_body(fields : Array[@api.Field]) -> String {
   let mut out = ""
   for f in fields {
+    let optional_type = @text.ends_with(f.type_, "?")
     if f.optional() == false && f.type_ == "String" {
       out = out +
         "  if self." +
@@ -144,14 +148,44 @@ fn check_body(fields : Array[@api.Field]) -> String {
         @text.quote(f.json_name() + " is required") +
         ")\n  }\n"
     }
+    // A field whose type is optional is only checked when it is there; a `match`
+    // keeps the comparison off the `Option` itself.
+    let field = if optional_type { "value" } else { "self." + f.mbt_name() }
+    let mut inner = ""
     let allowed = f.options()
     if allowed.length() > 0 {
-      out = out + options_check(f, allowed)
+      inner = inner + options_check(f, allowed, field)
     }
     match f.range() {
-      Some(r) => out = out + range_check(f, r)
+      Some(r) => inner = inner + range_check(f, r, field)
       None => ()
     }
+    if inner == "" {
+      continue
+    }
+    if optional_type {
+      out = out +
+        "  match self." +
+        f.mbt_name() +
+        " {\n    Some(value) =>\n" +
+        indent(inner) +
+        "    None => ()\n  }\n"
+    } else {
+      out = out + inner
+    }
+  }
+  out
+}
+
+///|
+/// `body` moved four spaces right, for the arm of a `match` it is placed in.
+fn indent(body : String) -> String {
+  let mut out = ""
+  for line in body.split("\n") {
+    if line == "" {
+      continue
+    }
+    out = out + "    " + line.to_owned() + "\n"
   }
   out
 }
@@ -174,6 +208,20 @@ fn default_pairs(fields : Array[@api.Field]) -> Array[String] {
       None => continue
     }
     let name = f.mbt_name()
+    if @text.ends_with(f.type_, "?") {
+      out.push(
+        "    " +
+        name +
+        ": if self." +
+        name +
+        " is None { Some(" +
+        value +
+        ") } else { self." +
+        name +
+        " },",
+      )
+      continue
+    }
     out.push(
       "    " +
       name +
