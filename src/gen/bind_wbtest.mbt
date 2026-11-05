@@ -11,6 +11,7 @@ fn bound_spec() -> @api.Spec {
       #|}
       #|
       #|type PageReq {
+      #|  id: int64 `path:"id"`
       #|  page: int `form:"page"`
       #|  all?: bool `form:"all"`
       #|}
@@ -20,7 +21,7 @@ fn bound_spec() -> @api.Spec {
       #|  post /items (CreateReq)
       #|
       #|  @handler list
-      #|  get /items (PageReq)
+      #|  get /items/:id (PageReq)
       #|}
     ),
   )
@@ -38,6 +39,9 @@ test "a binder reads each field from the place its tag names" {
   )
   // the header, from the request
   assert_eq(contains(code, "match ctx.request.header(\"X-Trace\") {"), true)
+  // the URL segment, from its own place
+  assert_eq(contains(code, "match ctx.param(\"id\") {"), true)
+  assert_eq(contains(code, "match bind_int64(text) {"), true)
   // the query string, parsed with the helper its type needs
   assert_eq(contains(code, "match ctx.query(\"page\") {"), true)
   assert_eq(contains(code, "match bind_int32(text) {"), true)
