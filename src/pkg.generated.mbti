@@ -17,6 +17,10 @@ import {
 }
 
 // Values
+pub fn binders_parse_text(@api.Spec) -> Bool
+
+pub fn bound_types(@api.Spec) -> Array[(String, Array[@api.Field])]
+
 pub fn bug_report(String, String, Array[(String, String)]) -> String
 
 pub fn cache_file_name(String) -> String

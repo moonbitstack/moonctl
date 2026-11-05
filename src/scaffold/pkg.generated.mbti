@@ -21,6 +21,8 @@ pub let pins : Map[String, String]
 
 pub let port : Int32
 
+pub fn rule_line(String, String) -> String
+
 pub fn scaffold_api(String) -> Array[@plugin.GenFile]
 
 pub fn scaffold_docker(String, port? : Int32) -> Array[@plugin.GenFile]

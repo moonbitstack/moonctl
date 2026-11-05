@@ -8,6 +8,8 @@ import {
 }
 
 // Values
+pub fn binders_parse_text(@api.Spec) -> Bool
+
 pub fn bound_types(@api.Spec) -> Array[(String, Array[@api.Field])]
 
 pub fn generate(@api.Spec, template? : String) -> String raise @template.Refused

@@ -205,6 +205,10 @@ out/internal/svc/service_context.mbt
 
 A grouped route's handler and logic go under the group's own directory, an ungrouped one's sit beside the routes, and every directory gets the `moon.pkg` that makes it a MoonBit package. `--flat` writes the single `<file>.mbt` earlier versions did.
 
+**What it writes is what `moon fmt` writes.** After a generation, mctl runs `moon fmt` over the packages it just wrote, so a freshly generated project needs no reformatting pass before its first commit: line wrapping, trailing commas and the shape of a `rule(...)` in `moon.mod` are all already the formatter's. The library layer stays pure text — `generate_tree` returns what it computed — and the formatting is the binary's step, so it needs `moon` on `PATH` (without it, generation still writes every file and says so). CI proves it: `scripts/check_scaffold_fmt.sh` scaffolds one project of every kind, formats them, and fails if the formatter changed a byte.
+
+Because the formatter works per package, a regeneration also formats the author's files in the packages it wrote. That is the same style `moon fmt` imposes on any MoonBit project, and it only ever moves whitespace.
+
 **Run it again and your code survives.** Only the two files moonctl owns — `internal/types/types.mbt` and `internal/handler/routes.mbt`, both of which must follow the spec — are rewritten. Everything else is written once and then left alone, because that is where the handler and logic bodies you filled in live. A route added to the spec since the last run still gets its stubs; the ones already on disk are not touched.
 
 The same rule is available to a library caller, which is where it is decided:

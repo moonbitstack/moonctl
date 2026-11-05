@@ -72,6 +72,8 @@ pub using @cli {
 ///|
 pub using @gen {
   type TemplateFile,
+  binders_parse_text,
+  bound_types,
   generate,
   generate_with,
   render_template_dir,

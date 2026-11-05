@@ -143,9 +143,13 @@ pub fn generate_mcp_tree(
       {
         ..f,
         content: f.content +
-        "\nrule(name: \"mcp\", command: \"moonx moonbitstack/moonmcp/cmd/mcp@" +
-        pins.get("moonbitstack/moonmcp").unwrap() +
-        " -C \\\"$mod_dir\\\" \\\"$input\\\" -o \\\"$output\\\"\")\n",
+        "\n" +
+        rule_line(
+          "mcp",
+          "moonx moonbitstack/moonmcp/cmd/mcp@" +
+          pins.get("moonbitstack/moonmcp").unwrap() +
+          " -C \\\"$mod_dir\\\" \\\"$input\\\" -o \\\"$output\\\"",
+        ),
       }
     } else {
       f

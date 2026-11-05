@@ -106,6 +106,9 @@ jobs:
           printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"hello","arguments":{"name":"leo"},"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}' \
             | (cd demomcp && moon run --target native . -- --stdio) | grep -q 'hello, leo'
 
+      - name: generated code is moon fmt-clean
+        run: bash scripts/check_scaffold_fmt.sh "$PWD/_build/native/debug/build/cmd/mctl/mctl.exe"
+
       - name: mctl serve --reload, with real processes
         run: bash scripts/check_serve_reload.sh
 

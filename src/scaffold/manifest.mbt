@@ -41,6 +41,28 @@ fn mod_file(name : String, deps : Array[String]) -> String {
 }
 
 ///|
+/// The `rule(...)` entry that wires a `moonx` generator into `moon.mod`, on one line
+/// when it fits in the width `moon fmt` breaks at and one argument per line when it
+/// does not — the two shapes the formatter leaves it in, so a generated `moon.mod`
+/// never changes on the first format.
+pub fn rule_line(name : String, command : String) -> String {
+  let one = "rule(name: " +
+    @text.quote(name) +
+    ", command: " +
+    @text.quote(command) +
+    ")"
+  if one.length() <= 80 {
+    one + "\n"
+  } else {
+    "rule(\n  name: " +
+    @text.quote(name) +
+    ",\n  command: " +
+    @text.quote(command) +
+    ",\n)\n"
+  }
+}
+
+///|
 /// A `moon.pkg` importing `entries`, each a `(path, alias)` pair where an empty
 /// alias leaves the path's last segment as the name, and marked as the module's
 /// native executable when `main_`.

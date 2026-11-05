@@ -480,7 +480,8 @@ test "a handler binds the request it declares and writes the reply it declares" 
   assert_eq(contains(types, "#derive(ToJson, FromJson)"), true)
   let pkg = tree_at(tree, "internal/types/moon.pkg")
   assert_eq(contains(pkg, "\"moonbitstack/moonapi\","), true)
-  assert_eq(contains(pkg, "\"moonbitlang/core/string\","), true)
+  // both request fields come out of the JSON body, so nothing parses text
+  assert_eq(contains(pkg, "\"moonbitlang/core/string\","), false)
   // and the handler's package imports the types package it calls into
   assert_eq(
     contains(
@@ -548,4 +549,43 @@ test "a types package with no binder imports only JSON" {
   assert_eq(contains(pkg, "\"moonbitlang/core/json\","), true)
   assert_eq(contains(pkg, "moonbitstack/moonapi"), false)
   assert_eq(contains(pkg, "moonbitlang/core/string"), false)
+}
+
+///|
+test "the text parsers are imported only by a binder that reads text" {
+  let header_only = @api.parse(
+    (
+      #|type Q {
+      #|  trace: string `header:"X-Trace"`
+      #|}
+      #|
+      #|service greet {
+      #|  @handler ping
+      #|  get /ping (Q)
+      #|}
+    ),
+  )
+  let pkg = tree_at(generate_tree(header_only), "internal/types/moon.pkg")
+  assert_eq(contains(pkg, "\"moonbitstack/moonapi\","), true)
+  assert_eq(contains(pkg, "\"moonbitlang/core/string\","), false)
+  // a number read out of the query string is what the parsers are for
+  let with_number = @api.parse(
+    (
+      #|type Q {
+      #|  page: int `form:"page"`
+      #|}
+      #|
+      #|service greet {
+      #|  @handler ping
+      #|  get /ping (Q)
+      #|}
+    ),
+  )
+  assert_eq(
+    contains(
+      tree_at(generate_tree(with_number), "internal/types/moon.pkg"),
+      "\"moonbitlang/core/string\",",
+    ),
+    true,
+  )
 }

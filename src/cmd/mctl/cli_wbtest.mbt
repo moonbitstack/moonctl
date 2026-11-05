@@ -119,3 +119,32 @@ test "a value flag with nothing after it keeps its default" {
   assert_eq(words, ["gen", "--branch"])
   assert_eq(opts.branch, "main")
 }
+
+///|
+test "a generation is formatted in the packages it wrote, under its own module" {
+  let files : Array[@moonctl.GenFile] = [
+    { path: "demo/moon.mod", content: "", },
+    { path: "demo/demo.mbt", content: "", },
+    { path: "demo/etc/demo.yaml", content: "", },
+    { path: "demo/internal/types/moon.pkg", content: "", },
+    { path: "demo/internal/types/types.mbt", content: "", },
+    { path: "demo/internal/handler/routes.mbt", content: "", },
+  ]
+  // the module is where `moon.mod` went; a package is any directory with a `.mbt`
+  assert_eq(module_root(files), "demo")
+  assert_eq(source_dirs(files), [
+    "demo", "demo/internal/types", "demo/internal/handler",
+  ])
+}
+
+///|
+test "a generation with no module of its own is left unformatted" {
+  // the docker and kube snippets belong to no module, and a flat generation writes
+  // beside the spec instead of into one
+  let files : Array[@moonctl.GenFile] = [
+    { path: "Dockerfile", content: "", },
+    { path: "deploy/service.yaml", content: "", },
+  ]
+  assert_eq(module_root(files), "")
+  assert_eq(source_dirs(files).length(), 0)
+}

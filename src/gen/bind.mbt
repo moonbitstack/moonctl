@@ -102,6 +102,20 @@ fn needed_helpers(fields : Array[@api.Field]) -> Array[String] {
 }
 
 ///|
+/// Whether any binder reads a value out of text, which is what
+/// `moonbitlang/core/string` is imported for. A spec whose request fields are all
+/// text or all in the body needs none of it, and an unused import fails
+/// `moon check` in a generated project.
+pub fn binders_parse_text(spec : @api.Spec) -> Bool {
+  for entry in bound_types(spec) {
+    if needed_helpers(entry.1).length() > 0 {
+      return true
+    }
+  }
+  false
+}
+
+///|
 /// The body of one request-field helper, by name.
 fn helper_src(name : String) -> String {
   let (ty, call) = match name {

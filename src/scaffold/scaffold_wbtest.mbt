@@ -326,7 +326,9 @@ test "mcp new lays out an MCP server whose registration is rebuilt from its tool
       "\"moonbitstack/moonmcp@" + pins["moonbitstack/moonmcp"] + "\"",
     ),
   )
-  assert_true(mod_.contains("rule(name: \"mcp\""))
+  // the rule is long enough that `moon fmt` keeps it one argument per line
+  assert_true(mod_.contains("rule(\n  name: \"mcp\","))
+  assert_true(mod_.contains("command: \"moonx moonbitstack/moonmcp/cmd/mcp@"))
   let tools_pkg = files
     .search_by(f => f.path == "hello/internal/tools/moon.pkg")
     .map(i => files[i].content)

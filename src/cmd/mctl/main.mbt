@@ -169,6 +169,7 @@ async fn write_tree(input : String, tree : Array[@moonctl.TreeFile]) -> Unit {
   for f in files {
     write_gen_file(f)
   }
+  format_written(module_root(files), files)
   let kept = tree.length() - files.length()
   println(
     "mctl: wrote " +
@@ -529,6 +530,7 @@ async fn write_scaffold(
     for f in files {
       write_gen_file(f)
     }
+    format_written(module_root(files), files)
     println(
       "mctl: scaffolded " +
       label +

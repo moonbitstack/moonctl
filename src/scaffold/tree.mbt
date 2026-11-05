@@ -301,7 +301,9 @@ fn types_imports(spec : @api.Spec, binders : String) -> Array[(String, String)] 
     if spec.types.length() == 0 {
       out.push(("moonbitlang/core/json", ""))
     }
-    out.push(("moonbitlang/core/string", ""))
+    if @gen.binders_parse_text(spec) {
+      out.push(("moonbitlang/core/string", ""))
+    }
   }
   out
 }
