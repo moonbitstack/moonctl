@@ -198,7 +198,12 @@ pub fn tables_from_reflection(cols : Array[ReflectedColumn]) -> Array[DdlTable] 
     let t = match tables.get(c.table) {
       Some(t) => t
       None => {
-        let t : DdlTable = { name: c.table, columns: [], }
+        let t : DdlTable = {
+          name: c.table,
+          columns: [],
+          indexes: [],
+          foreign_keys: [],
+        }
         tables[c.table] = t
         order.push(c.table)
         t
@@ -210,6 +215,7 @@ pub fn tables_from_reflection(cols : Array[ReflectedColumn]) -> Array[DdlTable] 
       primary_key: c.primary_key,
       nullable: c.nullable,
       default_: None,
+      unique: false,
     })
   }
   let out : Array[DdlTable] = []

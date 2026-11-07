@@ -233,3 +233,171 @@ test "the flat generators are untouched by the annotated tree" {
   )
   assert_eq(contains(code, "#orm.table"), false)
 }
+
+///|
+/// A schema with two tables, an index on the referencing one, and a foreign key
+/// between them.
+let related_schema : Array[@model.DdlTable] = @model.parse_ddl(
+  (
+    #|CREATE TABLE teams (
+    #|  id   INTEGER PRIMARY KEY,
+    #|  name TEXT NOT NULL UNIQUE
+    #|);
+    #|
+    #|CREATE TABLE heroes (
+    #|  id      INTEGER PRIMARY KEY,
+    #|  team_id INTEGER NOT NULL,
+    #|  code    TEXT,
+    #|  CONSTRAINT fk_team FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE
+    #|);
+    #|
+    #|CREATE UNIQUE INDEX uq_hero_code ON heroes (code);
+    #|CREATE INDEX ix_hero_team ON heroes (team_id);
+  ),
+)
+
+///|
+test "an index in the schema is an index annotation on the table" {
+  let models = tree_at(
+    generate_orm_tree_from_ddl(related_schema, "shop"),
+    "internal/model/models.mbt",
+  )
+  assert_eq(
+    contains(
+      models,
+      "#orm.index(column=\"code\", name=\"uq_hero_code\", unique=true)\n#orm.index(column=\"team_id\", name=\"ix_hero_team\")\n",
+    ),
+    true,
+  )
+  // the index annotations sit above the struct they belong to
+  assert_eq(contains(models, "#orm.index"), true)
+  // a table with no index keeps none
+  assert_eq(contains(models, "#orm.index(column=\"name\")"), false)
+}
+
+///|
+test "a column UNIQUE is the column's annotation" {
+  let models = tree_at(
+    generate_orm_tree_from_ddl(related_schema, "shop"),
+    "internal/model/models.mbt",
+  )
+  assert_eq(contains(models, "  #orm.column(unique=true)\n  name : String\n"), true)
+}
+
+///|
+test "a foreign key becomes a relation on both sides" {
+  let models = tree_at(
+    generate_orm_tree_from_ddl(related_schema, "shop"),
+    "internal/model/models.mbt",
+  )
+  // the referenced side holds the many
+  assert_eq(
+    contains(
+      models,
+      "#orm.has_many(name=\"heroes\", target=\"Heroes\", foreign_key=\"team_id\")",
+    ),
+    true,
+  )
+  // the referencing side holds the one, named after its column
+  assert_eq(
+    contains(
+      models,
+      "#orm.belongs_to(name=\"team\", target=\"Teams\", foreign_key=\"team_id\")",
+    ),
+    true,
+  )
+  // and the column itself carries the constraint, so the DDL it creates has it
+  assert_eq(
+    contains(models, "  #orm.column(kind=\"int\", references=\"teams.id\", on_delete=\"CASCADE\")"),
+    true,
+  )
+}
+
+///|
+test "two keys onto one table get two names, and a key onto a stranger is left out" {
+  let tables = @model.parse_ddl(
+    (
+      #|CREATE TABLE users (
+      #|  id INTEGER PRIMARY KEY
+      #|);
+      #|
+      #|CREATE TABLE posts (
+      #|  id        INTEGER PRIMARY KEY,
+      #|  author_id INTEGER REFERENCES users(id),
+      #|  editor_id INTEGER REFERENCES users(id),
+      #|  owner_id  INTEGER REFERENCES elsewhere(id)
+      #|);
+    ),
+  )
+  let models = tree_at(
+    generate_orm_tree_from_ddl(tables, "shop"),
+    "internal/model/models.mbt",
+  )
+  // both keys are named after their column, so neither collides with the other
+  assert_eq(
+    contains(
+      models,
+      "#orm.belongs_to(name=\"author\", target=\"Users\", foreign_key=\"author_id\")",
+    ),
+    true,
+  )
+  assert_eq(
+    contains(
+      models,
+      "#orm.belongs_to(name=\"editor\", target=\"Users\", foreign_key=\"editor_id\")",
+    ),
+    true,
+  )
+  // both appear on the same table, so the referenced side holds both
+  assert_eq(
+    contains(
+      models,
+      "#orm.has_many(name=\"posts\", target=\"Posts\", foreign_key=\"author_id\")",
+    ),
+    true,
+  )
+  assert_eq(
+    contains(
+      models,
+      "#orm.has_many(name=\"posts_list\", target=\"Posts\", foreign_key=\"editor_id\")",
+    ),
+    true,
+  )
+  // a key onto a table the schema does not declare is a column constraint only
+  assert_eq(contains(models, "target=\"Elsewhere\""), false)
+}
+
+///|
+test "a key onto a non-key column says which column it joins on" {
+  let tables = @model.parse_ddl(
+    (
+      #|CREATE TABLE countries (
+      #|  id   INTEGER PRIMARY KEY,
+      #|  code TEXT NOT NULL
+      #|);
+      #|
+      #|CREATE TABLE cities (
+      #|  id           INTEGER PRIMARY KEY,
+      #|  country_code TEXT REFERENCES countries(code)
+      #|);
+    ),
+  )
+  let models = tree_at(
+    generate_orm_tree_from_ddl(tables, "shop"),
+    "internal/model/models.mbt",
+  )
+  assert_eq(
+    contains(
+      models,
+      "#orm.belongs_to(name=\"country\", target=\"Countries\", foreign_key=\"country_code\", key=\"code\")",
+    ),
+    true,
+  )
+  assert_eq(
+    contains(
+      models,
+      "#orm.has_many(name=\"cities\", target=\"Cities\", foreign_key=\"country_code\", key=\"code\")",
+    ),
+    true,
+  )
+}

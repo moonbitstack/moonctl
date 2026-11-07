@@ -189,3 +189,122 @@ test "map_sql_type: the full type set the batch requires" {
   // unknown falls back to a TEXT-affinity String
   assert_eq(map_sql_type("geography"), "String")
 }
+
+///|
+/// A two-table schema carrying every constraint this front end reads: a
+/// column-level `UNIQUE`, two `CREATE INDEX` statements (one of them unique and
+/// declared before its table), a named table-level foreign key with a referential
+/// action, and a column-level `REFERENCES`.
+let related_ddl : String =
+  #|CREATE UNIQUE INDEX uq_heroes_code ON heroes (code);
+  #|CREATE INDEX ix_heroes_team ON heroes (team_id, code);
+  #|
+  #|CREATE TABLE teams (
+  #|  id    INTEGER PRIMARY KEY,
+  #|  name  TEXT NOT NULL UNIQUE
+  #|);
+  #|
+  #|CREATE TABLE heroes (
+  #|  id       INTEGER PRIMARY KEY,
+  #|  team_id  INTEGER NOT NULL,
+  #|  mentor   INTEGER REFERENCES heroes(id) ON DELETE SET NULL,
+  #|  code     TEXT,
+  #|  CONSTRAINT fk_hero_team FOREIGN KEY (team_id)
+  #|    REFERENCES teams(id) ON DELETE CASCADE ON UPDATE RESTRICT
+  #|);
+
+///|
+test "parse_ddl: CREATE INDEX, alone or after the table it covers" {
+  let tables = parse_ddl(related_ddl)
+  assert_eq(tables.length(), 2)
+  let heroes = tables[1]
+  assert_eq(heroes.name, "heroes")
+  // both statements landed on the table, in the order they were written — even
+  // though the first one came before the CREATE TABLE
+  assert_eq(heroes.indexes.length(), 2)
+  assert_eq(heroes.indexes[0].name, "uq_heroes_code")
+  assert_eq(heroes.indexes[0].columns.length(), 1)
+  assert_eq(heroes.indexes[0].columns[0], "code")
+  assert_eq(heroes.indexes[0].unique, true)
+  assert_eq(heroes.indexes[1].name, "ix_heroes_team")
+  assert_eq(heroes.indexes[1].columns.join(","), "team_id,code")
+  assert_eq(heroes.indexes[1].unique, false)
+  // a table with none keeps none
+  assert_eq(tables[0].indexes.length(), 0)
+}
+
+///|
+test "parse_ddl: UNIQUE and KEY table constraints are indexes" {
+  let src =
+    #|CREATE TABLE tags (
+    #|  id    INTEGER PRIMARY KEY,
+    #|  slug  TEXT,
+    #|  label TEXT,
+    #|  UNIQUE (slug),
+    #|  KEY ix_label (label)
+    #|);
+  let t = parse_ddl(src)[0]
+  assert_eq(t.indexes.length(), 2)
+  // an unnamed unique constraint stays unnamed, so the database names it
+  assert_eq(t.indexes[0].name, "")
+  assert_eq(t.indexes[0].unique, true)
+  assert_eq(t.indexes[0].columns.join(","), "slug")
+  assert_eq(t.indexes[1].name, "ix_label")
+  assert_eq(t.indexes[1].unique, false)
+}
+
+///|
+test "parse_ddl: a column UNIQUE is the column's, not the table's" {
+  let t = parse_ddl(related_ddl)[0]
+  assert_eq(t.indexes.length(), 0)
+  assert_eq(t.columns[1].name, "name")
+  assert_eq(t.columns[1].unique, true)
+  assert_eq(t.columns[0].unique, false)
+}
+
+///|
+test "parse_ddl: a table-level foreign key, with its actions" {
+  let heroes = parse_ddl(related_ddl)[1]
+  // two keys: the column-level one onto the table itself, the named table-level one
+  assert_eq(heroes.foreign_keys.length(), 2)
+  let team = heroes.foreign_keys[1]
+  assert_eq(team.columns.join(","), "team_id")
+  assert_eq(team.ref_table, "teams")
+  assert_eq(team.ref_columns.join(","), "id")
+  assert_eq(team.on_delete, "CASCADE")
+  assert_eq(team.on_update, "RESTRICT")
+}
+
+///|
+test "parse_ddl: a column-level REFERENCES" {
+  let heroes = parse_ddl(related_ddl)[1]
+  let mentor = heroes.foreign_keys[0]
+  assert_eq(mentor.columns.join(","), "mentor")
+  assert_eq(mentor.ref_table, "heroes")
+  assert_eq(mentor.ref_columns.join(","), "id")
+  // `SET NULL` is two words, and both are kept as the DDL wrote them
+  assert_eq(mentor.on_delete, "SET NULL")
+  assert_eq(mentor.on_update, "")
+}
+
+///|
+test "generate_crud: the model declares its indexes and foreign keys" {
+  let code = generate_crud(parse_ddl(related_ddl))
+  // the index list is the model's, so `create_table` creates them
+  assert_eq(
+    contains(
+      code,
+      "indexes=[\n    @moonorm.index([\"code\"], name=\"uq_heroes_code\", unique=true),\n    @moonorm.index([\"team_id\", \"code\"], name=\"ix_heroes_team\"),\n  ],",
+    ),
+    true,
+  )
+  // a column UNIQUE is the column's
+  assert_eq(contains(code, "unique=true"), true)
+  // and a foreign key names its target on the column that holds it
+  assert_eq(contains(code, ", references=(\"teams\", \"id\")"), true)
+  assert_eq(contains(code, ", on_delete=\"CASCADE\""), true)
+  assert_eq(contains(code, ", on_update=\"RESTRICT\""), true)
+  assert_eq(contains(code, ", references=(\"heroes\", \"id\")"), true)
+  // a table with no index declares none
+  assert_eq(contains(code, "indexes=[]"), false)
+}

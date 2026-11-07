@@ -23,12 +23,17 @@ fn orm_base(ty : String) -> String {
 
 ///|
 /// The `#orm.column` a field needs beyond what its type already says: a primary
-/// key, the SQL kind of a MoonBit type `moonorm` has no default column for, and
-/// `autoincrement` on an optional integer key. `None` when the type says it all.
+/// key, the SQL kind of a MoonBit type `moonorm` has no default column for,
+/// `autoincrement` on an optional integer key, `unique`, and the foreign key the
+/// column points at. `None` when the type says it all.
 fn orm_annotation(
   ty : String,
   primary_key : Bool,
   default : String?,
+  unique~ : Bool = false,
+  references~ : String = "",
+  on_delete~ : String = "",
+  on_update~ : String = "",
 ) -> String? {
   let base = orm_base(ty)
   let args : Array[String] = []
@@ -39,6 +44,9 @@ fn orm_annotation(
       args.push("autoincrement=true")
     }
   }
+  if unique {
+    args.push("unique=true")
+  }
   match orm_kind(base) {
     Some(kind) => args.push("kind=" + @text.quote(kind))
     None => ()
@@ -46,6 +54,15 @@ fn orm_annotation(
   match default {
     Some(text) => args.push("default=" + @text.quote(text))
     None => ()
+  }
+  if references != "" {
+    args.push("references=" + @text.quote(references))
+    if on_delete != "" {
+      args.push("on_delete=" + @text.quote(on_delete))
+    }
+    if on_update != "" {
+      args.push("on_update=" + @text.quote(on_update))
+    }
   }
   if args.length() == 0 {
     None
@@ -76,10 +93,23 @@ fn orm_field(
   ty : String,
   primary_key : Bool,
   default : String?,
+  unique~ : Bool = false,
+  references~ : String = "",
+  on_delete~ : String = "",
+  on_update~ : String = "",
 ) -> String {
   let note = match @model.storage_class(orm_base(ty)) {
     Some(_) =>
-      match orm_annotation(ty, primary_key, default) {
+      match
+        orm_annotation(
+          ty,
+          primary_key,
+          default,
+          unique~,
+          references~,
+          on_delete~,
+          on_update~,
+        ) {
         Some(annotation) => "  " + annotation + "\n"
         None => ""
       }
@@ -89,11 +119,30 @@ fn orm_field(
 }
 
 ///|
+/// One field of an annotated struct: its MoonBit `name`, its `ty`, and what the
+/// schema said about the column beyond that — `unique`, and the foreign key it
+/// points at (`references` as `table.column`, with the two referential actions).
+priv struct OrmField {
+  name : String
+  ty : String
+  unique : Bool
+  references : String
+  on_delete : String
+  on_update : String
+}
+
+///|
+/// A field that carries nothing beyond its type.
+fn orm_plain_field(name : String, ty : String) -> OrmField {
+  { name, ty, unique: false, references: "", on_delete: "", on_update: "", }
+}
+
+///|
 /// Whether any field of a struct takes `#orm.skip`, which is what makes
 /// `#derive(Default)` necessary.
-fn orm_skips(fields : Array[(String, String)]) -> Bool {
+fn orm_skips(fields : Array[OrmField]) -> Bool {
   for f in fields {
-    if @model.storage_class(orm_base(f.1)) is None {
+    if @model.storage_class(orm_base(f.ty)) is None {
       return true
     }
   }
@@ -102,33 +151,45 @@ fn orm_skips(fields : Array[(String, String)]) -> Bool {
 
 ///|
 /// The annotated struct for one table. `table` is the SQL name, `name` the MoonBit
-/// type, and `fields` its `(field, type)` pairs in declaration order.
+/// type, `fields` its fields in declaration order, `indexes` the `#orm.index`
+/// annotations the schema asked for and `relations` the `#orm.has_many` /
+/// `#orm.belongs_to` ones it implies.
 fn orm_struct(
   name : String,
   table : String,
   doc : String,
-  fields : Array[(String, String)],
+  fields : Array[OrmField],
   key : String,
   defaults : Map[String, String],
+  indexes~ : Array[String] = [],
+  relations~ : Array[String] = [],
 ) -> String {
-  let pairs : Array[(String, String)] = []
-  for f in fields {
-    pairs.push(f)
-  }
-  let skips = orm_skips(pairs)
+  let skips = orm_skips(fields)
   let mut out = "///|\n/// " + doc + "\n"
   if skips {
     out = out + "#derive(Default)\n"
   }
-  out = out +
-    "#orm.table(name=" +
-    @text.quote(table) +
-    ")\npub(all) struct " +
-    name +
-    " {\n"
-  for f in pairs {
-    let default = defaults.get(f.0)
-    out = out + orm_field(f.0, f.1, f.0 == key, default)
+  out = out + "#orm.table(name=" + @text.quote(table) + ")\n"
+  for ix in indexes {
+    out = out + ix + "\n"
+  }
+  for rel in relations {
+    out = out + rel + "\n"
+  }
+  out = out + "pub(all) struct " + name + " {\n"
+  for f in fields {
+    let default = defaults.get(f.name)
+    out = out +
+      orm_field(
+        f.name,
+        f.ty,
+        f.name == key,
+        default,
+        unique=f.unique,
+        references=f.references,
+        on_delete=f.on_delete,
+        on_update=f.on_update,
+      )
   }
   out = out + "}\n"
   if skips {
@@ -227,9 +288,9 @@ pub fn generate_orm_tree(
   for t in spec.types {
     let fields = @api.flat_fields(t, spec.types)
     let table = @text.to_snake(t.name)
-    let pairs : Array[(String, String)] = []
+    let pairs : Array[OrmField] = []
     for f in fields {
-      pairs.push((f.mbt_name(), f.type_))
+      pairs.push(orm_plain_field(f.mbt_name(), f.type_))
     }
     let has_key = fields.any(f => {
       f.mbt_name() == "id" && @model.storage_class(f.type_) is Some(_)
@@ -273,9 +334,189 @@ pub fn generate_orm_tree(
 }
 
 ///|
+/// The `(table, column)` a foreign key points at, taking the referenced table's
+/// single-column primary key when the DDL named no column.
+fn ddl_fk_target(
+  fk : @model.DdlForeignKey,
+  parent : @model.DdlTable,
+) -> String? {
+  match fk.ref_columns {
+    [one, ..] => Some(one)
+    [] => parent_pk(parent)
+  }
+}
+
+///|
+/// The single-column primary key of a table, or `None` for a table with none or a
+/// composite one — the only shape a relation can hang on without an explicit key.
+fn parent_pk(t : @model.DdlTable) -> String? {
+  let pks : Array[String] = []
+  for c in t.columns {
+    if c.primary_key {
+      pks.push(c.name)
+    }
+  }
+  match pks {
+    [one] => Some(one)
+    _ => None
+  }
+}
+
+///|
+/// Whether `t` has a column called `name`.
+fn has_column(t : @model.DdlTable, name : String) -> Bool {
+  for c in t.columns {
+    if c.name == name {
+      return true
+    }
+  }
+  false
+}
+
+///|
+/// The table `name` names, comparing case-insensitively the way SQL does.
+fn find_table(
+  tables : Array[@model.DdlTable],
+  name : String,
+) -> @model.DdlTable? {
+  let low = name.to_lower()
+  for t in tables {
+    if t.name.to_lower() == low {
+      return Some(t)
+    }
+  }
+  None
+}
+
+///|
+/// The name a `belongs_to` relation takes: the key column with the suffix a key
+/// column wears taken off, so `team_id` is `team` and `country_code` is `country`.
+/// A column whose name carries no such suffix keeps it, and the caller adds `_ref`
+/// when that would collide with the column itself.
+fn relation_name(column : String) -> String {
+  for suffix in ["_id", "_key", "_code", "_no", "_uuid"] {
+    if @text.ends_with(column, suffix) && column.length() > suffix.length() {
+      return column[0:column.length() - suffix.length()].to_owned()
+    }
+  }
+  column
+}
+
+///|
+/// `value`, or `fallback` when it is `None`.
+fn or_default(value : String?, fallback : String) -> String {
+  match value {
+    Some(v) => v
+    None => fallback
+  }
+}
+
+///|
+/// The `#orm.has_many` and `#orm.belongs_to` annotations a SQL schema implies, per
+/// table. A foreign key names both sides: the referencing table gets a `belongs_to`
+/// (named after the column, `team_id` → `team`) and the referenced one a `has_many`
+/// (named after the referencing table). A key onto a table the schema does not
+/// declare is left out — an annotation can only point at a type in the same file —
+/// and so is a composite key, which has no single field to hang a relation on.
+fn ddl_relations(tables : Array[@model.DdlTable]) -> Map[String, Array[String]] {
+  let out : Map[String, Array[String]] = Map([])
+  // The names already given to a relation on each table, so two keys onto the same
+  // table do not both claim `posts`.
+  let taken : Map[String, Array[String]] = Map([])
+  for t in tables {
+    out.set(t.name, [])
+    taken.set(t.name, [])
+  }
+  for t in tables {
+    let child = @text.to_pascal(t.name)
+    for fk in t.foreign_keys {
+      if fk.columns.length() != 1 {
+        continue
+      }
+      let parent = match find_table(tables, fk.ref_table) {
+        Some(p) => p
+        None => continue
+      }
+      let column = fk.columns[0]
+      let target = match ddl_fk_target(fk, parent) {
+        Some(c) => c
+        None => continue
+      }
+      let key_note = if target == or_default(parent_pk(parent), "") {
+        ""
+      } else {
+        ", key=" + @text.quote(target)
+      }
+      // The referenced side: `<Parent>::<child table>()`.
+      let many = out.get(parent.name).unwrap()
+      let many_taken = taken.get(parent.name).unwrap()
+      let mut many_name = t.name
+      if many_taken.contains(many_name) || has_column(parent, many_name) {
+        many_name = many_name + "_list"
+      }
+      many_taken.push(many_name)
+      many.push(
+        "#orm.has_many(name=" +
+        @text.quote(many_name) +
+        ", target=" +
+        @text.quote(child) +
+        ", foreign_key=" +
+        @text.quote(column) +
+        key_note +
+        ")",
+      )
+      // The referencing side: `<Child>::<column without its key suffix>()`.
+      let one = out.get(t.name).unwrap()
+      let one_taken = taken.get(t.name).unwrap()
+      let mut one_name = relation_name(column)
+      if one_taken.contains(one_name) || has_column(t, one_name) {
+        one_name = one_name + "_ref"
+      }
+      one_taken.push(one_name)
+      one.push(
+        "#orm.belongs_to(name=" +
+        @text.quote(one_name) +
+        ", target=" +
+        @text.quote(@text.to_pascal(parent.name)) +
+        ", foreign_key=" +
+        @text.quote(column) +
+        key_note +
+        ")",
+      )
+    }
+  }
+  out
+}
+
+///|
+/// The `#orm.index` annotations a table's DDL asked for: one per `CREATE INDEX`,
+/// `UNIQUE`/`KEY` constraint or column-level `UNIQUE`. `column=` is repeated once
+/// per column, the shape `#orm.index` reads.
+fn ddl_index_notes(t : @model.DdlTable) -> Array[String] {
+  let out : Array[String] = []
+  for ix in t.indexes {
+    let parts : Array[String] = []
+    for c in ix.columns {
+      parts.push("column=" + @text.quote(c))
+    }
+    let mut note = "#orm.index(" + parts.join(", ")
+    if ix.name != "" {
+      note = note + ", name=" + @text.quote(ix.name)
+    }
+    if ix.unique {
+      note = note + ", unique=true"
+    }
+    out.push(note + ")")
+  }
+  out
+}
+
+///|
 /// The annotated models, migrations and CRUD helpers for a SQL schema. The table
 /// and column names are the schema's; a nullable column is declared optional, so
-/// `#orm` reads it as one.
+/// `#orm` reads it as one. The schema's indexes become `#orm.index`, and each
+/// foreign key a pair of relations — `#orm.has_many` on the referenced table,
+/// `#orm.belongs_to` on the referencing one.
 pub fn generate_orm_tree_from_ddl(
   tables : Array[@model.DdlTable],
   module_ : String,
@@ -288,13 +529,46 @@ pub fn generate_orm_tree_from_ddl(
     ".g.mbt` on build.\n"
   let mut migrate = "// Code generated by moonctl from the SQL schema. DO NOT EDIT.\n"
   let mut crud = "// Code generated by moonctl from the SQL schema. DO NOT EDIT.\n"
+  let relations = ddl_relations(tables)
   for t in tables {
     let name = @text.to_pascal(t.name)
-    let pairs : Array[(String, String)] = []
+    let pairs : Array[OrmField] = []
     let defaults : Map[String, String] = Map([])
     let mut key = ""
     for c in t.columns {
-      pairs.push((c.name, ddl_field_type(c)))
+      let fk = @model.ddl_fk_of(t, c.name)
+      let reference = match fk {
+        Some(f) => {
+          let target = match f.ref_columns {
+            [one, ..] => one
+            [] =>
+              match find_table(tables, f.ref_table) {
+                Some(p) => or_default(parent_pk(p), "")
+                None => ""
+              }
+          }
+          if target == "" {
+            ""
+          } else {
+            f.ref_table + "." + target
+          }
+        }
+        None => ""
+      }
+      pairs.push({
+        name: c.name,
+        ty: ddl_field_type(c),
+        unique: c.unique,
+        references: reference,
+        on_delete: match fk {
+          Some(f) => f.on_delete
+          None => ""
+        },
+        on_update: match fk {
+          Some(f) => f.on_update
+          None => ""
+        },
+      })
       if c.primary_key && key == "" {
         key = c.name
       }
@@ -305,7 +579,16 @@ pub fn generate_orm_tree_from_ddl(
     }
     models = models +
       "\n" +
-      orm_struct(name, t.name, "`" + t.name + "` table.", pairs, key, defaults)
+      orm_struct(
+        name,
+        t.name,
+        "`" + t.name + "` table.",
+        pairs,
+        key,
+        defaults,
+        indexes=ddl_index_notes(t),
+        relations=relations.get(t.name).unwrap(),
+      )
     migrate = migrate + "\n" + @model.migration_for(t, name + "::model()")
     crud = crud +
       "\n" +
