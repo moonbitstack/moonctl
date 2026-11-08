@@ -31,6 +31,18 @@ jobs:
           Set-ExecutionPolicy RemoteSigned -Scope CurrentUser; irm https://cli.moonbitlang.com/install/powershell.ps1 | iex
           "C:\Users\runneradmin\.moon\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
 
+      # Every job below fetches the same packages from mooncakes, and a cold
+      # `moon update` is most of the wall clock on a small runner. The cache is the
+      # registry (the downloaded and extracted packages), keyed by the module's
+      # dependency list, so a bump re-fetches only what changed.
+      - name: cache the mooncakes packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.moon/registry
+          key: ${{ runner.os }}-mooncakes-${{ hashFiles('moon.mod') }}
+          restore-keys: |
+            ${{ runner.os }}-mooncakes-
+
       - name: post install
         run: |
           moon version --all
@@ -83,6 +95,18 @@ jobs:
         run: |
           curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
           echo "$HOME/.moon/bin" >> $GITHUB_PATH
+
+      # This job scaffolds a project of every kind and builds each one, so it
+      # downloads the pinned releases as well as this module's own dependencies:
+      # the key covers both lists, and the restore key lets a pin bump reuse the
+      # packages that did not move.
+      - name: cache the mooncakes packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.moon/registry
+          key: ${{ runner.os }}-mooncakes-${{ hashFiles('moon.mod', 'src/scaffold/manifest.mbt') }}
+          restore-keys: |
+            ${{ runner.os }}-mooncakes-
 
       - name: build mctl
         run: |
