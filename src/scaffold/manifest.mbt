@@ -17,6 +17,7 @@ pub let pins : Map[String, String] = {
   "moonbitstack/moonrpc": "0.21.12",
   "moonbitstack/moonorm": "0.11.7",
   "moonbitstack/moondb": "0.2.6",
+  "moonbitstack/moonbase": "0.4.3",
   "moonbitstack/moonhttp": "0.15.8",
   "moonbitlang/async": "0.22.5",
 }

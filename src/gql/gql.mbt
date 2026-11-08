@@ -19,47 +19,88 @@ fn gql_starts_with(s : String, prefix : String) -> Bool {
 }
 
 ///|
-/// A non-null scalar constructor expression.
-fn nn_scalar(name : String) -> String {
-  "NonNull(Scalar(\"" + name + "\"))"
+/// The GraphQL scalar a MoonBit type has no built-in for, in the spelling the
+/// GraphQL ecosystem uses: bytes travel as the base64 text of the `Base64` scalar
+/// (graphql-scalars), and a map as the object of the `JSON` scalar. `None` for a
+/// type that already has a GraphQL type.
+fn gql_custom_scalar(ty : String) -> String? {
+  match ty {
+    "Bytes" => Some("Base64")
+    _ => if gql_starts_with(ty, "Map[") { Some("JSON") } else { None }
+  }
 }
 
 ///|
 /// The moongql `GqlType` constructor expression for a field's MoonBit type (as the
 /// `.api` parser emits it). MoonBit scalars map to GraphQL scalars, `Array[T]` to a
-/// non-null list, a `Map[...]` to a JSON string (GraphQL has no map type), and any
-/// other name to a `Named` reference. Every field is `NonNull` — the scaffold's
-/// default, loosened per field as the schema is filled in.
-fn gql_type_expr(mb_type : String) -> String {
-  if gql_starts_with(mb_type, "Array[") {
-    let inner = mb_type[6:mb_type.length() - 1].to_owned()
-    "NonNull(ListOf(" + gql_type_expr(inner) + "))"
-  } else if gql_starts_with(mb_type, "Map[") {
-    nn_scalar("String")
+/// non-null list, an optional `T?` to a nullable position, `Bytes` to a `Base64`
+/// scalar and `Map[…]` to a `JSON` one — every custom scalar met is added to
+/// `scalars`, which the caller declares. Any other name is a `Named` reference.
+/// Every field is `NonNull` unless the spec wrote it optional.
+fn gql_type_expr(mb_type : String, scalars : Map[String, Unit]) -> String {
+  let mut ty = mb_type
+  let mut nullable = false
+  if @text.ends_with(ty, "?") && ty.length() > 1 {
+    ty = ty[0:ty.length() - 1].to_owned()
+    nullable = true
+  }
+  let named = if gql_starts_with(ty, "Array[") {
+    let inner = ty[6:ty.length() - 1].to_owned()
+    "ListOf(" + gql_type_expr(inner, scalars) + ")"
   } else {
-    match mb_type {
-      "String" => nn_scalar("String")
-      "Int32" => nn_scalar("Int")
-      "Int64" => nn_scalar("Int")
-      "UInt32" => nn_scalar("Int")
-      "UInt64" => nn_scalar("Int")
-      "Bool" => nn_scalar("Boolean")
-      "Double" => nn_scalar("Float")
-      "Float" => nn_scalar("Float")
-      "ID" => nn_scalar("ID")
-      other => "NonNull(Named(\"" + other + "\"))"
+    match gql_custom_scalar(ty) {
+      Some(custom) => {
+        scalars.set(custom, ())
+        "Scalar(\"" + custom + "\")"
+      }
+      None =>
+        match ty {
+          "String" => "Scalar(\"String\")"
+          "Int32" | "Int64" | "UInt32" | "UInt64" => "Scalar(\"Int\")"
+          "Bool" => "Scalar(\"Boolean\")"
+          "Double" | "Float" => "Scalar(\"Float\")"
+          "ID" => "Scalar(\"ID\")"
+          other => "Named(\"" + other + "\")"
+        }
     }
+  }
+  if nullable {
+    named
+  } else {
+    "NonNull(" + named + ")"
   }
 }
 
 ///|
 /// Generate a moongql code-first schema from `spec`'s `type` blocks. Each `type`
 /// becomes an object type with its fields mapped to GraphQL types, and the `Query`
-/// root has `ping: String!` plus a `<type>(id: ID!): <Type>` lookup per type.
+/// root has `ping: String!` plus a `<type>(id: ID!): <Type>` lookup per type. A
+/// streaming route adds a `Subscription` root field of its own: the event type, as
+/// a list, is what a subscriber receives.
 ///
 /// Only the schema is generated: the resolvers are the author's code. A root field
 /// needs one; an object field without one reads its parent's member of that name.
 pub fn generate_gql(spec : @api.Spec) -> String {
+  let scalars : Map[String, Unit] = Map([])
+  // The types first, so the scalar list is complete before it is written out.
+  let bodies = StringBuilder()
+  for t in spec.types {
+    let v = @text.lower_first(t.name)
+    bodies.write_string(
+      "  let " + v + " = schema.object(" + @text.quote(t.name) + ")\n",
+    )
+    for f in @api.flat_fields(t, spec.types) {
+      bodies.write_string(
+        "  " +
+        v +
+        ".field(" +
+        @text.quote(f.json_name()) +
+        ", " +
+        gql_type_expr(f.type_, scalars) +
+        ")\n",
+      )
+    }
+  }
   let out = StringBuilder()
   let line = (s : String) => {
     out.write_string(s)
@@ -71,21 +112,10 @@ pub fn generate_gql(spec : @api.Spec) -> String {
   line("/// A moongql code-first schema built from the `.api` `type` blocks.")
   line("pub fn build_schema() -> @moongql.Schema {")
   line("  let schema = @moongql.Schema::new()")
-  for t in spec.types {
-    let v = @text.lower_first(t.name)
-    line("  let " + v + " = schema.object(" + @text.quote(t.name) + ")")
-    for f in @api.flat_fields(t, spec.types) {
-      line(
-        "  " +
-        v +
-        ".field(" +
-        @text.quote(f.json_name()) +
-        ", " +
-        gql_type_expr(f.type_) +
-        ")",
-      )
-    }
+  for name in scalars.keys() {
+    line("  schema.scalar(" + @text.quote(name) + ")")
   }
+  out.write_string(bodies.to_string())
   line("  let query = schema.object(\"Query\")")
   line("  query.field(\"ping\", NonNull(Scalar(\"String\")))")
   for t in spec.types {
@@ -96,6 +126,25 @@ pub fn generate_gql(spec : @api.Spec) -> String {
       @text.quote(t.name) +
       "))",
     )
+  }
+  if spec.routes.any(r => r.stream) {
+    line("  let subscription = schema.object(\"Subscription\")")
+    for r in spec.routes {
+      if r.stream {
+        let event = if r.resp != "" {
+          "NonNull(Named(" + @text.quote(r.resp) + "))"
+        } else {
+          "NonNull(Scalar(\"String\"))"
+        }
+        line(
+          "  subscription.field(" +
+          @text.quote(r.handler) +
+          ", NonNull(ListOf(" +
+          event +
+          ")))",
+        )
+      }
+    }
   }
   line("  schema")
   line("}")

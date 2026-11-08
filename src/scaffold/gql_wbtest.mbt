@@ -90,12 +90,13 @@ test "the entry point builds the schema and serves it" {
 }
 
 ///|
-test "a field GraphQL has no type for is left out, and said so" {
+test "Bytes and Map fields are carried by the scalars that name them" {
   let spec = @api.parse_lenient(
     (
       #|type Blob {
       #|  id: int64
       #|  data: bytes
+      #|  meta: map[string]string
       #|}
       #|
       #|service shelf {
@@ -103,13 +104,80 @@ test "a field GraphQL has no type for is left out, and said so" {
       #|}
     ),
   )
-  let schema = tree_at(generate_gql_tree(spec), "internal/schema/schema.mbt")
+  let tree = generate_gql_tree(spec)
+  let schema = tree_at(tree, "internal/schema/schema.mbt")
   assert_eq(contains(schema, "  id : Int64"), true)
-  // `Bytes` has no GraphQL scalar, and a skipped field still has to satisfy
-  // `ToGql`, so the field is dropped rather than annotated
-  assert_eq(contains(schema, "data : Bytes"), false)
-  // the omission is reported rather than silent
-  assert_eq(gql_dropped_fields(spec), ["Blob.data (Bytes)"])
+  // `Bytes` has no `ToGql` impl this generator may write — the trait and the type
+  // both belong elsewhere — so the field is declared as the text of the `Base64`
+  // scalar, and the conversion comes with the schema.
+  assert_eq(
+    contains(
+      schema, "  /// The base64 text of `data`, which is what the `Base64` scalar carries.\n  #gql.field(kind=\"Base64\")\n  data : String",
+    ),
+    true,
+  )
+  // a map is the object of the `JSON` scalar, for the same reason
+  assert_eq(contains(schema, "#gql.field(kind=\"JSON\")\n  meta : Json"), true)
+  // nothing is dropped, so nothing is reported
+  assert_eq(gql_dropped_fields(spec).length(), 0)
+  // the conversions the two scalars need are generated beside the schema, and the
+  // package imports the encoder they call
+  let scalars = tree_at(tree, "internal/schema/scalars.mbt")
+  assert_eq(
+    contains(scalars, "pub fn base64_of(bytes : Bytes) -> String"),
+    true,
+  )
+  assert_eq(
+    contains(scalars, "pub fn bytes_of_base64(text : String) -> Bytes?"),
+    true,
+  )
+  let pkg = tree_at(tree, "internal/schema/moon.pkg")
+  assert_eq(contains(pkg, "\"moonbitstack/moonbase/base64\""), true)
+  assert_eq(contains(tree_at(tree, "moon.mod"), "moonbitstack/moonbase@"), true)
+}
+
+///|
+test "a map whose key is not a string is left out, and said so" {
+  let spec = @api.parse_lenient(
+    (
+      #|type Counts {
+      #|  by_id: map[int]int
+      #|}
+      #|
+      #|service shelf {
+      #|  get /counts get_counts
+      #|}
+    ),
+  )
+  // an object's member names are strings, so an `Int` key has no shape to become
+  assert_eq(gql_dropped_fields(spec), ["Counts.by_id (Map[Int32, Int32])"])
+  let schema = tree_at(generate_gql_tree(spec), "internal/schema/schema.mbt")
+  assert_eq(contains(schema, "by_id"), false)
+}
+
+///|
+test "a streaming route is a subscription, one event per declared type" {
+  let spec = @api.parse_lenient(
+    (
+      #|type Tick {
+      #|  at: int64
+      #|}
+      #|
+      #|service feed {
+      #|  @handler watch
+      #|  get /watch returns (stream Tick)
+      #|}
+    ),
+  )
+  let schema = tree_at(generate_gql_tree(spec), "internal/schema/schema.mbt")
+  assert_eq(
+    contains(
+      schema, "#gql.subscription\npub fn watch() -> Array[Tick] {\n  []\n}",
+    ),
+    true,
+  )
+  // the event type is the declared one, not a string
+  assert_eq(contains(schema, "Array[String]"), false)
 }
 
 ///|

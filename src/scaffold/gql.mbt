@@ -11,34 +11,91 @@
 let gql_schema_pkg = "internal/schema"
 
 ///|
-/// Whether `moongql` has a GraphQL type for `ty`. A slice or an optional is that
-/// of its element; `Bytes` and `Map` have none, and a field of one of those keeps
-/// the generated `ToGql` impl from compiling, so it is dropped from the schema and
-/// reported instead.
-pub fn gql_expressible(ty : String) -> Bool {
-  let base = if @text.ends_with(ty, "?") {
-    ty[0:ty.length() - 1].to_owned()
+/// How a field of the spec's MoonBit type reaches GraphQL.
+priv enum GqlField {
+  /// The MoonBit type is a GraphQL type already.
+  Direct
+  /// `Bytes`: the `Base64` scalar. The field is declared as the text that scalar
+  /// carries, since `ToGql` has no impl for `Bytes` and none can be written — the
+  /// trait and the type both belong to another package.
+  Base64
+  /// `Map[String, V]`: the `JSON` scalar, with the field declared as a `Json`
+  /// object for the same reason.
+  JsonMap
+  /// A map keyed by something other than a `String`: an object's member names are
+  /// strings, so there is no shape to give it.
+  Dropped
+}
+
+///|
+/// `ty` without the `?` that makes it optional.
+fn gql_base(ty : String) -> (String, Bool) {
+  if @text.ends_with(ty, "?") && ty.length() > 1 {
+    (ty[0:ty.length() - 1].to_owned(), true)
   } else {
-    ty
-  }
-  let element = if @text.starts_with(base, "Array[") &&
-    @text.ends_with(base, "]") {
-    base[6:base.length() - 1].to_owned()
-  } else {
-    base
-  }
-  // Everything else the `.api` vocabulary carries — a `type` block's own name
-  // turned into a `#gql.type` — is expressible; `Bytes` and `Map` are not, and
-  // there is no scalar to map them onto.
-  match element {
-    "Bytes" | "Map" => false
-    _ => @text.starts_with(element, "Map[") == false
+    (ty, false)
   }
 }
 
 ///|
-/// The annotated struct for one `type` block: its fields, minus the ones GraphQL
-/// cannot carry. `skipped` collects what was left out so the command can say so.
+/// The MoonBit type of a `Map[…]`'s value, or `None` when the key is not a
+/// `String` — a GraphQL object's field names are strings, so a map keyed by
+/// anything else has no object to become.
+fn gql_map_value(ty : String) -> String? {
+  let close = @text.index_of_str(ty, "]")
+  if close <= 4 {
+    return None
+  }
+  // `Map[K, V]` — the key is what stands before the first comma of the inside, so
+  // a value that is itself generic (`Map[String, Array[Int32]]`) still reads right.
+  let inside = @text.trim(ty[4:close].to_owned())
+  let comma = @text.index_of_str(inside, ",")
+  if comma < 0 {
+    return None
+  }
+  let key = @text.trim(inside[0:comma].to_owned())
+  if key != "String" {
+    return None
+  }
+  Some(@text.trim(inside[comma + 1:].to_owned()))
+}
+
+///|
+/// The GraphQL shape of a field's MoonBit type. An optional and a slice take
+/// their element's shape; `Bytes` becomes the `Base64` scalar and a `Map[String,
+/// V]` the `JSON` one; every other name is a type the schema declares.
+fn gql_field_kind(ty : String) -> GqlField {
+  let element = gql_element(ty)
+  if element == "Bytes" {
+    return Base64
+  }
+  if @text.starts_with(element, "Map[") {
+    return match gql_map_value(element) {
+      Some(_) => JsonMap
+      None => Dropped
+    }
+  }
+  Direct
+}
+
+///|
+/// Whether the schema can carry `ty` — directly, or through the scalar this
+/// generator declares for it.
+pub fn gql_expressible(ty : String) -> Bool {
+  (gql_field_kind(ty) is Dropped) == false
+}
+
+///|
+/// The annotated struct for one `type` block. A field GraphQL carries directly is
+/// the struct field the spec declared; `Bytes` and `Map[String, V]` are declared
+/// as the text and the object their scalars carry, with the scalar named on the
+/// field, because neither has a `ToGql` impl this generator may write.
+
+///|
+/// The annotated struct for one `type` block. A field GraphQL carries directly is
+/// a struct field; `Bytes` and `Map[String, V]` are skipped in the struct and
+/// reached through a `#gql.field` method returning the text or the object of their
+/// scalar, since neither type has a `ToGql` impl this generator may write.
 fn gql_struct(t : @api.TypeDef, fields : Array[@api.Field]) -> String {
   let mut out = "///|\n/// `" +
     t.name +
@@ -46,8 +103,23 @@ fn gql_struct(t : @api.TypeDef, fields : Array[@api.Field]) -> String {
     t.name +
     " {\n"
   for f in fields {
-    if gql_expressible(f.type_) {
-      out = out + "  " + f.mbt_name() + " : " + f.type_ + "\n"
+    match gql_field_kind(f.type_) {
+      Direct => out = out + "  " + f.mbt_name() + " : " + f.type_ + "\n"
+      Base64 =>
+        out = out +
+          "  /// The base64 text of `" +
+          f.mbt_name() +
+          "`, which is what the `Base64` scalar carries.\n  #gql.field(kind=\"Base64\")\n  " +
+          f.mbt_name() +
+          " : String\n"
+      JsonMap =>
+        out = out +
+          "  /// `" +
+          f.mbt_name() +
+          "` as the object the `JSON` scalar carries, one member per key.\n  #gql.field(kind=\"JSON\")\n  " +
+          f.mbt_name() +
+          " : Json\n"
+      Dropped => ()
     }
   }
   out + "}\n"
@@ -66,6 +138,32 @@ pub fn gql_dropped_fields(spec : @api.Spec) -> Array[String] {
     }
   }
   out
+}
+
+///|
+/// The element type of a field's MoonBit type: a slice's element, or the type
+/// itself. `Bytes` and `Map[…]` are what the two scalars are about.
+fn gql_element(ty : String) -> String {
+  let (base, _) = gql_base(ty)
+  if @text.starts_with(base, "Array[") && @text.ends_with(base, "]") {
+    base[6:base.length() - 1].to_owned()
+  } else {
+    base
+  }
+}
+
+///|
+/// Whether any field of the spec is `Bytes`, which is what makes the generated
+/// package import the base64 encoder its scalar's text comes from.
+fn gql_uses_base64(spec : @api.Spec) -> Bool {
+  for t in spec.types {
+    for f in @api.flat_fields(t, spec.types) {
+      if gql_element(f.type_) == "Bytes" {
+        return true
+      }
+    }
+  }
+  false
 }
 
 ///|
@@ -100,7 +198,12 @@ fn gql_root_field(spec : @api.Spec, r : @api.Route, name : String) -> String {
       args.push((p, "String"))
     }
   }
-  let reply = if r.resp != "" && gql_expressible(r.resp) {
+  let declared = r.resp != "" && gql_expressible(r.resp)
+  // A subscription answers with the events a subscriber receives, one array of
+  // them, so its type is a list of the declared event type rather than the type.
+  let reply = if r.stream {
+    "Array[" + (if declared { r.resp } else { "String" }) + "]"
+  } else if declared {
     r.resp + "?"
   } else {
     "String"
@@ -109,10 +212,25 @@ fn gql_root_field(spec : @api.Spec, r : @api.Route, name : String) -> String {
     r.verb +
     " " +
     r.path +
-    "` — the root field `" +
+    "` — the " +
+    (if r.stream { "subscription" } else { "root field" }) +
+    " `" +
     name +
-    "`.\n"
-  out = out + (if r.verb == "get" { "#gql.query" } else { "#gql.mutation" })
+    "`" +
+    (if r.stream {
+      ", one event per `" + (if declared { r.resp } else { "String" }) + "`"
+    } else {
+      ""
+    }) +
+    ".\n"
+  out = out +
+    (if r.stream {
+      "#gql.subscription"
+    } else if r.verb == "get" {
+      "#gql.query"
+    } else {
+      "#gql.mutation"
+    })
   out = out + "\npub fn " + name + "("
   if args.length() > 0 {
     out = out + "\n"
@@ -134,7 +252,13 @@ fn gql_root_field(spec : @api.Spec, r : @api.Route, name : String) -> String {
   }
   out = out +
     "  " +
-    (if reply == "String" { @text.quote("TODO: " + r.handler) } else { "None" }) +
+    (if r.stream {
+      "[]"
+    } else if reply == "String" {
+      @text.quote("TODO: " + r.handler)
+    } else {
+      "None"
+    }) +
     "\n}\n"
   out
 }
@@ -160,6 +284,33 @@ pub fn gql_schema_for(spec : @api.Spec) -> String {
     out = out + "\n" + gql_root_field(spec, r, name)
   }
   out
+}
+
+///|
+/// The two conversions a `Base64` field needs and the schema cannot state: the
+/// text a `Bytes` value is published as, and the bytes a client's text means. They
+/// are generated rather than left to the author, since the encoding is what makes
+/// the field's GraphQL type true.
+fn gql_scalars_src() -> String {
+  let src =
+    #|// Code generated by moonctl. DO NOT EDIT.
+    #|
+    #|///|
+    #|/// The base64 text the `Base64` scalar carries, from the bytes of a field.
+    #|pub fn base64_of(bytes : Bytes) -> String {
+    #|  @base64.encode(bytes[:])
+    #|}
+    #|
+    #|///|
+    #|/// The bytes a base64 text holds: `None` when the text is not base64, so a
+    #|/// malformed input is refused rather than read as an empty value.
+    #|pub fn bytes_of_base64(text : String) -> Bytes? {
+    #|  let decoded = @base64.decode(text) catch {
+    #|    _ => return None
+    #|  }
+    #|  Some(decoded)
+    #|}
+  src + "\n"
 }
 
 ///|
@@ -206,11 +357,22 @@ pub fn generate_gql_tree(
   let mod_ = spec.service
   let gql = ("moonbitstack/moongql", "")
   let schema_pkg = mod_ + "/" + gql_schema_pkg
+  // `Bytes` is base64-encoded for its scalar, and a map is rendered to JSON: the
+  // schema package imports each library only when a field of the spec needs it.
+  let needs_base64 = gql_uses_base64(spec)
+  let deps = ["moonbitstack/moongql", "moonbitstack/mooncat"]
+  if needs_base64 {
+    deps.push("moonbitstack/moonbase")
+  }
+  let schema_imports : Array[(String, String)] = [gql]
+  if needs_base64 {
+    schema_imports.push(("moonbitstack/moonbase/base64", "base64"))
+  }
   let out = base_tree(
     mod_,
     st,
     dir,
-    deps=["moonbitstack/moongql", "moonbitstack/mooncat"],
+    deps~,
     imports=[gql, ("moonbitstack/mooncat", ""), (schema_pkg, "")],
     main=gql_main(mod_),
     context=false,
@@ -218,7 +380,7 @@ pub fn generate_gql_tree(
   )
   out.push({
     path: at(dir, gql_schema_pkg + "/moon.pkg"),
-    content: pkg_file([gql]) +
+    content: pkg_file(schema_imports) +
     "\ndev_build(rule: \"gql\", input: \"" +
     st.format("schema") +
     ".mbt\", output: \"" +
@@ -233,6 +395,13 @@ pub fn generate_gql_tree(
     content: gql_schema_for(spec) + "\n" + gql_build_src(),
     regen: Once,
   })
+  if needs_base64 {
+    out.push({
+      path: at(dir, gql_schema_pkg + "/" + st.format("scalars") + ".mbt"),
+      content: gql_scalars_src(),
+      regen: Always,
+    })
+  }
   // A root field to ask for, whatever the resolvers end up answering: asking the
   // schema what it is keeps the seeded test true after the stubs are filled in.
   if spec.routes.any(r => r.verb == "get") {
