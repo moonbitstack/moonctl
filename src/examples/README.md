@@ -30,6 +30,7 @@ moon run examples/00-greet
 | 15 | [`mongo`](15-mongo/) | `.api` `type` → a document model and a typed repository over a collection port | `generate_mongo`, `mongo_file_name` |
 | 16 | [`gateway`](16-gateway/) | `.proto` → an HTTP gateway: default routes, a route mapping, and the status codes | `default_routes`, `parse_route_map`, `generate_gateway` |
 | 17 | [`cache`](17-cache/) | Cache-aside CRUD: read-through `find`, invalidating `write`, `evict`, over a generic cache port | `generate_cached`, `cache_file_name` |
+| 18 | [`events`](18-events/) | One streaming route, four answers: an SSE handler, a GraphQL subscription, `text/event-stream` in the document, and a model whose table and columns are the spec's own | `Route::stream`, `generate`, `generate_gql`, `generate_doc`, `generate_model` |
 
 Each `main.mbt` calls the real API and prints the actual generated artefact — a
 moonapi scaffold, an OpenAPI document, moonorm SQL/CRUD, a moonrpc gRPC stub,
