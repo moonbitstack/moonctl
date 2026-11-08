@@ -133,6 +133,13 @@ jobs:
       - name: generated code is moon fmt-clean
         run: bash scripts/check_scaffold_fmt.sh "$PWD/_build/native/debug/build/cmd/mctl/mctl.exe"
 
+      # The plugin protocol's decisions are unit-tested; what reaches the plugin —
+      # its argv, the request on its stdin, the exit code that decides whether the
+      # reply is read, and the temporary file it travels through — is not, and
+      # cannot be without a process.
+      - name: the plugin spawn path, with real processes
+        run: bash scripts/check_plugin_faults.sh "$PWD/_build/native/debug/build/cmd/mctl/mctl.exe"
+
       - name: mctl serve --reload, with real processes
         run: bash scripts/check_serve_reload.sh
 
