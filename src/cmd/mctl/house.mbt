@@ -159,7 +159,57 @@ async fn cmd_template(args : Array[String]) -> Unit {
         e => println("mctl: template init error: " + e.to_string())
       }
     }
-    _ => println("mctl: template <list|show|init> [name]")
+    "export" => {
+      let kind = if args.length() > 1 { args[1] } else { "api" }
+      let dir = if args.length() > 2 { args[2] } else { "." }
+      match @cli.export_sample(kind) {
+        Some(files) => {
+          let written : Array[String] = []
+          for entry in files {
+            let path = if dir == "." {
+              entry.0
+            } else if @text.ends_with(dir, "/") {
+              dir + entry.0
+            } else {
+              dir + "/" + entry.0
+            }
+            if @fs.exists(path) {
+              println("mctl: " + path + " is already there, left alone")
+            } else {
+              try {
+                write_gen_file({ path, content: entry.1, })
+                written.push(path)
+              } catch {
+                e => println("mctl: cannot write " + path + ": " + e.to_string())
+              }
+            }
+          }
+          if written.length() > 0 {
+            // The gateway is its own command (`mctl gateway`), not a `gen` kind.
+            println(
+              "mctl: wrote the " +
+              kind +
+              " starting spec; next: `" +
+              (if kind == "gateway" {
+                "mctl gateway "
+              } else {
+                "mctl gen " + kind + " "
+              }) +
+              written[0] +
+              "`",
+            )
+          }
+        }
+        None =>
+          println(
+            "mctl: no starting spec for \"" +
+            kind +
+            "\"; kinds: " +
+            @cli.export_kinds().join(", "),
+          )
+      }
+    }
+    _ => println("mctl: template <list|show|init|export> [name]")
   }
 }
 

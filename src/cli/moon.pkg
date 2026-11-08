@@ -9,3 +9,7 @@ import {
   "moonbitstack/moonctl/internal/text",
   "moonbitlang/core/json",
 }
+
+import {
+  "moonbitstack/moonctl/api",
+} for "wbtest"

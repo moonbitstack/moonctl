@@ -209,3 +209,200 @@ pub fn template_starter(pins : Map[String, String]) -> Array[(String, String)] {
     ("api/service/README.md", readme),
   ]
 }
+
+///|
+/// The kinds `mctl template export` writes a starting spec for — one per
+/// generator, named the way the command is spelled.
+pub fn export_kinds() -> Array[String] {
+  ["api", "gql", "mcp", "model", "rpc", "gateway", "crud"]
+}
+
+///|
+/// A starting `service` spec: one block, two routes, and the types they carry.
+let api_sample : String =
+  #|// A starting point for `mctl gen api`: one service, two routes and the types
+  #|// they carry. `mctl api format` prints this file canonically.
+  #|
+  #|info (
+  #|  title:   "greet"
+  #|  version: "0.1.0"
+  #|)
+  #|
+  #|type GreetReq {
+  #|  name: string
+  #|}
+  #|
+  #|type GreetResp {
+  #|  message: string
+  #|}
+  #|
+  #|service greet {
+  #|  @doc "health check"
+  #|  @handler ping
+  #|  get /ping returns (GreetResp)
+  #|
+  #|  @doc "greet someone by name"
+  #|  @handler greet
+  #|  post /greet (GreetReq) returns (GreetResp)
+  #|}
+
+///|
+/// A starting `service` spec whose types become GraphQL objects, and whose routes
+/// a query and a subscription.
+let gql_sample : String =
+  #|// A starting point for `mctl gen gql`: the types become GraphQL objects, a
+  #|// `get` route a query, and a streaming one a subscription.
+  #|
+  #|type Book {
+  #|  id:    int64
+  #|  title: string
+  #|}
+  #|
+  #|service shelf {
+  #|  @doc "one book"
+  #|  @handler book
+  #|  get /books/:id returns (Book)
+  #|
+  #|  @doc "each book as it is added"
+  #|  @handler book_added
+  #|  get /books/added returns (stream Book)
+  #|}
+
+///|
+/// A starting `service` spec whose routes become MCP tools.
+let mcp_sample : String =
+  #|// A starting point for `mctl gen mcp`: every route becomes a tool an MCP
+  #|// client can call, its request type the tool's arguments.
+  #|
+  #|type HelloReq {
+  #|  name: string
+  #|}
+  #|
+  #|type HelloResp {
+  #|  message: string
+  #|}
+  #|
+  #|service notes {
+  #|  @doc "say hello to someone"
+  #|  @handler hello
+  #|  post /hello (HelloReq) returns (HelloResp)
+  #|}
+
+///|
+/// A starting `service` spec for the model generator: one `type` block per table,
+/// with the naming policy the schema asks for.
+let model_sample : String =
+  #|// A starting point for `mctl gen model`: one `type` block per table, its `id`
+  #|// field the primary key. The `info` block names the tables and columns; drop
+  #|// it to keep the generators' own spelling.
+  #|
+  #|info (
+  #|  tableNaming:  plural_snake
+  #|  columnNaming: snake
+  #|)
+  #|
+  #|type User {
+  #|  id:         int64
+  #|  email:      string
+  #|  created_at: int64
+  #|}
+  #|
+  #|service accounts {
+  #|  @handler user
+  #|  get /users/:id returns (User)
+  #|}
+
+///|
+/// A starting `.proto`: one message pair, one unary call, one streaming call.
+let rpc_sample : String =
+  #|// A starting point for `mctl gen rpc`: one message pair, one unary call and
+  #|// one streaming call.
+  #|
+  #|syntax = "proto3";
+  #|
+  #|package greet;
+  #|
+  #|message PingReq {
+  #|  string name = 1;
+  #|}
+  #|
+  #|message PingResp {
+  #|  string message = 1;
+  #|}
+  #|
+  #|service Greeter {
+  #|  rpc Ping (PingReq) returns (PingResp);
+  #|  rpc Watch (PingReq) returns (stream PingResp);
+  #|}
+
+///|
+/// A starting `.proto` for the gateway, whose RPCs it turns into HTTP routes.
+let gateway_sample : String =
+  #|// A starting point for `mctl gateway`: the proto's RPCs become HTTP routes,
+  #|// and `gateway-sample.routes` says which URL answers which.
+  #|
+  #|syntax = "proto3";
+  #|
+  #|package shop;
+  #|
+  #|message ListReq {
+  #|  int32 page = 1;
+  #|}
+  #|
+  #|message ListResp {
+  #|  repeated string names = 1;
+  #|}
+  #|
+  #|service Catalog {
+  #|  rpc List (ListReq) returns (ListResp);
+  #|}
+
+///|
+/// The route map a gateway reads beside the proto.
+let gateway_routes : String =
+  #|# one route per line: the verb, the path, then the gRPC method it calls
+  #|get /v1/books /shop.Catalog/List
+
+///|
+/// A starting SQL schema: two tables, a foreign key and an index over them.
+let crud_sample : String =
+  #|-- A starting point for `mctl gen crud`: two tables, a foreign key and an
+  #|-- index over them, which become a moonorm model, its relations and its CRUD.
+  #|
+  #|CREATE TABLE teams (
+  #|  id   INTEGER PRIMARY KEY,
+  #|  name TEXT NOT NULL UNIQUE
+  #|);
+  #|
+  #|CREATE TABLE heroes (
+  #|  id      INTEGER PRIMARY KEY,
+  #|  team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+  #|  name    TEXT NOT NULL
+  #|);
+  #|
+  #|CREATE INDEX ix_heroes_team ON heroes (team_id);
+
+///|
+/// The spec to start from for `kind`, as `(path, contents)` pairs — one file for
+/// most kinds, and a proto plus its route map for the gateway. `None` for a kind
+/// this command does not write.
+///
+/// The file is named for the kind rather than the service, so two kinds exported
+/// into one directory do not overwrite each other, and `api-sample.api` says what
+/// it is when it turns up in a repository a year from now.
+pub fn export_sample(kind : String) -> Array[(String, String)]? {
+  match kind {
+    "api" => Some([("api-sample.api", api_sample + "\n")])
+    "gql" => Some([("gql-sample.api", gql_sample + "\n")])
+    "mcp" => Some([("mcp-sample.api", mcp_sample + "\n")])
+    "model" => Some([("model-sample.api", model_sample + "\n")])
+    "rpc" => Some([("rpc-sample.proto", rpc_sample + "\n")])
+    "gateway" =>
+      Some([
+        ("gateway-sample.proto", gateway_sample + "\n"),
+        ("gateway-sample.routes", gateway_routes + "\n"),
+      ])
+    "crud" => Some([("crud-sample.sql", crud_sample + "\n")])
+    _ => None
+  }
+}

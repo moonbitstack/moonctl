@@ -264,3 +264,52 @@ test "the starter library is a template home mctl can read back" {
   assert_eq(has(pkg, "\"moonbitstack/moonapi\","), true)
   assert_eq(has(pkg, "@1.2.3"), false)
 }
+
+///|
+test "every kind exports a spec that parses" {
+  let kinds = export_kinds()
+  assert_eq(kinds.length(), 7)
+  for kind in kinds {
+    match export_sample(kind) {
+      Some(files) => {
+        assert_eq(files.length() > 0, true)
+        for entry in files {
+          // the file is named for the kind, so two exports in one directory fit
+          assert_eq(@text.starts_with(entry.0, kind + "-sample."), true)
+          // it ends with a newline, so it reads as a file and not as a paste
+          assert_eq(@text.ends_with(entry.1, "\n"), true)
+        }
+      }
+      None => abort("no spec exported for " + kind)
+    }
+  }
+  // an unknown kind is refused rather than guessed
+  assert_eq(export_sample("nope") is None, true)
+}
+
+///|
+test "the api and gql samples are specs the parser reads" {
+  let spec = (kind : String) => {
+    let files = match export_sample(kind) {
+      Some(f) => f
+      None => abort("no spec exported for " + kind)
+    }
+    @api.parse(files[0].1)
+  }
+  let api = spec("api")
+  assert_eq(api.service, "greet")
+  assert_eq(api.routes.length(), 2)
+  assert_eq(api.types.length(), 2)
+  // the gql sample carries a streaming route, which is a subscription there
+  let gql = spec("gql")
+  assert_eq(gql.routes.length(), 2)
+  assert_eq(gql.routes[1].stream, true)
+  // and the model sample asks for plural tables
+  let model = spec("model")
+  assert_eq(
+    model.info.any(kv => {
+      kv.0 == "tableNaming" && kv.1 == "plural_snake"
+    }),
+    true,
+  )
+}

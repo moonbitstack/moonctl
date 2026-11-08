@@ -53,8 +53,8 @@ pub fn commands() -> Array[Command] {
     },
     {
       name: "template",
-      usage: "mctl template <list|show|init> [name]",
-      summary: "list the bundled template library, or write one into a directory",
+      usage: "mctl template <list|show|init|export> [name] [dir]",
+      summary: "the bundled template library, a starter library, or a starting spec",
     },
     {
       name: "upgrade",
@@ -121,7 +121,7 @@ pub fn subcommands(name : String) -> Array[String] {
     "rpc" => ["new"]
     "gql" => ["new"]
     "mcp" => ["new"]
-    "template" => ["list", "show", "init"]
+    "template" => ["list", "show", "init", "export"]
     "config" => ["list", "get", "set", "path", "migrate"]
     "completion" => ["bash", "zsh", "fish", "powershell"]
     _ => []

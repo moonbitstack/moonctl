@@ -26,6 +26,10 @@ pub fn default_config() -> Config
 
 pub fn env_report(String, Array[(String, String)]) -> String
 
+pub fn export_kinds() -> Array[String]
+
+pub fn export_sample(String) -> Array[(String, String)]?
+
 pub fn find_template(String) -> TemplateEntry?
 
 pub fn is_bundled(Library) -> Bool
