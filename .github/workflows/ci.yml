@@ -80,6 +80,14 @@ jobs:
         if: runner.os == 'Linux'
         run: python3 scripts/gen_api_reference.py --check
 
+      - name: the skills are valid
+        if: runner.os == 'Linux'
+        run: |
+          for dir in docs/skills/*/; do
+            [ -f "$dir/SKILL.md" ] || continue
+            pipx run --spec skills-ref agentskills validate "$dir"
+          done
+
   scaffold:
     # A pin that no longer compiles, or a service that no longer answers, fails
     # here rather than in the first project someone scaffolds.
