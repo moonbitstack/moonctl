@@ -2,10 +2,23 @@
 // where each name now lives, so `@moonctl.parse` and the rest keep working.
 
 ///|
-pub using @template {type FuncFn, type Template, type Value, render}
+pub using @template {
+  type FuncFn,
+  type MissingKey,
+  type Template,
+  type TemplateOptions,
+  type Trim,
+  type Value,
+  default_options,
+  parse_option,
+  render,
+}
 
 ///|
-pub using @style {type Style}
+pub using @style {type Naming, type NamingPolicy, type Style}
+
+///|
+pub using @style {default_naming, naming_problems}
 
 ///|
 pub using @api {

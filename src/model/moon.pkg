@@ -4,6 +4,7 @@ import {
   "moonbitstack/moonctl/internal/text",
   "moonbitstack/moonctl/api",
   "moonbitstack/moonctl/proto",
+  "moonbitstack/moonctl/style",
 }
 
 import {

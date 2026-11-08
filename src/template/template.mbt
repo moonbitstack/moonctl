@@ -13,6 +13,11 @@
 /// explicit stand-in for the arbitrary Go values goctl reflects over.
 pub(all) enum Value {
   Null
+  /// A field the data does not have. Kept apart from `Null`, which is a value the
+  /// data really holds: whether a missing field is nothing, the text `<no value>`
+  /// or an error is the template's `missingkey` option, and only a value that
+  /// knows it is missing can answer all three.
+  Missing
   Bool(Bool)
   Int(Int64)
   Float(Double)
@@ -34,6 +39,101 @@ impl Show for Refused with fn output(self, logger) {
     ParseError(m) => logger.write_string("template parse error: " + m)
     ExecError(m) => logger.write_string("template exec error: " + m)
   }
+}
+
+///|
+/// What a `{{.Field}}` that names no key does (Go's `missingkey` option).
+pub(all) enum MissingKey {
+  /// Nothing: the field renders as the empty string and tests false.
+  Zero
+  /// Go's own default: the text `<no value>`.
+  Literal
+  /// Stop the render, naming the field.
+  Error
+}
+
+///|
+/// Whether whitespace around an action is trimmed, beyond the `{{-` and `-}}`
+/// markers the template writes.
+pub(all) enum Trim {
+  /// Only the markers trim, which is Go's behaviour.
+  Markers
+  /// Every action trims the whitespace on both sides, as if each carried `-`.
+  Actions
+  /// A line holding nothing but an action goes, with its indentation; spaces
+  /// shared with other text stay.
+  BlankLines
+}
+
+///|
+/// The engine's behaviour switches: what a missing key does, and how much
+/// whitespace an action takes with it.
+pub(all) struct TemplateOptions {
+  missing_key : MissingKey
+  trim : Trim
+}
+
+///|
+/// The options a template is built with when none are asked for: a missing key is
+/// nothing, and only the markers trim — what this engine has always done, and what
+/// a template ported from Go expects.
+pub let default_options : TemplateOptions = {
+  missing_key: Zero,
+  trim: Markers,
+}
+
+///|
+/// The options Go's `text/template` spells as strings, read the same way:
+/// `missingkey=zero`, `missingkey=default` (or `invalid`), `missingkey=error`, and
+/// `trim=markers`, `trim=actions`, `trim=blanklines`. An unknown name is refused
+/// rather than silently taken for the default.
+pub fn parse_option(text : String) -> TemplateOptions raise Refused {
+  let mut opts = default_options
+  for part in @text.split_char(text, ',') {
+    let one = @text.trim(part)
+    if one == "" {
+      continue
+    }
+    match @text.index_of_str(one, "=") {
+      -1 => raise ParseError("option \"" + one + "\" is not `name=value`")
+      at => {
+        let name = @text.trim(one[0:at].to_owned()).to_lower()
+        let value = @text.trim(one[at + 1:].to_owned()).to_lower()
+        match name {
+          "missingkey" =>
+            opts = {
+              ..opts,
+              missing_key: match value {
+                "zero" => Zero
+                "default" | "invalid" => Literal
+                "error" => Error
+                _ =>
+                  raise ParseError(
+                    "missingkey=\"" + value + "\" is not zero, default or error",
+                  )
+              },
+            }
+          "trim" =>
+            opts = {
+              ..opts,
+              trim: match value {
+                "markers" | "none" => Markers
+                "actions" => Actions
+                "blanklines" | "blank-lines" => BlankLines
+                _ =>
+                  raise ParseError(
+                    "trim=\"" +
+                    value +
+                    "\" is not markers, actions or blanklines",
+                  )
+              },
+            }
+          other => raise ParseError("unknown template option \"" + other + "\"")
+        }
+      }
+    }
+  }
+  opts
 }
 
 ///|
@@ -136,7 +236,7 @@ fn trim_right_ws(s : String) -> String {
 ///|
 /// Split `src` into literal-text and action pieces, honouring `{{- -}}`
 /// whitespace-trim markers and dropping `{{/* comments */}}`.
-fn scan(src : String) -> Array[Piece] raise Refused {
+fn scan_with(src : String, trim : Trim) -> Array[Piece] raise Refused {
   let pieces : Array[Piece] = []
   let n = src.length()
   let mut i = 0
@@ -198,7 +298,74 @@ fn scan(src : String) -> Array[Piece] raise Refused {
   if t != "" {
     pieces.push(PText(t))
   }
-  pieces
+  trim_pieces(pieces, trim)
+}
+
+///|
+/// The text up to and including its first newline, dropped when nothing but
+/// whitespace stands before that newline — the blank line an action sat on.
+fn trim_leading_blank_line(s : String) -> String {
+  let mut i = 0
+  while i < s.length() && @text.is_ws(s[i]) && s[i] != '\n' {
+    i = i + 1
+  }
+  if i < s.length() && s[i] == '\n' {
+    s[i + 1:].to_owned()
+  } else {
+    s
+  }
+}
+
+///|
+/// The text after its last newline, dropped when nothing but whitespace follows
+/// that newline, keeping the newline itself.
+fn trim_trailing_blank_line(s : String) -> String {
+  let mut b = s.length()
+  while b > 0 && @text.is_ws(s[b - 1]) && s[b - 1] != '\n' {
+    b = b - 1
+  }
+  if b > 0 && s[b - 1] == '\n' {
+    s[0:b].to_owned()
+  } else {
+    s
+  }
+}
+
+///|
+/// Apply a blanket trimming policy to the text between actions. `Markers` leaves
+/// the pieces as the template wrote them; `Actions` trims every run of whitespace
+/// that touches an action; `BlankLines` drops the lines that hold nothing but the
+/// action, and keeps the spaces it shares with other text.
+fn trim_pieces(pieces : Array[Piece], trim : Trim) -> Array[Piece] {
+  if trim is Markers {
+    return pieces
+  }
+  let n = pieces.length()
+  let out : Array[Piece] = []
+  for i = 0; i < n; i = i + 1 {
+    match pieces[i] {
+      PText(t) => {
+        let mut s = t
+        if i > 0 && pieces[i - 1] is PAction(_) {
+          s = if trim is Actions {
+            trim_left_ws(s)
+          } else {
+            trim_leading_blank_line(s)
+          }
+        }
+        if i + 1 < n && pieces[i + 1] is PAction(_) {
+          s = if trim is Actions {
+            trim_right_ws(s)
+          } else {
+            trim_trailing_blank_line(s)
+          }
+        }
+        out.push(PText(s))
+      }
+      action => out.push(action)
+    }
+  }
+  out
 }
 
 // ── Lexing: action body → tokens ─────────────────────────────────────────────
@@ -807,6 +974,7 @@ fn Parser::parse_list(self : Parser) -> (Array[Node], String) raise Refused {
 priv struct Env {
   root : Value
   funcs : Map[String, FuncFn]
+  missing_key : MissingKey
 }
 
 ///|
@@ -814,6 +982,7 @@ priv struct Env {
 fn truthy(v : Value) -> Bool {
   match v {
     Null => false
+    Missing => false
     Bool(b) => b
     Int(n) => n != 0L
     Float(f) => f != 0.0
@@ -870,6 +1039,7 @@ fn sorted_keys(m : Map[String, Value]) -> Array[String] {
 fn to_output(v : Value) -> String {
   match v {
     Null => ""
+    Missing => "<no value>"
     Bool(b) => if b { "true" } else { "false" }
     Int(n) => n.to_string()
     Float(f) => f.to_string()
@@ -905,16 +1075,27 @@ fn to_output(v : Value) -> String {
 }
 
 ///|
-fn follow(v : Value, chain : Array[String]) -> Value raise Refused {
+fn follow(
+  v : Value,
+  chain : Array[String],
+  missing : MissingKey,
+) -> Value raise Refused {
   let mut cur = v
   for f in chain {
     cur = match cur {
       Dict(m) =>
         match m.get(f) {
           Some(x) => x
-          None => Null
+          None =>
+            match missing {
+              Zero => Null
+              Literal => Missing
+              Error =>
+                raise ExecError("the template data has no field '" + f + "'")
+            }
         }
       Null => Null
+      Missing => Missing
       _ =>
         raise ExecError("cannot access field '" + f + "' of a non-object value")
     }
@@ -931,7 +1112,7 @@ fn eval_arg(
 ) -> Value raise Refused {
   match a {
     Dot => dot
-    Field(chain) => follow(dot, chain)
+    Field(chain) => follow(dot, chain, env.missing_key)
     Var(name, chain) => {
       let base = if name == "" {
         env.root
@@ -941,7 +1122,7 @@ fn eval_arg(
           None => raise ExecError("undefined variable $" + name)
         }
       }
-      follow(base, chain)
+      follow(base, chain, env.missing_key)
     }
     StrLit(s) => Str(s)
     IntLit(n) => Int(n)
@@ -1454,13 +1635,23 @@ fn default_funcs() -> Map[String, FuncFn] {
 pub struct Template {
   mut renderer : (Value) -> String raise Refused
   funcs : Map[String, FuncFn]
+  mut options : TemplateOptions
 }
 
 ///|
 /// A fresh template preloaded with the default function library. Rendering before
 /// `parse` yields the empty string.
 pub fn Template::new() -> Template {
-  { renderer: _data => "", funcs: default_funcs(), }
+  { renderer: _data => "", funcs: default_funcs(), options: default_options, }
+}
+
+///|
+/// Set the behaviour switches — a missing key's fate, and how much whitespace an
+/// action takes — returning `self` for chaining. Set them before `parse`: the
+/// trimming happens while the source is being read.
+pub fn Template::options(self : Template, opts : TemplateOptions) -> Template {
+  self.options = opts
+  self
 }
 
 ///|
@@ -1478,7 +1669,8 @@ pub fn Template::parse(
   self : Template,
   source : String,
 ) -> Template raise Refused {
-  let parser : Parser = { pieces: scan(source), pos: 0, }
+  let opts = self.options
+  let parser : Parser = { pieces: scan_with(source, opts.trim), pos: 0, }
   let (nodes, term) = parser.parse_list()
   if term != "" {
     raise ParseError(
@@ -1487,7 +1679,7 @@ pub fn Template::parse(
   }
   let funcs = self.funcs
   self.renderer = data => {
-    let env : Env = { root: data, funcs, }
+    let env : Env = { root: data, funcs, missing_key: opts.missing_key, }
     let sb = StringBuilder()
     render_nodes(env, nodes, data, Map([]), sb)
     sb.to_string()

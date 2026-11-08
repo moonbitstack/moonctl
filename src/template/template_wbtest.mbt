@@ -208,3 +208,90 @@ test "exec error on undefined function" {
     _ => fail("expected an exec error but render succeeded")
   }
 }
+
+///|
+/// A data value with one field, for the options that only matter when a key is
+/// missing.
+let one_field : Value = Dict(Map([("name", Str("ada"))]))
+
+///|
+test "a missing key is nothing, the text Go prints, or an error" {
+  // the default: nothing, and false in a condition
+  assert_eq(render("[{{.nope}}]", one_field), "[]")
+  assert_eq(render("{{if .nope}}yes{{else}}no{{end}}", one_field), "no")
+  // Go's own default: the text `<no value>`
+  let literal = Template::new().options({
+    ..default_options,
+    missing_key: Literal,
+  })
+  assert_eq(literal.parse("[{{.nope}}]").render(one_field), "[<no value>]")
+  // and the strict one stops the render, naming the field
+  let strict = Template::new().options({
+    ..default_options,
+    missing_key: Error,
+  })
+  let outcome = Ok(strict.parse("{{.nope}}").render(one_field)) catch {
+    e => Err(Show::to_string(e))
+  }
+  let said = match outcome {
+    Ok(text) => text
+    Err(message) => message
+  }
+  assert_eq(said.contains("no field 'nope'"), true)
+  // a field the data does hold is unaffected by the policy
+  assert_eq(render("{{.name}}", one_field), "ada")
+  assert_eq(literal.parse("{{.name}}").render(one_field), "ada")
+}
+
+///|
+test "the trimming policy decides how much whitespace an action takes" {
+  let source =
+    #|<ul>
+    #|  {{range .items}}
+    #|  <li>{{.}}</li>
+    #|  {{end}}
+    #|</ul>
+  let data = Dict(Map([("items", List([Str("a"), Str("b")]))]))
+  // Markers, the default: every line the template wrote is kept
+  assert_eq(
+    render(source, data),
+    "<ul>\n  \n  <li>a</li>\n  \n  <li>b</li>\n  \n</ul>",
+  )
+  // BlankLines: the lines that held nothing but the action go, and the indent of
+  // the text that shares a line with an action stays
+  let blank = Template::new().options({ ..default_options, trim: BlankLines, })
+  assert_eq(
+    blank.parse(source).render(data),
+    "<ul>\n  <li>a</li>\n  <li>b</li>\n</ul>",
+  )
+  // Actions: every run of whitespace touching an action goes
+  let actions = Template::new().options({ ..default_options, trim: Actions, })
+  assert_eq(actions.parse(source).render(data), "<ul><li>a</li><li>b</li></ul>")
+}
+
+///|
+test "the options are read from Go's spelling, and an unknown one is refused" {
+  let opts = parse_option("missingkey=error, trim=blanklines")
+  assert_eq(opts.missing_key is Error, true)
+  assert_eq(opts.trim is BlankLines, true)
+  assert_eq(parse_option("missingkey=default").missing_key is Literal, true)
+  assert_eq(parse_option("").trim is Markers, true)
+  let refused = (text : String) => {
+    let outcome = Ok(parse_option(text)) catch {
+      e => Err(Show::to_string(e))
+    }
+    match outcome {
+      Ok(_) => ""
+      Err(message) => message
+    }
+  }
+  assert_eq(
+    refused("missingkey=maybe").contains("not zero, default or error"),
+    true,
+  )
+  assert_eq(
+    refused("trim=everything").contains("not markers, actions or blanklines"),
+    true,
+  )
+  assert_eq(refused("style=snake").contains("unknown template option"), true)
+}

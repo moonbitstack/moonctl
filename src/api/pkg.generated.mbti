@@ -101,6 +101,7 @@ pub(all) struct Route {
   req : String
   resp : String
   group : Group?
+  stream : Bool
 }
 
 pub(all) struct Service {

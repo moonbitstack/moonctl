@@ -61,23 +61,30 @@ fn is_primary(f : @api.Field) -> Bool {
 /// One `type` block as one `CREATE TABLE`, or `None` for a block with no field —
 /// there is nothing to create, and an empty table is a mistake rather than a
 /// schema.
-fn create_table(t : @api.TypeDef, types : Array[@api.TypeDef]) -> String? {
+fn create_table(
+  t : @api.TypeDef,
+  types : Array[@api.TypeDef],
+  naming : @style.NamingPolicy?,
+) -> String? {
   let fields = @api.flat_fields(t, types)
   if fields.length() == 0 {
     return None
   }
   let out : Array[String] = []
-  let table = table_name(t.name)
+  let table = match naming {
+    Some(p) => p.table_name(t.name)
+    None => table_name(t.name)
+  }
   out.push("-- " + t.name)
   out.push("CREATE TABLE IF NOT EXISTS `" + table + "` (")
   let mut key = ""
   let lines : Array[String] = []
   for f in fields {
-    let column = @text.to_snake(f.json_name())
-    let mut line = "  `" +
-      @text.to_snake(f.json_name()) +
-      "` " +
-      sql_type(f.type_)
+    let column = match naming {
+      Some(p) => p.column_name(f.json_name())
+      None => @text.to_snake(f.json_name())
+    }
+    let mut line = "  `" + column + "` " + sql_type(f.type_)
     if is_primary(f) && sql_type(f.type_) != "JSON" {
       line = line + " NOT NULL"
       key = column
@@ -102,7 +109,16 @@ fn create_table(t : @api.TypeDef, types : Array[@api.TypeDef]) -> String? {
 ///|
 /// The migration file for a spec: one `CREATE TABLE` per type. `service` names the
 /// file and the header, so two specs migrated into one directory do not look alike.
-pub fn generate_migrations(spec : @api.Spec) -> String {
+pub fn generate_migrations(
+  spec : @api.Spec,
+  naming? : @style.NamingPolicy,
+) -> String {
+  // A spec that names no policy keeps the plural table this generator has always
+  // written; one that names a policy gets exactly that spelling.
+  let policy = match naming {
+    Some(p) => Some(p)
+    None => @style.NamingPolicy::of_info(spec.info)
+  }
   let out : Array[String] = []
   out.push(
     "-- mctl migrate: " +
@@ -122,7 +138,7 @@ pub fn generate_migrations(spec : @api.Spec) -> String {
   out.push("")
   let mut wrote = false
   for t in spec.types {
-    match create_table(t, spec.types) {
+    match create_table(t, spec.types, policy) {
       Some(sql) => {
         out.push(sql)
         wrote = true

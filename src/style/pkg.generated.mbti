@@ -2,6 +2,9 @@
 package "moonbitstack/moonctl/style"
 
 // Values
+pub let default_naming : NamingPolicy
+
+pub fn naming_problems(Array[(String, String)]) -> Array[String]
 
 // Errors
 pub(all) suberror Refused {
@@ -10,6 +13,24 @@ pub(all) suberror Refused {
 
 // Types and methods
 type Case
+
+pub(all) enum Naming {
+  Snake
+  Camel
+  Pascal
+  Kebab
+  ScreamingSnake
+}
+pub fn Naming::spell(Self, String) -> String
+
+pub(all) struct NamingPolicy {
+  table : Naming
+  column : Naming
+  plural : Bool
+}
+pub fn NamingPolicy::column_name(Self, String) -> String
+pub fn NamingPolicy::of_info(Array[(String, String)]) -> Self?
+pub fn NamingPolicy::table_name(Self, String) -> String
 
 pub struct Style {
   before : String

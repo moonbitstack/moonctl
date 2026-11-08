@@ -3,12 +3,15 @@ package "moonbitstack/moonctl/model"
 
 import {
   "moonbitstack/moonctl/api",
+  "moonbitstack/moonctl/style",
 }
 
 // Values
 pub fn cache_file_name(String) -> String
 
 pub fn crud_for(DdlTable, String, nullable_aware? : Bool) -> String
+
+pub fn ddl_fk_of(DdlTable, String) -> DdlForeignKey?
 
 pub fn generate_cached(@api.Spec) -> String
 
@@ -18,9 +21,9 @@ pub fn generate_crud_from_ddl(String) -> String
 
 pub fn generate_crud_from_reflection(Array[ReflectedColumn]) -> String
 
-pub fn generate_migrations(@api.Spec) -> String
+pub fn generate_migrations(@api.Spec, naming? : @style.NamingPolicy) -> String
 
-pub fn generate_model(@api.Spec) -> String
+pub fn generate_model(@api.Spec, naming? : @style.NamingPolicy) -> String
 
 pub fn generate_mongo(@api.Spec) -> String
 
@@ -57,11 +60,28 @@ pub(all) struct DdlColumn {
   mut primary_key : Bool
   nullable : Bool
   default_ : String?
+  unique : Bool
+}
+
+pub(all) struct DdlForeignKey {
+  columns : Array[String]
+  ref_table : String
+  ref_columns : Array[String]
+  on_delete : String
+  on_update : String
+}
+
+pub(all) struct DdlIndex {
+  name : String
+  columns : Array[String]
+  unique : Bool
 }
 
 pub(all) struct DdlTable {
   name : String
   columns : Array[DdlColumn]
+  indexes : Array[DdlIndex]
+  foreign_keys : Array[DdlForeignKey]
 }
 
 pub(all) struct PgTarget {

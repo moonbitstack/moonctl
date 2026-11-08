@@ -2,6 +2,10 @@
 package "moonbitstack/moonctl/template"
 
 // Values
+pub let default_options : TemplateOptions
+
+pub fn parse_option(String) -> TemplateOptions raise Refused
+
 pub fn render(String, Value) -> String raise Refused
 
 // Errors
@@ -11,17 +15,37 @@ pub(all) suberror Refused {
 }
 
 // Types and methods
+pub(all) enum MissingKey {
+  Zero
+  Literal
+  Error
+}
+
 pub struct Template {
   mut renderer : (Value) -> String raise Refused
   funcs : Map[String, (Array[Value]) -> Value raise Refused]
+  mut options : TemplateOptions
 }
 pub fn Template::func(Self, String, (Array[Value]) -> Value raise Refused) -> Self
 pub fn Template::new() -> Self
+pub fn Template::options(Self, TemplateOptions) -> Self
 pub fn Template::parse(Self, String) -> Self raise Refused
 pub fn Template::render(Self, Value) -> String raise Refused
 
+pub(all) struct TemplateOptions {
+  missing_key : MissingKey
+  trim : Trim
+}
+
+pub(all) enum Trim {
+  Markers
+  Actions
+  BlankLines
+}
+
 pub(all) enum Value {
   Null
+  Missing
   Bool(Bool)
   Int(Int64)
   Float(Double)

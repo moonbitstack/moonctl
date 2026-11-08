@@ -397,3 +397,46 @@ test "a key onto a non-key column says which column it joins on" {
     true,
   )
 }
+
+///|
+test "the spec's info block names the tables and columns" {
+  let spec = @api.parse(
+    (
+      #|info (
+      #|  tableNaming:  plural_snake
+      #|  columnNaming: camel
+      #|)
+      #|
+      #|type BlogPost {
+      #|  id:         int64
+      #|  created_at: int64
+      #|}
+      #|
+      #|service blog {
+      #|  get /posts list
+      #|}
+    ),
+  )
+  let models = tree_at(generate_orm_tree(spec), "internal/model/models.mbt")
+  // the table is named for the set, as the spec asked
+  assert_eq(contains(models, "#orm.table(name=\"blog_posts\")"), true)
+  // the field keeps the language's spelling, the column takes the schema's
+  assert_eq(
+    contains(models, "  #orm.column(name=\"createdAt\")\n  created_at : Int64"),
+    true,
+  )
+  // and the migration creates the same table
+  let migrate = tree_at(generate_orm_tree(spec), "internal/model/migrate.mbt")
+  assert_eq(contains(migrate, "blog_posts"), true)
+}
+
+///|
+test "a spec that names no policy keeps the spelling the generator wrote" {
+  let spec = @api.parse(
+    "type BlogPost {\n  id: int64\n}\n\nservice blog {\n  get /p p\n}\n",
+  )
+  let models = tree_at(generate_orm_tree(spec), "internal/model/models.mbt")
+  assert_eq(contains(models, "#orm.table(name=\"blog_post\")"), true)
+  // no field names a column, because none of them differs from its field
+  assert_eq(contains(models, "#orm.column(name="), false)
+}

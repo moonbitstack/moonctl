@@ -16,7 +16,7 @@ pub fn generate_mcp_from_spec(@api.Spec, style? : @style.Style, dir? : String) -
 
 pub fn generate_mcp_tree(String, style? : @style.Style, dir? : String, tools? : String, registration? : String, checks? : String) -> Array[TreeFile]
 
-pub fn generate_orm_tree(@api.Spec, style? : @style.Style, dir? : String) -> Array[TreeFile]
+pub fn generate_orm_tree(@api.Spec, style? : @style.Style, dir? : String, naming? : @style.NamingPolicy) -> Array[TreeFile]
 
 pub fn generate_orm_tree_from_ddl(Array[@model.DdlTable], String, style? : @style.Style, dir? : String) -> Array[TreeFile]
 

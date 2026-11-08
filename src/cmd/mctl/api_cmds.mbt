@@ -36,13 +36,23 @@ async fn api_validate(input : String) -> Unit {
     for d in found {
       println(d.to_string())
     }
+    // The `info` block also carries the naming policy, which the model generators
+    // read: a value they cannot read is named here instead of being spelled the
+    // default way without a word.
+    let naming = @moonctl.naming_problems(
+      @moonctl.parse_all(source, files, from=input).info,
+    )
+    for note in naming {
+      println("warning [naming] " + note)
+    }
     let mut errors = 0
     for d in found {
       if d.severity == @moonctl.Severity::Error {
         errors = errors + 1
       }
     }
-    if found.length() == 0 {
+    let warnings = found.length() - errors + naming.length()
+    if found.length() == 0 && naming.length() == 0 {
       println("mctl: " + input + " is valid")
     } else {
       println(
@@ -51,7 +61,7 @@ async fn api_validate(input : String) -> Unit {
         ": " +
         errors.to_string() +
         " error(s), " +
-        (found.length() - errors).to_string() +
+        warnings.to_string() +
         " warning(s)",
       )
     }

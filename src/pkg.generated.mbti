@@ -47,6 +47,10 @@ pub let default_branch : String
 
 pub fn default_config() -> @cli.Config
 
+pub let default_naming : @style.NamingPolicy
+
+pub let default_options : @template.TemplateOptions
+
 pub fn default_routes(@proto.Proto) -> Array[@proto.GatewayRoute]
 
 pub fn deps(String, from? : String) -> Array[String]
@@ -91,13 +95,13 @@ pub fn generate_mcp_from_spec(@api.Spec, style? : @style.Style, dir? : String) -
 
 pub fn generate_mcp_tree(String, style? : @style.Style, dir? : String, tools? : String, registration? : String, checks? : String) -> Array[@scaffold.TreeFile]
 
-pub fn generate_migrations(@api.Spec) -> String
+pub fn generate_migrations(@api.Spec, naming? : @style.NamingPolicy) -> String
 
-pub fn generate_model(@api.Spec) -> String
+pub fn generate_model(@api.Spec, naming? : @style.NamingPolicy) -> String
 
 pub fn generate_mongo(@api.Spec) -> String
 
-pub fn generate_orm_tree(@api.Spec, style? : @style.Style, dir? : String) -> Array[@scaffold.TreeFile]
+pub fn generate_orm_tree(@api.Spec, style? : @style.Style, dir? : String, naming? : @style.NamingPolicy) -> Array[@scaffold.TreeFile]
 
 pub fn generate_orm_tree_from_ddl(Array[@model.DdlTable], String, style? : @style.Style, dir? : String) -> Array[@scaffold.TreeFile]
 
@@ -129,6 +133,8 @@ pub fn mod_pins(String) -> Array[(String, String)]
 
 pub fn mongo_file_name(String) -> String
 
+pub fn naming_problems(Array[(String, String)]) -> Array[String]
+
 pub fn openapi_document(@api.Spec, version? : @doc.DocVersion, title? : String, api_version? : String) -> @json.Json
 
 pub fn parse(String) -> @api.Spec raise @api.Refused
@@ -144,6 +150,8 @@ pub fn parse_dsn(String) -> @model.DataSource raise @model.Refused
 pub fn parse_gen_files(@json.Json) -> Array[@plugin.GenFile]
 
 pub fn parse_lenient(String) -> @api.Spec
+
+pub fn parse_option(String) -> @template.TemplateOptions raise @template.Refused
 
 pub fn parse_proto(String) -> @proto.Proto
 
@@ -264,6 +272,12 @@ pub using @client {type Lang}
 
 pub using @cli {type Library}
 
+pub using @template {type MissingKey}
+
+pub using @style {type Naming}
+
+pub using @style {type NamingPolicy}
+
 pub using @model {type PgTarget}
 
 pub using @plugin {type Plugin}
@@ -304,7 +318,11 @@ pub using @cli {type TemplateEntry}
 
 pub using @gen {type TemplateFile}
 
+pub using @template {type TemplateOptions}
+
 pub using @scaffold {type TreeFile}
+
+pub using @template {type Trim}
 
 pub using @api {type TypeDef}
 
