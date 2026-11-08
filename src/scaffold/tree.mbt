@@ -104,14 +104,21 @@ pub fn generate_tree(
   let types_pkg = mod_ + "/internal/types"
   let api = ("moonbitstack/moonapi", "")
   let asgi = ("moonbitstack/moonasgi", "")
-
+  // A streaming route frames its events with `moonhttp/sse`, which the module has
+  // to name itself: a package cannot import what only a dependency's dependency
+  // brought in.
+  let streams = spec.routes.any(r => r.stream)
+  let deps = [
+    "moonbitstack/moonapi", "moonbitstack/moonasgi", "moonbitstack/mooncat",
+  ]
+  if streams {
+    deps.push("moonbitstack/moonhttp")
+  }
   let out = base_tree(
     mod_,
     st,
     dir,
-    deps=[
-      "moonbitstack/moonapi", "moonbitstack/moonasgi", "moonbitstack/mooncat",
-    ],
+    deps~,
     imports=[api, ("moonbitstack/mooncat", ""), (handler_pkg, "")],
     main=asgi_main(
       mod_, "HTTP", "@handler.register_handlers(@moonapi.App::new(), svc).to_asgi()",
@@ -150,10 +157,15 @@ pub fn generate_tree(
   }
   let routes_imports : Array[(String, String)] = [api, (svc_pkg, "")]
   if ungrouped {
-    routes_imports.push(asgi)
+    if responds_in(spec, st, "") {
+      routes_imports.push(asgi)
+    }
     routes_imports.push((logic_pkg, "logic"))
     if binds_in(spec, st, "") {
       routes_imports.push((types_pkg, ""))
+    }
+    if streams_in(spec, st, "") {
+      routes_imports.push(("moonbitstack/moonhttp/sse", "sse"))
     }
   }
   for d in group_dirs {
@@ -209,7 +221,9 @@ pub fn generate_tree(
           logic_pkg,
           types_pkg,
           d,
+          responds_in(spec, st, d),
           binds_in(spec, st, d),
+          streams_in(spec, st, d),
         ),
       ),
       regen: Once,
@@ -234,11 +248,7 @@ pub fn generate_tree(
     out.push({
       path: at(dir, at("internal/logic", at(d, "moon.pkg"))),
       content: pkg_file(
-        if binds_in(spec, st, d) {
-          [api, asgi, (svc_pkg, ""), (types_pkg, "")]
-        } else {
-          [api, asgi, (svc_pkg, "")]
-        },
+        logic_imports(spec, st, d, api, asgi, svc_pkg, types_pkg),
       ),
       regen: Once,
     })
@@ -341,18 +351,108 @@ fn group_handler_imports(
   logic_pkg : String,
   types_pkg : String,
   group : String,
+  responds : Bool,
   binds : Bool,
+  streams : Bool,
 ) -> Array[(String, String)] {
-  let out : Array[(String, String)] = [
-    api,
-    asgi,
-    (svc_pkg, ""),
-    (logic_pkg + "/" + group, "logic"),
-  ]
+  let out : Array[(String, String)] = [api]
+  // A streaming handler answers a `Stream`, not a `Response`, so a package of
+  // nothing but streams does not need the framework the response type comes from.
+  if responds {
+    out.push(asgi)
+  }
+  out.push((svc_pkg, ""))
+  out.push((logic_pkg + "/" + group, "logic"))
   if binds {
     out.push((types_pkg, ""))
   }
+  // A streaming handler frames its events, which is `moonhttp/sse`'s job.
+  if streams {
+    out.push(("moonbitstack/moonhttp/sse", "sse"))
+  }
   out
+}
+
+///|
+/// Whether a route whose handler lives in `group`'s package is a stream.
+fn streams_in(spec : @api.Spec, st : @style.Style, group : String) -> Bool {
+  for r in spec.routes {
+    if route_dir(r, st) == group && r.stream {
+      return true
+    }
+  }
+  false
+}
+
+///|
+/// Whether a streaming route in `group`'s package names an event type of the spec,
+/// which is what makes the handler and the logic import `internal/types`.
+fn stream_types_in(spec : @api.Spec, st : @style.Style, group : String) -> Bool {
+  for r in spec.routes {
+    if route_dir(r, st) == group &&
+      r.stream &&
+      r.resp != "" &&
+      declares(spec, r.resp) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+/// The imports of a generated `internal/logic` package: the framework when the
+/// package writes a `Response`, and `internal/types` when the logic names one of
+/// the spec's types.
+fn logic_imports(
+  spec : @api.Spec,
+  st : @style.Style,
+  group : String,
+  api : (String, String),
+  asgi : (String, String),
+  svc_pkg : String,
+  types_pkg : String,
+) -> Array[(String, String)] {
+  let out : Array[(String, String)] = [api]
+  if logic_responds_in(spec, st, group) {
+    out.push(asgi)
+  }
+  out.push((svc_pkg, ""))
+  if binds_in(spec, st, group) || stream_types_in(spec, st, group) {
+    out.push((types_pkg, ""))
+  }
+  out
+}
+
+///|
+/// Whether a route in `group`'s package has a logic function that writes a
+/// `Response` itself — one with no reply type: a route with one returns
+/// `Result[T, String]` instead, so the package needs no response type for it.
+fn logic_responds_in(
+  spec : @api.Spec,
+  st : @style.Style,
+  group : String,
+) -> Bool {
+  for r in spec.routes {
+    if route_dir(r, st) == group && r.stream == false {
+      let has_resp = r.resp != "" && declares(spec, r.resp)
+      if has_resp == false {
+        return true
+      }
+    }
+  }
+  false
+}
+
+///|
+/// Whether any route in `group`'s package answers a `Response` rather than a
+/// `Stream`, which is what makes the package import `moonasgi`.
+fn responds_in(spec : @api.Spec, st : @style.Style, group : String) -> Bool {
+  for r in spec.routes {
+    if route_dir(r, st) == group && r.stream == false {
+      return true
+    }
+  }
+  false
 }
 
 ///|
@@ -365,6 +465,70 @@ fn binds_in(spec : @api.Spec, st : @style.Style, group : String) -> Bool {
     }
   }
   false
+}
+
+///|
+/// The handler of a streaming route: open a `text/event-stream` and hand the logic
+/// a function that sends one event. The response stays open for as long as the
+/// logic keeps sending, which is what makes it a stream rather than a body written
+/// in one go — the seeded logic sends nothing and ends immediately.
+fn stream_handler_src(
+  r : @api.Route,
+  name : String,
+  logic : String,
+  event : String,
+) -> String {
+  let send = if event == "" {
+    "@sse.Event::of(" + @text.quote("TODO: " + r.handler) + ")"
+  } else {
+    "@sse.Event::of(ToJson::to_json(event).stringify())"
+  }
+  "///|\n/// `" +
+  r.verb +
+  " " +
+  r.path +
+  "` — the HTTP edge of the route: a `text/event-stream` whose events come from\n/// the logic. It stays open until the logic returns.\npub fn " +
+  name +
+  "(\n  svc : @svc.ServiceContext,\n  ctx : @moonapi.Context,\n) -> @moonapi.Stream {\n  @moonapi.sse(events => {\n    @logic." +
+  logic +
+  "(svc, ctx, event => events.send(" +
+  send +
+  "))\n  })\n}\n"
+}
+
+///|
+/// The logic of a streaming route: it takes the request the handler bound (or the
+/// context) and a function that sends one event, and calls it as the events happen.
+/// Nothing is buffered here; the seeded body sends none and returns.
+fn stream_logic_src(
+  r : @api.Route,
+  name : String,
+  event : String,
+  use_req~ : Bool = false,
+) -> String {
+  let param = if use_req {
+    "_req : @types." + r.req
+  } else {
+    "_ctx : @moonapi.Context"
+  }
+  let sink = if event == "" {
+    "async (String) -> Unit"
+  } else {
+    "async (@types." + event + ") -> Unit"
+  }
+  "///|\n/// `" +
+  r.verb +
+  " " +
+  r.path +
+  "`" +
+  (if r.summary == "" { "" } else { " — " + r.summary }) +
+  ". Send each event as it happens; the response closes when this returns.\npub fn " +
+  name +
+  "(\n  _svc : @svc.ServiceContext,\n  " +
+  param +
+  ",\n  send : " +
+  sink +
+  ",\n) -> Unit {\n  ignore(send)\n}\n"
 }
 
 ///|
@@ -381,6 +545,18 @@ fn api_handler_src(
 ) -> String {
   let has_req = r.req != "" && is_bound(spec, r.req)
   let has_resp = r.resp != "" && declares(spec, r.resp)
+  if r.stream {
+    return stream_handler_src(
+      r,
+      name,
+      st.format(r.handler + "_logic"),
+      if has_resp {
+        r.resp
+      } else {
+        ""
+      },
+    )
+  }
   let call = "@logic." + st.format(r.handler + "_logic")
   let mut body = ""
   if has_req {
@@ -419,6 +595,18 @@ fn api_handler_src(
 fn api_logic_src(spec : @api.Spec, r : @api.Route, name : String) -> String {
   let has_req = r.req != "" && is_bound(spec, r.req)
   let has_resp = r.resp != "" && declares(spec, r.resp)
+  if r.stream {
+    return stream_logic_src(
+      r,
+      name,
+      if has_resp {
+        r.resp
+      } else {
+        ""
+      },
+      use_req=has_req,
+    )
+  }
   let param = if has_req {
     "_req : @types." + r.req
   } else {
@@ -477,7 +665,7 @@ fn route_lines(routes : Array[@api.Route], st : @style.Style) -> String {
     let call = (if d == "" { "" } else { "@" + d + "." }) +
       st.format(r.handler + "_handler")
     let head = "  app." +
-      r.verb +
+      (if r.stream { "stream" } else { r.verb }) +
       "(" +
       @text.quote(@gen.route_path(r.path)) +
       ", ctx => " +

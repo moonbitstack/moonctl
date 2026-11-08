@@ -293,8 +293,7 @@ test "generate_crud: the model declares its indexes and foreign keys" {
   // the index list is the model's, so `create_table` creates them
   assert_eq(
     contains(
-      code,
-      "indexes=[\n    @moonorm.index([\"code\"], name=\"uq_heroes_code\", unique=true),\n    @moonorm.index([\"team_id\", \"code\"], name=\"ix_heroes_team\"),\n  ],",
+      code, "indexes=[\n    @moonorm.index([\"code\"], name=\"uq_heroes_code\", unique=true),\n    @moonorm.index([\"team_id\", \"code\"], name=\"ix_heroes_team\"),\n  ],",
     ),
     true,
   )

@@ -145,9 +145,14 @@ pub fn generate_builtin(spec : @api.Spec) -> String {
     // named fn no longer coerces to one. Register each handler through an arrow
     // closure — a closure infers the raise effect, so a stub that never raises and a
     // filled-in handler that raises an `HttpException` are both accepted unchanged.
+    //
+    // A streaming route registers on `app.stream`, whose handler answers a
+    // `Stream` rather than a `Response`; the closure itself is written the same
+    // way, since an arrow that awaits nothing is accepted where an async one is
+    // wanted.
     let handler = "ctx => " + r.handler + "(ctx)"
     let head = "  app." +
-      r.verb +
+      (if r.stream { "stream" } else { r.verb }) +
       "(" +
       @text.quote(route_path(r.path)) +
       ", " +
@@ -172,11 +177,26 @@ pub fn generate_builtin(spec : @api.Spec) -> String {
       r.path +
       "`" +
       where_ +
-      ".\npub fn " +
-      r.handler +
-      "(_ctx : @moonapi.Context) -> @moonasgi.Response {\n  @moonapi.text(200, " +
-      @text.quote("TODO: " + r.handler) +
-      ")\n}\n\n"
+      (if r.stream {
+        " — a `text/event-stream`: send each event as it happens and the\n/// response stays open."
+      } else {
+        "."
+      })
+    if r.stream {
+      out = out +
+        "\npub fn " +
+        r.handler +
+        "(_ctx : @moonapi.Context) -> @moonapi.Stream {\n  @moonapi.sse(events => {\n    events.send(@sse.Event::of(" +
+        @text.quote("TODO: " + r.handler) +
+        "))\n  })\n}\n\n"
+    } else {
+      out = out +
+        "\npub fn " +
+        r.handler +
+        "(_ctx : @moonapi.Context) -> @moonasgi.Response {\n  @moonapi.text(200, " +
+        @text.quote("TODO: " + r.handler) +
+        ")\n}\n\n"
+    }
   }
   out
 }

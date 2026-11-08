@@ -84,6 +84,11 @@ pub fn spec_to_json(spec : @api.Spec) -> Json {
       ("req", Json(r.req)),
       ("resp", Json(r.resp)),
     ])
+    // Only a streaming route carries the key, so the shape a plugin has always
+    // been handed does not change for the routes that are not one.
+    if r.stream {
+      m["stream"] = Json::boolean(true)
+    }
     match r.group {
       Some(g) => m["group"] = group_to_json(g)
       None => ()
@@ -291,6 +296,10 @@ pub fn spec_from_json(j : Json) -> @api.Spec {
                   req: json_str(rm, "req"),
                   resp: json_str(rm, "resp"),
                   group: group_from_json(rm.get("group")),
+                  stream: match rm.get("stream") {
+                    Some(True) => true
+                    _ => false
+                  },
                 })
               _ => ()
             }

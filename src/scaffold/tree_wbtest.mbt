@@ -589,3 +589,55 @@ test "the text parsers are imported only by a binder that reads text" {
     true,
   )
 }
+
+///|
+/// A service whose one route streams: the shape the handler, the logic and the
+/// schema all have to agree on.
+fn streaming_spec() -> @api.Spec raise {
+  @api.parse(
+    (
+      #|type Tick {
+      #|  at: int64
+      #|}
+      #|
+      #|service feed {
+      #|  @handler watch
+      #|  get /watch returns (stream Tick)
+      #|}
+    ),
+  )
+}
+
+///|
+test "a streaming route opens an event stream, and the logic sends the events" {
+  let tree = generate_tree(streaming_spec())
+  let routes = tree_at(tree, "internal/handler/routes.mbt")
+  // the route is registered as a stream, so the app writes its body as it goes
+  assert_eq(
+    contains(routes, "app.stream(\"/watch\", ctx => watchhandler(svc, ctx))"),
+    true,
+  )
+  let handler = tree_at(tree, "internal/handler/watchhandler.mbt")
+  assert_eq(contains(handler, "pub fn watchhandler("), true)
+  assert_eq(contains(handler, ") -> @moonapi.Stream {"), true)
+  assert_eq(contains(handler, "@moonapi.sse(events => {"), true)
+  // the logic is handed a sink: it sends each event when it happens, and the
+  // response closes when it returns, which is what makes this a stream
+  let logic = tree_at(tree, "internal/logic/watchlogic.mbt")
+  assert_eq(contains(logic, "send : async (@types.Tick) -> Unit"), true)
+  assert_eq(contains(logic, ") -> Unit {"), true)
+  // the event travels as the JSON of its own type
+  assert_eq(contains(handler, "ToJson::to_json(event).stringify()"), true)
+}
+
+///|
+test "a streaming package imports the event framer, and its module names it" {
+  let tree = generate_tree(streaming_spec())
+  let pkg = tree_at(tree, "internal/handler/moon.pkg")
+  assert_eq(contains(pkg, "\"moonbitstack/moonhttp/sse\""), true)
+  // a package cannot import what only a dependency's dependency brought in
+  assert_eq(
+    contains(tree_at(tree, "moon.mod"), pinned("moonbitstack/moonhttp")),
+    true,
+  )
+}

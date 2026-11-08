@@ -264,8 +264,7 @@ test "an index in the schema is an index annotation on the table" {
   )
   assert_eq(
     contains(
-      models,
-      "#orm.index(column=\"code\", name=\"uq_hero_code\", unique=true)\n#orm.index(column=\"team_id\", name=\"ix_hero_team\")\n",
+      models, "#orm.index(column=\"code\", name=\"uq_hero_code\", unique=true)\n#orm.index(column=\"team_id\", name=\"ix_hero_team\")\n",
     ),
     true,
   )
@@ -281,7 +280,10 @@ test "a column UNIQUE is the column's annotation" {
     generate_orm_tree_from_ddl(related_schema, "shop"),
     "internal/model/models.mbt",
   )
-  assert_eq(contains(models, "  #orm.column(unique=true)\n  name : String\n"), true)
+  assert_eq(
+    contains(models, "  #orm.column(unique=true)\n  name : String\n"),
+    true,
+  )
 }
 
 ///|
@@ -293,22 +295,22 @@ test "a foreign key becomes a relation on both sides" {
   // the referenced side holds the many
   assert_eq(
     contains(
-      models,
-      "#orm.has_many(name=\"heroes\", target=\"Heroes\", foreign_key=\"team_id\")",
+      models, "#orm.has_many(name=\"heroes\", target=\"Heroes\", foreign_key=\"team_id\")",
     ),
     true,
   )
   // the referencing side holds the one, named after its column
   assert_eq(
     contains(
-      models,
-      "#orm.belongs_to(name=\"team\", target=\"Teams\", foreign_key=\"team_id\")",
+      models, "#orm.belongs_to(name=\"team\", target=\"Teams\", foreign_key=\"team_id\")",
     ),
     true,
   )
   // and the column itself carries the constraint, so the DDL it creates has it
   assert_eq(
-    contains(models, "  #orm.column(kind=\"int\", references=\"teams.id\", on_delete=\"CASCADE\")"),
+    contains(
+      models, "  #orm.column(kind=\"int\", references=\"teams.id\", on_delete=\"CASCADE\")",
+    ),
     true,
   )
 }
@@ -336,30 +338,26 @@ test "two keys onto one table get two names, and a key onto a stranger is left o
   // both keys are named after their column, so neither collides with the other
   assert_eq(
     contains(
-      models,
-      "#orm.belongs_to(name=\"author\", target=\"Users\", foreign_key=\"author_id\")",
+      models, "#orm.belongs_to(name=\"author\", target=\"Users\", foreign_key=\"author_id\")",
     ),
     true,
   )
   assert_eq(
     contains(
-      models,
-      "#orm.belongs_to(name=\"editor\", target=\"Users\", foreign_key=\"editor_id\")",
+      models, "#orm.belongs_to(name=\"editor\", target=\"Users\", foreign_key=\"editor_id\")",
     ),
     true,
   )
   // both appear on the same table, so the referenced side holds both
   assert_eq(
     contains(
-      models,
-      "#orm.has_many(name=\"posts\", target=\"Posts\", foreign_key=\"author_id\")",
+      models, "#orm.has_many(name=\"posts\", target=\"Posts\", foreign_key=\"author_id\")",
     ),
     true,
   )
   assert_eq(
     contains(
-      models,
-      "#orm.has_many(name=\"posts_list\", target=\"Posts\", foreign_key=\"editor_id\")",
+      models, "#orm.has_many(name=\"posts_list\", target=\"Posts\", foreign_key=\"editor_id\")",
     ),
     true,
   )
@@ -388,15 +386,13 @@ test "a key onto a non-key column says which column it joins on" {
   )
   assert_eq(
     contains(
-      models,
-      "#orm.belongs_to(name=\"country\", target=\"Countries\", foreign_key=\"country_code\", key=\"code\")",
+      models, "#orm.belongs_to(name=\"country\", target=\"Countries\", foreign_key=\"country_code\", key=\"code\")",
     ),
     true,
   )
   assert_eq(
     contains(
-      models,
-      "#orm.has_many(name=\"cities\", target=\"Cities\", foreign_key=\"country_code\", key=\"code\")",
+      models, "#orm.has_many(name=\"cities\", target=\"Cities\", foreign_key=\"country_code\", key=\"code\")",
     ),
     true,
   )

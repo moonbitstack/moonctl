@@ -270,3 +270,43 @@ test "parse type blocks into schemas" {
   assert_eq(user.fields[3].type_, "Array[String]")
   assert_eq(user.fields[4].type_, "Map[String, Int32]")
 }
+
+///|
+test "a route that streams carries the type of one event" {
+  let spec = parse(
+    (
+      #|type Tick {
+      #|  at: int64
+      #|}
+      #|
+      #|service feed {
+      #|  @handler watch
+      #|  get /watch returns (stream Tick)
+      #|  @handler ping
+      #|  get /ping returns (Tick)
+      #|}
+    ),
+  )
+  assert_eq(spec.routes.length(), 2)
+  assert_eq(spec.routes[0].stream, true)
+  assert_eq(spec.routes[0].resp, "Tick")
+  // the word `stream` is not part of the type it modifies
+  assert_eq(spec.routes[1].stream, false)
+  assert_eq(spec.routes[1].resp, "Tick")
+}
+
+///|
+test "a route that streams has to be a get, and has to name its event" {
+  assert_eq(
+    complaint("service f {\n  @handler w\n  post /w returns (stream Tick)\n}").contains(
+      "only a get route streams",
+    ),
+    true,
+  )
+  assert_eq(
+    complaint("service f {\n  @handler w\n  get /w returns (stream)\n}").contains(
+      "needs the type of one event",
+    ),
+    true,
+  )
+}

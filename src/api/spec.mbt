@@ -234,6 +234,11 @@ pub(all) struct Group {
 /// (Resp)`) also carries its request/response type names (its `@doc` fills
 /// `summary`); both are empty for the legacy inline form (`verb /path handler
 /// "summary"`).
+///
+/// `stream` marks a route whose reply never ends in one body — `returns (stream
+/// T)` — so the reply type is one event of the sequence rather than the whole
+/// answer. Only a `get` route may stream: the server-sent-event transport is a GET
+/// with a body that stays open, and there is no other shape a browser reads.
 pub(all) struct Route {
   verb : String
   path : String
@@ -242,6 +247,7 @@ pub(all) struct Route {
   req : String
   resp : String
   group : Group?
+  stream : Bool
 }
 
 ///|
@@ -357,6 +363,19 @@ fn paren_body(s : String) -> String {
     return ""
   }
   @text.trim(s[lp + 1:rp].to_owned())
+}
+
+///|
+/// Split a `returns (…)` body into the type it names and whether that type is one
+/// event of a sequence: `stream Event` is a route whose reply never ends in one
+/// body, `Event` the whole reply.
+fn split_stream(resp : String) -> (String, Bool) {
+  let toks = tokens(resp)
+  if toks.length() >= 1 && toks[0].to_lower() == "stream" {
+    (@text.trim(resp[toks[0].length():].to_owned()), true)
+  } else {
+    (resp, false)
+  }
 }
 
 ///|
@@ -1024,6 +1043,20 @@ fn read(source : String) -> (Spec, Array[(Int32, String)]) {
           }
         }
         let verb = toks[0].to_lower()
+        let (event, stream) = split_stream(resp)
+        if stream {
+          if event == "" {
+            issues.push((no, "`returns (stream)` needs the type of one event"))
+          }
+          if verb != "get" {
+            issues.push(
+              (
+                no,
+                "only a get route streams: " + verb + " " + toks[1] + " cannot",
+              ),
+            )
+          }
+        }
         if handler == "" {
           issues.push(
             (
@@ -1047,8 +1080,9 @@ fn read(source : String) -> (Spec, Array[(Int32, String)]) {
           handler,
           summary,
           req,
-          resp,
+          resp: event,
           group,
+          stream,
         }
         routes.push(route)
         let owner = match active {

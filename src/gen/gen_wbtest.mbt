@@ -333,3 +333,31 @@ test "spec paths become route templates" {
   assert_eq(route_path("/ping"), "/ping")
   assert_eq(route_path("/"), "/")
 }
+
+///|
+test "a streaming route registers on app.stream and answers a Stream" {
+  let spec = @api.parse(
+    (
+      #|type Tick {
+      #|  at: int64
+      #|}
+      #|
+      #|service feed {
+      #|  @handler watch
+      #|  get /watch returns (stream Tick)
+      #|}
+    ),
+  )
+  let code = generate(spec)
+  // the response is written while it is sent, so the route takes a stream handler
+  assert_eq(contains(code, "app.stream(\"/watch\", ctx => watch(ctx))"), true)
+  // and the stub opens a `text/event-stream` rather than answering one body
+  assert_eq(
+    contains(code, "pub fn watch(_ctx : @moonapi.Context) -> @moonapi.Stream"),
+    true,
+  )
+  assert_eq(contains(code, "@moonapi.sse(events => {"), true)
+  assert_eq(contains(code, "events.send(@sse.Event::of("), true)
+  // no plain route is left behind in its place
+  assert_eq(contains(code, "app.get(\"/watch\""), false)
+}

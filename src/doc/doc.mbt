@@ -470,7 +470,16 @@ pub fn openapi_document(
     if params.length() > 0 {
       op["parameters"] = Json(params)
     }
-    let ok : Map[String, Json] = Map([("description", Json("OK"))])
+    // A streaming route answers a `text/event-stream`, one event per frame, so the
+    // document says so rather than calling the reply a JSON body.
+    let media_type = if r.stream {
+      "text/event-stream"
+    } else {
+      "application/json"
+    }
+    let ok : Map[String, Json] = Map([
+      ("description", Json(if r.stream { "One event per frame" } else { "OK" })),
+    ])
     if r.resp != "" {
       let schema : Map[String, Json] = Map([
         ("$ref", Json(ref_prefix(version) + r.resp)),
@@ -480,9 +489,15 @@ pub fn openapi_document(
         _ => {
           let media : Map[String, Json] = Map([("schema", Json(schema))])
           ok["content"] = Json(
-            (Map([("application/json", Json(media))]) : Map[String, Json]),
+            (Map([(media_type, Json(media))]) : Map[String, Json]),
           )
         }
+      }
+    }
+    if r.stream {
+      match version {
+        Swagger20 => op["produces"] = Json([Json("text/event-stream")])
+        _ => ()
       }
     }
     op["responses"] = Json((Map([("200", Json(ok))]) : Map[String, Json]))
