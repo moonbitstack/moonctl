@@ -160,6 +160,36 @@ jobs:
       - name: the plugin spawn path, with real processes
         run: bash scripts/check_plugin_faults.sh "$PWD/_build/native/debug/build/cmd/mctl/mctl.exe"
 
+      # The scaffolds above are generated from the samples mctl ships, which carry
+      # neither a streaming route nor a `bytes`/`map` field. Those two paths write
+      # code the unit tests can only compare as text, so they are compiled here
+      # against the same published releases a user gets.
+      - name: a spec with a stream, bytes and a map compiles
+        run: |
+          mctl="$PWD/_build/native/debug/build/cmd/mctl/mctl.exe"
+          work="$(mktemp -d)"
+          cd "$work"
+          cat > feed.api <<'API'
+          type Tick {
+            id:   int64
+            data: bytes
+            meta: map[string]string
+          }
+
+          service feed {
+            @handler watch
+            get /watch returns (stream Tick)
+
+            @handler one
+            get /ticks/:id returns (Tick)
+          }
+          API
+          "$mctl" gen api feed.api --dir api
+          "$mctl" gen gql feed.api --dir gql
+          for dir in api gql; do
+            (cd "$dir" && moon check --target all --deny-warn)
+          done
+
       - name: mctl serve --reload, with real processes
         run: bash scripts/check_serve_reload.sh
 
