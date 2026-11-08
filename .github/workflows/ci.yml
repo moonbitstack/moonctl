@@ -94,12 +94,6 @@ jobs:
         if: runner.os == 'Linux'
         run: python3 scripts/check_snippets.py
 
-      # A reader pastes the blocks of the README and the skills into a project, so
-      # they have to compile as written, against this commit's source.
-      - name: the code in the docs compiles
-        if: runner.os == 'Linux'
-        run: python3 scripts/check_snippets.py
-
   scaffold:
     # A pin that no longer compiles, or a service that no longer answers, fails
     # here rather than in the first project someone scaffolds.
