@@ -278,6 +278,81 @@ get /ping</pre>
         handler writes the value as JSON.
       </p>
 
+      <h3 id="streaming">A route whose reply never ends</h3>
+      <p>
+        A reply that keeps arriving is not a bigger body, so the spec says it:
+        <code>returns (stream T)</code> marks the route, and <code>T</code> is one event of
+        the sequence rather than the whole answer.
+      </p>
+      <div class="code">
+        <div class="code-head"><span class="file">feed.api</span><button class="copy" type="button" data-copy>Copy</button></div>
+<pre>type Tick {
+  at: int64
+}
+
+service feed {
+  @handler watch
+  get /watch returns (stream Tick)
+}</pre>
+      </div>
+      <p>
+        Only a <code>get</code> may stream: a <code>text/event-stream</code> is a GET with a
+        body that stays open. A <code>post</code> that claims one is refused while the file is
+        read, rather than turned into a route that answers one body — and
+        <code>returns (stream)</code> with no event type is refused too.
+      </p>
+      <div class="code">
+        <div class="code-head"><span class="file">internal/handler/watchhandler.mbt</span><button class="copy" type="button" data-copy>Copy</button></div>
+<pre>pub fn watchhandler(
+  svc : @svc.ServiceContext,
+  ctx : @moonapi.Context,
+) -&gt; @moonapi.Stream {
+  @moonapi.sse(events =&gt; {
+    @logic.watchlogic(svc, ctx, event =&gt; {
+      events.send(@sse.Event::of(ToJson::to_json(event).stringify()))
+    })
+  })
+}</pre>
+      </div>
+      <p>
+        The logic is handed <code>send</code> rather than a return value, so an event leaves
+        when it happens and the response closes when the logic returns. The GraphQL generator
+        makes the same route a <code>#gql.subscription</code> root field of type
+        <code>Array[Tick]</code>, and the OpenAPI document answers
+        <code>text/event-stream</code>.
+      </p>
+
+      <h2 id="naming">The names the schema implies <a class="anchor" href="#naming">#</a></h2>
+      <p>
+        A table and a column are not file names. The <code>info</code> block says how the
+        schema spells them, once, instead of every generated file deciding:
+      </p>
+      <div class="code">
+        <div class="code-head"><span class="file">info</span><button class="copy" type="button" data-copy>Copy</button></div>
+<pre>info (
+  title:        "blog"
+  tableNaming:  plural_snake
+  columnNaming: camel
+  tablePlural:  true
+)
+
+type BlogPost {
+  id:         int64
+  created_at: int64
+}</pre>
+      </div>
+      <p>
+        <code>tableNaming</code> and <code>columnNaming</code> take <code>snake</code> (the
+        default), <code>camel</code>, <code>pascal</code>, <code>kebab</code>,
+        <code>screaming</code> or <code>plural_snake</code>; <code>tablePlural</code> is
+        <code>true</code> or <code>false</code>. The MoonBit field keeps the language's
+        spelling and the column carries the schema's, so the example stores
+        <code>created_at</code> as <code>createdAt</code> in the <code>blog_posts</code>
+        table. A spec that names no policy keeps each generator's own spelling, and a value
+        that is not a casing is reported by <code>mctl api validate</code> as
+        <code>warning [naming]</code>.
+      </p>
+
       <h2 id="services">More than one service <a class="anchor" href="#services">#</a></h2>
       <p>
         A file may hold several <code>service</code> blocks. Each is a service of its own, and

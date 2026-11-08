@@ -203,6 +203,70 @@ pub fn orders_delete_by_id(sess : @moonorm.Session, id : Int64) -&gt; @moondb.Ex
         here, <code>find_by_code</code> for a table keyed on <code>code</code>.
       </p>
 
+      <h3 id="relations">Indexes and relations</h3>
+      <p>
+        The constraints a schema states are read too: <code>CREATE [UNIQUE] INDEX</code>, a
+        <code>UNIQUE</code>/<code>KEY</code> table constraint, a column's own
+        <code>UNIQUE</code>, and a <code>FOREIGN KEY … REFERENCES …</code> with its
+        <code>ON DELETE</code>/<code>ON UPDATE</code>.
+      </p>
+      <div class="code">
+        <div class="code-head"><span class="file">schema.sql</span><button class="copy" type="button" data-copy>Copy</button></div>
+<pre>CREATE TABLE teams (
+  id   INTEGER PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE heroes (
+  id      INTEGER PRIMARY KEY,
+  team_id INTEGER NOT NULL REFERENCES teams(id) ON DELETE CASCADE,
+  code    TEXT
+);
+
+CREATE UNIQUE INDEX uq_hero_code ON heroes (code);</pre>
+      </div>
+      <div class="code">
+        <div class="code-head"><span class="file">internal/model/models.mbt</span><button class="copy" type="button" data-copy>Copy</button></div>
+<pre>///|
+/// `teams` table.
+#orm.table(name="teams")
+#orm.has_many(name="heroes", target="Heroes", foreign_key="team_id")
+pub(all) struct Teams {
+  #orm.column(primary_key=true, kind="int")
+  id : Int32
+  #orm.column(unique=true)
+  name : String
+}
+
+///|
+/// `heroes` table.
+#orm.table(name="heroes")
+#orm.index(column="code", name="uq_hero_code", unique=true)
+#orm.belongs_to(name="team", target="Teams", foreign_key="team_id")
+pub(all) struct Heroes {
+  #orm.column(primary_key=true, kind="int")
+  id : Int32
+  #orm.column(kind="int", references="teams.id", on_delete="CASCADE")
+  team_id : Int32
+  code : String?
+}</pre>
+      </div>
+      <p>
+        Both sides of the key become functions: <code>Teams::heroes()</code> and
+        <code>Heroes::team()</code>, loaded with <code>Session::load</code> and
+        <code>load_one</code>. The <code>belongs_to</code> name comes from the key column, so
+        <code>team_id</code> is <code>team</code> and <code>author_id</code> is
+        <code>author</code>; a second key onto the same table gets a <code>_list</code> suffix
+        instead of claiming the same name. A key onto a table the file does not declare stays
+        a column constraint, since an annotation can only point at a type beside it.
+      </p>
+      <p>
+        The flat generator (<code>--flat</code>) writes the same facts as data instead:
+        <code>@moonorm.index</code> on the model, so <code>create_table</code> creates the
+        indexes, and <code>references=(table, column)</code> on the column, so the DDL it
+        emits has the constraint.
+      </p>
+
       <h2 id="live">A live database <a class="anchor" href="#live"></a></h2>
       <p>
         A schema is often in the server, not in a file. <code>model mysql datasource</code> and

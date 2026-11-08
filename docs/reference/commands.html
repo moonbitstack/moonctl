@@ -131,6 +131,8 @@
             <tr><td><code>mctl env</code></td><td>print the configuration in force and where each value came from</td></tr>
             <tr><td><code>mctl config list|get|set|path|migrate</code></td><td>read and write the config file</td></tr>
             <tr><td><code>mctl template list|show [name]</code></td><td>the bundled template catalogue</td></tr>
+            <tr><td><code>mctl template init &lt;dir&gt;</code></td><td>a starter template library to edit</td></tr>
+            <tr><td><code>mctl template export &lt;kind&gt; [dir]</code></td><td>a starting spec of that kind: <code>api</code>, <code>gql</code>, <code>mcp</code>, <code>model</code>, <code>rpc</code>, <code>gateway</code>, <code>crud</code></td></tr>
             <tr><td><code>mctl completion &lt;shell&gt;</code></td><td>a completion script for bash, zsh, fish or powershell</td></tr>
             <tr><td><code>mctl upgrade [version]</code></td><td>move the <code>moonbitstack</code> pins in <code>moon.mod</code> to a release</td></tr>
             <tr><td><code>mctl bug [title]</code></td><td>a bug report, pre-filled with the environment</td></tr>
@@ -198,6 +200,21 @@
 <pre><span class="p">$</span> mctl template init my-templates
 <span class="p">$</span> mctl gen api greet.api --home my-templates --dir out
 <span class="o">mctl: wrote 4 file(s) from greet.api through the template library at my-templates</span></pre>
+      </div>
+      <p>
+        The other half is <code>mctl template export &lt;kind&gt;</code>: instead of a library to
+        edit, it writes a spec to type over — one per generator, named for its kind so two of
+        them fit in one directory, and left alone rather than replaced when the file is
+        already there.
+      </p>
+      <div class="term">
+        <div class="term-bar"><span class="dots"><i></i><i></i><i></i></span>terminal</div>
+<pre><span class="p">$</span> mctl template export api
+<span class="o">mctl: wrote api-sample.api</span>
+<span class="o">mctl: wrote the api starting spec; next: `mctl gen api api-sample.api`</span>
+<span class="p">$</span> mctl template export gateway specs/
+<span class="o">mctl: wrote specs/gateway-sample.proto</span>
+<span class="o">mctl: wrote specs/gateway-sample.routes</span></pre>
       </div>
 
       <h2 id="library">The library behind it <a class="anchor" href="#library"></a></h2>

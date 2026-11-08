@@ -31,6 +31,17 @@ keywords = [
   "moonapi",
   "moonzero",
   "moonbit",
+  "sse",
+  "event-stream",
+  "subscription",
+  "index",
+  "foreign-key",
+  "migration",
+  "naming",
+  "scaffold",
+  "moonorm",
+  "moongql",
+  "moonmcp",
 ]
 
 description = "Project and code generator for MoonBit services."

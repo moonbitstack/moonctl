@@ -277,9 +277,7 @@ test "the options are read from Go's spelling, and an unknown one is refused" {
   assert_eq(parse_option("missingkey=default").missing_key is Literal, true)
   assert_eq(parse_option("").trim is Markers, true)
   let refused = (text : String) => {
-    let outcome = Ok(parse_option(text)) catch {
-      e => Err(Show::to_string(e))
-    }
+    let outcome = Ok(parse_option(text)) catch { e => Err(Show::to_string(e)) }
     match outcome {
       Ok(_) => ""
       Err(message) => message

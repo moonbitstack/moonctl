@@ -180,7 +180,8 @@ async fn cmd_template(args : Array[String]) -> Unit {
                 write_gen_file({ path, content: entry.1, })
                 written.push(path)
               } catch {
-                e => println("mctl: cannot write " + path + ": " + e.to_string())
+                e =>
+                  println("mctl: cannot write " + path + ": " + e.to_string())
               }
             }
           }

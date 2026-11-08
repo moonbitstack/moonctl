@@ -307,9 +307,7 @@ test "the api and gql samples are specs the parser reads" {
   // and the model sample asks for plural tables
   let model = spec("model")
   assert_eq(
-    model.info.any(kv => {
-      kv.0 == "tableNaming" && kv.1 == "plural_snake"
-    }),
+    model.info.any(kv => kv.0 == "tableNaming" && kv.1 == "plural_snake"),
     true,
   )
 }
