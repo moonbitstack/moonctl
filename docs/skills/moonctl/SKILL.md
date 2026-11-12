@@ -65,6 +65,30 @@ so a consumer imports both. `CREATE INDEX` becomes the model's index list, a
 `generate_orm_tree_from_ddl`) spells the same schema as `#orm.index`,
 `#orm.has_many` and `#orm.belongs_to` instead.
 
+## A proto becomes an HTTP gateway
+
+`generate_gateway` writes a route table and a `Caller` port: bind the port to a
+channel and the gateway answers HTTP. A route map (`<stem>.routes`, one
+`VERB /path /package.Service/Method` per line) may name path parameters:
+
+```moonbit
+let proto = @moonctl.parse_proto(
+  "syntax = \"proto3\";\npackage shop;\n\nmessage GetReq { string id = 1; }\nmessage User { string id = 1; }\n\nservice UserService {\n  rpc Get(GetReq) returns (User);\n}\n",
+)
+let (routes, skipped) = @moonctl.parse_route_map(
+  proto,
+  "get /v1/users/:id /shop.UserService/Get\n",
+)
+assert_eq(skipped.length(), 0)
+assert_eq(@moonctl.route_shape(routes[0]), "GET /v1/users/{}")
+assert_eq(routes[0].path, "/v1/users/:id")
+```
+
+A `:name` segment binds the value it took into the request document under that
+name, a literal segment outranks a parameter, and `route_clashes` reports two routes
+of one shape — a pair the generator refuses to write, since one of them could never
+be reached.
+
 ## Your own template
 
 The engine is Go's `text/template` in MoonBit: `{{.Field}}`, `{{if}}`, `{{range}}`,
@@ -104,6 +128,8 @@ assert_eq(rendered is Err(_), true)
   packages — so the `gql` schema declares the field as the text or the object the
   scalar carries, and generates `base64_of` / `bytes_of_base64` beside it. A map
   keyed by something other than a string is left out, and reported.
+- **The generated gateway reads bodies with `moonbitstack/moonjson`.** Add it to the
+  project the file lands in; the file says so at the top.
 - **Generated projects pin their libraries.** `mctl` writes the versions it was
   built with; a project that wants a newer release edits its own `moon.mod`.
 - **The binary needs `moon` on `PATH`** to format what it writes. Without it,

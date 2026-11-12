@@ -106,6 +106,7 @@ message User { string id = 1; }
 
 service UserService {
   rpc Create(CreateReq) returns (User);
+  rpc Get(CreateReq) returns (User);
   rpc List(CreateReq) returns (User);
   rpc Watch(CreateReq) returns (stream User);
 }</pre>
@@ -120,8 +121,9 @@ service UserService {
         <div class="code-head"><span class="file">shop_gateway.mbt</span><button class="copy" type="button" data-copy>Copy</button></div>
 <pre>pub fn routes() -&gt; Array[GatewayRoute] {
   [
-    { verb: "POST", path: "/UserService/Create", rpc: "/shop.UserService/Create" },
-    { verb: "POST", path: "/UserService/List", rpc: "/shop.UserService/List" },
+    { verb: "POST", path: "/UserService/Create", rpc: "/shop.UserService/Create", },
+    { verb: "POST", path: "/UserService/Get", rpc: "/shop.UserService/Get", },
+    { verb: "POST", path: "/UserService/List", rpc: "/shop.UserService/List", },
   ]
 }</pre>
       </div>
@@ -133,14 +135,16 @@ service UserService {
         <div class="code-head"><span class="file">shop.routes</span><button class="copy" type="button" data-copy>Copy</button></div>
 <pre># what the browser sees            what the RPC is called
 post /v1/users                    /shop.UserService/Create
+get  /v1/users/:id                /shop.UserService/Get
 get  /v1/users                    /shop.UserService/List</pre>
       </div>
       <div class="code">
         <div class="code-head"><span class="file">shop_gateway.mbt</span><button class="copy" type="button" data-copy>Copy</button></div>
 <pre>pub fn routes() -&gt; Array[GatewayRoute] {
   [
-    { verb: "POST", path: "/v1/users", rpc: "/shop.UserService/Create" },
-    { verb: "GET", path: "/v1/users", rpc: "/shop.UserService/List" },
+    { verb: "POST", path: "/v1/users", rpc: "/shop.UserService/Create", },
+    { verb: "GET", path: "/v1/users/:id", rpc: "/shop.UserService/Get", },
+    { verb: "GET", path: "/v1/users", rpc: "/shop.UserService/List", },
   ]
 }</pre>
       </div>
@@ -155,7 +159,7 @@ get  /v1/users                    /shop.UserService/List</pre>
           <thead><tr><th>Status</th><th>When</th><th>Body</th></tr></thead>
           <tbody>
             <tr><td><code>200</code></td><td>the upstream answered</td><td>the RPC's reply, as it came back</td></tr>
-            <tr><td><code>400</code></td><td>the request body is not JSON</td><td><code>{"error": "body is not JSON"}</code></td></tr>
+            <tr><td><code>400</code></td><td>the request body is not JSON, or a path parameter has no object to land in</td><td><code>{"error": "body is not JSON"}</code></td></tr>
             <tr><td><code>404</code></td><td>no route answers that verb and path</td><td><code>{"error": "no route for ..."}</code></td></tr>
             <tr><td><code>502</code></td><td>the upstream call failed</td><td><code>{"error": "upstream 500: ..."}</code></td></tr>
           </tbody>
@@ -169,14 +173,22 @@ get  /v1/users                    /shop.UserService/List</pre>
   path : String,
   body : Json,
 ) -&gt; GatewayReply {
-  let target = method_of(verb, path)
-  if target == "" {
-    return { status: 404, body: error_body("no route for " + verb + " " + path) }
+  let found = match match_route(verb, path) {
+    Some(found) =&gt; found
+    None =&gt;
+      return {
+        status: 404,
+        body: error_body("no route for " + verb + " " + path),
+      }
   }
-  let reply = (self.caller.call)(target, body) catch {
-    e =&gt; return { status: 502, body: error_body(describe(e)) }
+  let request = match with_params(body, found.params) {
+    Ok(request) =&gt; request
+    Err(why) =&gt; return { status: 400, body: error_body(why), }
   }
-  { status: 200, body: reply }
+  let reply = (self.caller.call)(found.rpc, request) catch {
+    e =&gt; return { status: 502, body: error_body(describe(e)), }
+  }
+  { status: 200, body: reply, }
 }</pre>
       </div>
 
@@ -197,18 +209,79 @@ get  /v1/users                    /shop.UserService/List</pre>
         one and answers <code>400</code> when it will not parse.
       </p>
 
-      <h2 id="limits">What it does not do yet <a class="anchor" href="#limits"></a></h2>
-      <div class="callout warn">
-        <span class="t">Exact paths only</span>
-        <p>
-          Routes are matched by verb and path exactly. A route written
-          <code>get /v1/users/:id</code> is emitted into the table, but a request for
-          <code>/v1/users/7</code> will not match it, and the path parameter is not passed on to
-          the RPC. Until that is done, keep gateway routes literal.
-        </p>
-      </div>
+      <h2 id="params">Path parameters <a class="anchor" href="#params"></a></h2>
       <p>
-        <code>mctl gateway</code> also does not transcode protobuf to JSON: the body is forwarded
+        A segment written <code>:name</code> stands for one segment of the request path, and the
+        value it took is bound into the request document under that name — the same reading a gRPC
+        method gives its fields. <code>get /v1/users/:id</code> answers <code>/v1/users/7</code>
+        with <code>{"id": "7"}</code> added to the body:
+      </p>
+      <div class="code">
+        <div class="code-head"><span class="file">shop_gateway.mbt</span><button class="copy" type="button" data-copy>Copy</button></div>
+<pre>fn match_route(verb : String, path : String) -&gt; GatewayMatch? {
+  let parts = segments(path)
+  let mut best : GatewayMatch? = None
+  let mut best_weight = -1
+  for route in routes() {
+    if route.verb != verb {
+      continue
+    }
+    let pattern = segments(route.path)
+    if pattern.length() != parts.length() {
+      continue
+    }
+    let params : Map[String, String] = Map([])
+    let mut weight = 0
+    let mut matched = true
+    for i = 0; i &lt; pattern.length(); i = i + 1 {
+      let segment = pattern[i]
+      if segment.length() &gt; 1 &amp;&amp; segment[0] == ':' {
+        params[segment[1:].to_owned()] = parts[i]
+      } else if segment == parts[i] {
+        weight = weight + 1
+      } else {
+        matched = false
+        break
+      }
+    }
+    if matched &amp;&amp; weight &gt; best_weight {
+      best_weight = weight
+      best = Some({ rpc: route.rpc, params, })
+    }
+  }
+  best
+}</pre>
+      </div>
+      <ul>
+        <li>
+          A literal segment outranks a parameter, so <code>get /v1/users/me</code> still answers
+          <code>/v1/users/me</code> when <code>get /v1/users/:id</code> is declared first.
+        </li>
+        <li>
+          Two routes of one shape — the same verb with every parameter taken out — answer the same
+          requests, so the generator refuses the table and writes nothing, rather than a table with
+          a dead line. <code>route_clashes</code> reports the pair.
+        </li>
+        <li>
+          A parameter wins over the same member in the body: the path is where the client said
+          which resource it means. A body that is not an object has nowhere to put one, and answers
+          <code>400</code>; a blank body — a <code>GET</code> with parameters sends none — is the
+          empty document.
+        </li>
+        <li>
+          Empty segments are dropped, so <code>/v1/users/7/</code> and <code>/v1//users/7</code> are
+          the same request as <code>/v1/users/7</code>.
+        </li>
+      </ul>
+      <p>
+        A value arrives as a string, spelled the way the path spelled it: the gateway has no field
+        types to convert with, and percent-decoding is the server's job, since the path it hands
+        over is the path it read.
+      </p>
+
+      <h2 id="limits">What it does not do yet <a class="anchor" href="#limits"></a></h2>
+      <p>
+        <code>mctl gateway</code> does not transcode protobuf to JSON: the body is forwarded
         as the JSON document it arrived as, so the method behind <code>call</code> is expected to
         take a JSON request. Bind it to a client that does the conversion, or to a service whose
         transport is JSON.
@@ -232,6 +305,7 @@ get  /v1/users                    /shop.UserService/List</pre>
     <a href="#routes">Routes</a>
     <a href="#answers">The answers</a>
     <a href="#port">The Caller port</a>
+    <a href="#params">Path parameters</a>
     <a href="#limits">What it does not do yet</a>
   </nav>
 </div>

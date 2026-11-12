@@ -710,13 +710,23 @@ from a sibling mapping file when there is one:
 
 ```
 # greet.routes
-post /v1/users   /shop.UserService/Create
-get  /v1/stock   /shop.StockService/Count
+post /v1/users     /shop.UserService/Create
+get  /v1/users/:id /shop.UserService/Get
+get  /v1/stock     /shop.StockService/Count
 ```
 
-A line naming a method the `.proto` does not declare is reported and skipped, and a
-streaming RPC is left out of the table with a comment saying which one, because an
-HTTP response is one body with one end.
+A segment written `:name` is a path parameter: `get /v1/users/:id` answers
+`/v1/users/7` and binds `{"id": "7"}` into the request document, a parameter winning
+over the same member in the body. A literal segment outranks a parameter, so
+`/v1/users/me` stays reachable next to `/v1/users/:id`, and two routes of one shape
+are refused at generation time rather than written as a table with a dead line. A
+blank body — a `GET` with parameters carries none — is the empty document, and a
+parameter on a body that is not an object answers `400`.
+
+A line naming a method the `.proto` does not declare is reported and skipped, as is
+one whose path cannot be matched, and a streaming RPC is left out of the table with
+a comment saying which one, because an HTTP response is one body with one end. The
+generated file reads bodies with `moonbitstack/moonjson` and needs nothing else.
 
 ## Cache-aside CRUD: `model cache`
 
@@ -847,13 +857,9 @@ moonorm's and moongql's own generators, the four clients were each compiled once
 with their own compiler, and every generator's output is checked under
 `moon check --target all --deny-warn`.
 
-Two limits are worth knowing before reaching for it:
-
-- the gateway matches a route by verb and path exactly, so a `:param` pattern is
-  emitted but never matched;
-- `--style` names the files and functions mctl invents and leaves the spec's own
-  types alone, while the SQL names come from the spec's `info` block — see
-  [Naming style](#naming-style).
+One limit is worth knowing before reaching for it: `--style` names the files and
+functions mctl invents and leaves the spec's own types alone, while the SQL names
+come from the spec's `info` block — see [Naming style](#naming-style).
 
 ## Documentation
 
