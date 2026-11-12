@@ -1,0 +1,15 @@
+// The playground's engine: this library built to JavaScript, so the page on the
+// site runs the generator itself rather than a copy of its logic.
+
+import {
+  "moonbitstack/moonctl",
+  "moonbitstack/moonctl/api",
+  "moonbitstack/moonctl/template",
+  "moonbitstack/moonjson/json",
+}
+
+supported_targets = "js"
+
+options(
+  link: { "js": { "exports": [ "compile" ], "format": "esm" } },
+)

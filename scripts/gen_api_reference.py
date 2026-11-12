@@ -552,6 +552,7 @@ PAGE = """<!doctype html>
       <a href="../getting-started/installation.html">Docs</a>
       <a href="../guides/api-spec.html">Guides</a>
       <a href="../reference/commands.html" aria-current="true">Reference</a>
+      <a href="../playground.html">Playground</a>
       <a href="../getting-started/quick-start.html">Quick start</a>
     </nav>
     <div class="nav-right">

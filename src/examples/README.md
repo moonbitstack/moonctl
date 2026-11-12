@@ -32,6 +32,10 @@ moon run examples/00-greet
 | 17 | [`cache`](17-cache/) | Cache-aside CRUD: read-through `find`, invalidating `write`, `evict`, over a generic cache port | `generate_cached`, `cache_file_name` |
 | 18 | [`events`](18-events/) | One streaming route, four answers: an SSE handler, a GraphQL subscription, `text/event-stream` in the document, and a model whose table and columns are the spec's own | `Route::stream`, `generate`, `generate_gql`, `generate_doc`, `generate_model` |
 
+`browser/` is not one of them: it is the playground's engine, the library built to
+JavaScript for the site, so the page on the website runs the generator itself. It
+is compiled by the docs workflow, and its build output is not committed.
+
 Each `main.mbt` calls the real API and prints the actual generated artefact — a
 moonapi scaffold, an OpenAPI document, moonorm SQL/CRUD, a moonrpc gRPC stub,
 plugin JSON, a rendered template — so running it proves the feature works. The

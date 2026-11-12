@@ -5,6 +5,7 @@
 **A spec-driven code generator for MoonBit — `← goctl`.**
 
 [**Documentation**](https://moonbitstack.github.io/moonctl/) ·
+[**Playground**](https://moonbitstack.github.io/moonctl/playground.html) ·
 [**Quick start**](https://moonbitstack.github.io/moonctl/getting-started/quick-start.html) ·
 [**Commands**](https://moonbitstack.github.io/moonctl/reference/commands.html) ·
 [**Library API**](https://moonbitstack.github.io/moonctl/reference/api.html) ·

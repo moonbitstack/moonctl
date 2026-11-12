@@ -1733,3 +1733,204 @@ td .muted {
 @supports not selector(::-webkit-scrollbar) {
   html:not(.scrolling) { scrollbar-color: transparent transparent; }
 }
+
+/* The playground: the spec on the left, what the generator makes of it on the
+   right. Two columns that each keep their own width, so a long line scrolls
+   inside its pane instead of widening the page. */
+
+.play {
+  --bad: #ff9aa0;
+  padding: 34px 0 60px;
+}
+
+:root[data-theme="light"] .play {
+  --bad: #b4232b;
+}
+
+.play h1 {
+  font-size: clamp(1.9rem, 3.4vw, 2.6rem);
+  letter-spacing: -0.02em;
+  margin: 0 0 10px;
+}
+
+.play .lede {
+  max-width: 62ch;
+  color: var(--ink-2);
+  margin: 0 0 6px;
+}
+
+.workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--code-bg);
+  overflow: hidden;
+}
+
+.pane-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: var(--code-head);
+  border-bottom: 1px solid var(--line-2);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.pane-head .label {
+  color: var(--ink-2);
+  letter-spacing: 0.04em;
+}
+
+.pane-head .grow {
+  margin-left: auto;
+}
+
+.chip {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.7rem;
+  padding: 3px 9px;
+  cursor: pointer;
+}
+
+.chip:hover {
+  color: var(--ink);
+  border-color: var(--accent-line);
+}
+
+.chip[aria-selected="true"],
+.chip[aria-pressed="true"] {
+  color: var(--ink);
+  border-color: var(--accent-line);
+  background: var(--accent-wash);
+}
+
+.pane textarea {
+  flex: 1;
+  min-height: 380px;
+  width: 100%;
+  resize: none;
+  white-space: pre;
+  overflow: auto;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink-2);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  line-height: 1.72;
+  padding: 14px 16px;
+  tab-size: 2;
+}
+
+.pane pre.out {
+  flex: 1;
+  min-height: 380px;
+  max-height: 62vh;
+  font-size: 0.78rem;
+}
+
+.pane .findings {
+  flex: 1;
+  min-height: 380px;
+  max-height: 62vh;
+  overflow: auto;
+  margin: 0;
+  padding: 12px 14px;
+  list-style: none;
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  line-height: 1.6;
+}
+
+.findings li {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line-2);
+  overflow-wrap: anywhere;
+}
+
+.findings li:last-child {
+  border-bottom: 0;
+}
+
+.findings .sev {
+  display: inline-block;
+  min-width: 4.6em;
+  color: var(--muted);
+}
+
+.findings li.error .sev {
+  color: var(--bad);
+}
+
+.findings li.warning .sev {
+  color: var(--warn);
+}
+
+.findings .rule {
+  color: var(--accent-strong);
+}
+
+.findings .empty {
+  color: var(--muted);
+}
+
+.pane-foot {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 12px;
+  border-top: 1px solid var(--line-2);
+  background: var(--code-head);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.pane-foot .said {
+  color: var(--ink-2);
+}
+
+.pane-foot .bad {
+  color: var(--bad);
+}
+
+.note {
+  margin: 22px 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--accent-line);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 10px 10px 0;
+  background: var(--accent-wash);
+  color: var(--ink-2);
+  font-size: 0.86rem;
+}
+
+@media (width <= 860px) {
+  .workbench {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pane textarea,
+  .pane pre.out,
+  .pane .findings {
+    min-height: 300px;
+    max-height: none;
+  }
+}
