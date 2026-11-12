@@ -11,7 +11,7 @@
 ///     moon run src/examples/08-plugin
 #coverage.skip
 fn run_plugin(request : String) -> String raise {
-  let req = @moonctl.plugin_from_json(@json.parse(request))
+  let req = @moonctl.plugin_from_json(@json.loads(request))
   let spec = req.api
   let mut md = "# " + spec.service + " routes (style " + req.style + ")\n\n"
   for r in spec.routes {
@@ -24,7 +24,7 @@ fn run_plugin(request : String) -> String raise {
       content: spec.routes.length().to_string() + "\n",
     },
   ]
-  @moonctl.gen_files_to_json(files).stringify(indent=2)
+  @json.dumps(@moonctl.gen_files_to_json(files), indent=2)
 }
 
 ///|
@@ -47,7 +47,7 @@ fn main raise {
 
   // The spec alone cannot tell a plugin where to write or how to spell what it
   // writes, so goctl's request carries the file, the style and the directory too.
-  let req = @moonctl.plugin_from_json(@json.parse(request))
+  let req = @moonctl.plugin_from_json(@json.loads(request))
   println(
     "\nApiFilePath=\{req.api_file_path}  Style=\{req.style}  Dir=\{req.dir}",
   )
@@ -56,7 +56,7 @@ fn main raise {
     println("\n==== plugin stdout: gen_files_to_json(files) ====\n")
     println(reply)
     println("\n==== parse_gen_files(reply) -> files mctl writes ====\n")
-    for f in @moonctl.parse_gen_files(@json.parse(reply)) {
+    for f in @moonctl.parse_gen_files(@json.loads(reply)) {
       println("---- " + f.path + " ----")
       println(f.content)
     }

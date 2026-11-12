@@ -7,7 +7,7 @@
 // the command surface is testable and the binary owns the IO.
 import {
   "moonbitstack/moonctl/internal/text",
-  "moonbitlang/core/json",
+  "moonbitstack/moonjson/json",
 }
 
 import {

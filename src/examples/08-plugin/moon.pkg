@@ -1,6 +1,6 @@
 import {
   "moonbitstack/moonctl",
-  "moonbitlang/core/json",
+  "moonbitstack/moonjson/json",
 }
 
 pkgtype(kind: "executable")

@@ -6,7 +6,9 @@
 ///|
 async fn main {
   try {
-    let req = @moonctl.plugin_from_json(@stdio.stdin.read_all().json())
+    let req = @moonctl.plugin_from_json(
+      @json.loads(@stdio.stdin.read_all().text()),
+    )
     let spec = req.api
     let mut md = "# " +
       spec.service +
@@ -27,7 +29,7 @@ async fn main {
         content: spec.routes.length().to_string() + "\n",
       },
     ]
-    @stdio.stdout.write(@moonctl.gen_files_to_json(files).stringify())
+    @stdio.stdout.write(@json.dumps(@moonctl.gen_files_to_json(files)))
   } catch {
     e => @stdio.stderr.write("demo-plugin: " + e.to_string())
   }

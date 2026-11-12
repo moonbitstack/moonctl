@@ -52,7 +52,7 @@ pub fn parse_serve(argv : ArrayView[String]) -> Serve raise {
       "--reload-dir" => dirs.push(value("--reload-dir"))
       "--reload-delay" => {
         let seconds = value("--reload-delay")
-        let parsed = @json.parse(seconds) catch {
+        let parsed = @json.loads(seconds) catch {
           _ => fail("--reload-delay takes seconds, not \{seconds}")
         }
         guard parsed is Number(n, ..) && n > 0.0 else {
@@ -104,7 +104,7 @@ pub fn is_skipped(dir : String) -> Bool {
 ///|
 /// The executable a `moon run --build-only` built, from what it prints.
 pub fn built_binary(output : String) -> String? {
-  let json = @json.parse(output) catch { _ => return None }
+  let json = @json.loads(output) catch { _ => return None }
   guard json is Object(fields) else { return None }
   guard fields.get("artifacts_path") is Some(Array(paths)) else { return None }
   match paths {
