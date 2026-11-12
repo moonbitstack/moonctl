@@ -147,6 +147,13 @@ jobs:
       - name: generated code is moon fmt-clean
         run: bash scripts/check_scaffold_fmt.sh "$PWD/_build/native/debug/build/cmd/mctl/mctl.exe"
 
+      # The gateway is generated into a project of its own, not scaffolded by a
+      # `new` command, so the step above never sees it. Its matcher and its
+      # parameter binding only exist as code, so this compiles the file and drives
+      # it through `Caller` instead of comparing text.
+      - name: the generated gateway routes and binds
+        run: bash scripts/check_gateway.sh "$PWD/_build/native/debug/build/cmd/mctl/mctl.exe"
+
       # The plugin protocol's decisions are unit-tested; what reaches the plugin —
       # its argv, the request on its stdin, the exit code that decides whether the
       # reply is read, and the temporary file it travels through — is not, and
