@@ -111,9 +111,13 @@ pub using @proto {
   generate_gateway,
   generate_grpc,
   has_method,
+  is_param,
+  param_name,
   parse_proto,
   parse_route_map,
   proto_reserved_conflicts,
+  route_clashes,
+  route_shape,
 }
 
 ///|

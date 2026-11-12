@@ -18,11 +18,19 @@ pub fn generate_grpc(Proto) -> String
 
 pub fn has_method(Proto, String) -> Bool
 
+pub fn is_param(String) -> Bool
+
+pub fn param_name(String) -> String
+
 pub fn parse_proto(String) -> Proto
 
 pub fn parse_route_map(Proto, String) -> (Array[GatewayRoute], Array[String])
 
 pub fn proto_reserved_conflicts(ProtoMessage) -> Array[String]
+
+pub fn route_clashes(Array[GatewayRoute]) -> Array[String]
+
+pub fn route_shape(GatewayRoute) -> String
 
 // Errors
 

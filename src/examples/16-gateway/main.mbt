@@ -20,6 +20,7 @@ fn main {
       #|
       #|service UserService {
       #|  rpc Create(CreateReq) returns (User);
+      #|  rpc Get(CreateReq) returns (User);
       #|  rpc Watch(CreateReq) returns (stream User);
       #|}
       #|
@@ -39,20 +40,47 @@ fn main {
   let (routes, skipped) = @moonctl.parse_route_map(
     proto,
     (
-      #|# what the browser sees
-      #|post /v1/users   /shop.UserService/Create
-      #|get  /v1/stock   /shop.StockService/Count
-      #|post /v1/ghost   /shop.UserService/Ghost
+      #|# what the browser sees        what the RPC is called
+      #|post /v1/users                /shop.UserService/Create
+      #|get  /v1/users/:id            /shop.UserService/Get
+      #|get  /v1/stock                /shop.StockService/Count
+      #|post /v1/ghost                /shop.UserService/Ghost
+      #|get  /v1/jobs/:               /shop.StockService/Count
     ),
   )
   for r in routes {
-    println("  " + r.verb + " " + r.path + " -> " + r.rpc)
+    // the shape is the route with its parameters taken out: two routes of one shape
+    // answer the same requests, and the generator refuses a table carrying both
+    println(
+      "  " +
+      r.verb +
+      " " +
+      r.path +
+      " -> " +
+      r.rpc +
+      "   (" +
+      @moonctl.route_shape(r) +
+      ")",
+    )
   }
   println(
     "  skipped " +
     skipped.length().to_string() +
-    " line(s) naming no such method",
+    " line(s), unreadable or naming no such method",
   )
+  println("")
+  // a table with two routes of one shape is a spec error, not a gateway
+  let (clashing, _) = @moonctl.parse_route_map(
+    proto,
+    (
+      #|get /v1/users/:id    /shop.UserService/Get
+      #|get /v1/users/:name  /shop.UserService/Get
+    ),
+  )
+  println("---- clashes")
+  for clash in @moonctl.route_clashes(clashing) {
+    println("  " + clash)
+  }
   println("")
   let gw = @moonctl.generate_gateway(proto, routes)
   println("gateway: " + gw.length().to_string() + " bytes")
@@ -60,7 +88,8 @@ fn main {
   println("")
   for
     anchor in [
-      "pub fn routes() -> Array[GatewayRoute] {", "pub fn Gateway::handle(", "pub fn Gateway::handle_text(",
+      "pub fn routes() -> Array[GatewayRoute] {", "fn match_route(verb : String, path : String) -> GatewayMatch? {",
+      "fn with_params(", "pub fn Gateway::handle(",
     ] {
     println("---- " + anchor)
     println(excerpt(gw, anchor, 10))

@@ -66,7 +66,7 @@ test "a mapping file names the verb and the path" {
   let out = generate_gateway(proto, routes)
   assert_eq(
     contains(
-      out, "{ verb: \"POST\", path: \"/v1/users\", rpc: \"/demo.UserService/Create\" }",
+      out, "{ verb: \"POST\", path: \"/v1/users\", rpc: \"/demo.UserService/Create\", }",
     ),
     true,
   )
@@ -117,4 +117,107 @@ test "the file is named after the proto" {
     "shop_service_gateway.mbt",
   )
   assert_eq(gateway_file_name(""), "gateway.mbt")
+}
+
+///|
+test "a segment that starts with a colon is a parameter" {
+  assert_eq(is_param(":id"), true)
+  assert_eq(is_param("id"), false)
+  assert_eq(is_param(":"), false)
+  assert_eq(is_param(""), false)
+  assert_eq(param_name(":userId"), "userId")
+  assert_eq(param_name("userId"), "")
+}
+
+///|
+test "a parameter and a literal are the same shape only when the literal is not one" {
+  let by_param = {
+    verb: "GET",
+    path: "/v1/users/:id",
+    rpc: "/shop.UserService/Get",
+  }
+  let by_other_name = {
+    verb: "GET",
+    path: "/v1/users/:name",
+    rpc: "/shop.UserService/Get",
+  }
+  let by_literal = {
+    verb: "GET",
+    path: "/v1/users/me",
+    rpc: "/shop.UserService/Get",
+  }
+  assert_eq(route_shape(by_param), "GET /v1/users/{}")
+  assert_eq(route_shape(by_param), route_shape(by_other_name))
+  assert_eq(route_shape(by_literal), "GET /v1/users/me")
+  // the verb is part of the shape: one path can answer a GET and a POST
+  let posted = {
+    verb: "POST",
+    path: "/v1/users/:id",
+    rpc: "/shop.UserService/Update",
+  }
+  assert_eq(route_shape(posted) == route_shape(by_param), false)
+  // the root is a shape of its own
+  let root = { verb: "GET", path: "/", rpc: "/shop.UserService/Get", }
+  assert_eq(route_shape(root), "GET /")
+}
+
+///|
+test "two routes of one shape are reported, and only those" {
+  let proto = parse_proto(gateway_proto_src())
+  let map =
+    #|get  /v1/users/:id    /demo.UserService/Create
+    #|get  /v1/users/:name  /demo.UserService/Create
+    #|get  /v1/users/me     /demo.UserService/Create
+    #|post /v1/users/:id    /demo.JobService/Submit
+  let (routes, skipped) = parse_route_map(proto, map)
+  assert_eq(skipped.length(), 0)
+  assert_eq(routes.length(), 4)
+  let clashes = route_clashes(routes)
+  assert_eq(clashes.length(), 1)
+  assert_eq(
+    clashes[0],
+    "`GET /v1/users/:name` answers the same requests as `GET /v1/users/:id`",
+  )
+}
+
+///|
+test "a route map may name parameters, and one that cannot bind is skipped" {
+  let proto = parse_proto(gateway_proto_src())
+  let map =
+    #|get  /v1/users/:id       /demo.UserService/Create
+    #|get  /v1/jobs/:          /demo.JobService/Submit
+    #|get  /v1/jobs/:a/:a      /demo.JobService/Submit
+    #|get  v1/jobs             /demo.JobService/Submit
+    #|get  /v1/jobs/:9lives    /demo.JobService/Submit
+  let (routes, skipped) = parse_route_map(proto, map)
+  assert_eq(routes.length(), 1)
+  assert_eq(routes[0].path, "/v1/users/:id")
+  assert_eq(skipped.length(), 4)
+}
+
+///|
+test "the generated gateway carries the matcher and binds a parameter" {
+  let proto = parse_proto(gateway_proto_src())
+  let map =
+    #|get /v1/users/:id /demo.UserService/Create
+  let (routes, _) = parse_route_map(proto, map)
+  let out = generate_gateway(proto, routes)
+  assert_eq(out.contains("pub(all) struct GatewayMatch {"), true)
+  assert_eq(
+    out.contains(
+      "fn match_route(verb : String, path : String) -> GatewayMatch?",
+    ),
+    true,
+  )
+  assert_eq(
+    out.contains("pub fn method_of(verb : String, path : String) -> String {"),
+    true,
+  )
+  assert_eq(out.contains("fn with_params("), true)
+  assert_eq(out.contains("params[segment[1:].to_owned()] = parts[i]"), true)
+  // a literal counts for more than a parameter, so the more specific route wins
+  assert_eq(out.contains("if matched && weight > best_weight"), true)
+  // the body a request arrives with is read by the family's parser, not by hand
+  assert_eq(out.contains("@json.loads(body)"), true)
+  assert_eq(out.contains("a path parameter needs a JSON object body"), true)
 }

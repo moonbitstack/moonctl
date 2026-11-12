@@ -119,6 +119,8 @@ pub fn has_method(@proto.Proto, String) -> Bool
 
 pub fn is_bundled(@cli.Library) -> Bool
 
+pub fn is_param(String) -> Bool
+
 pub fn library(home? : String, remote? : String, branch? : String) -> @cli.Library
 
 pub fn markdown_file_name(String) -> String
@@ -136,6 +138,8 @@ pub fn mongo_file_name(String) -> String
 pub fn naming_problems(Array[(String, String)]) -> Array[String]
 
 pub fn openapi_document(@api.Spec, version? : @doc.DocVersion, title? : String, api_version? : String) -> @json.Json
+
+pub fn param_name(String) -> String
 
 pub fn parse(String) -> @api.Spec raise @api.Refused
 
@@ -182,6 +186,10 @@ pub fn render_template_dir(@api.Spec, Array[@gen.TemplateFile]) -> Array[(String
 pub fn render_template_file(@api.Spec, @gen.TemplateFile) -> (String, String) raise @template.Refused
 
 pub fn resolve_import(String, String) -> String
+
+pub fn route_clashes(Array[@proto.GatewayRoute]) -> Array[String]
+
+pub fn route_shape(@proto.GatewayRoute) -> String
 
 pub fn safe_path(String) -> Bool
 

@@ -6,7 +6,8 @@
 /// `<stem>_gateway.mbt`. Routes come from a sibling `<stem>.routes` mapping file
 /// when there is one (`VERB /path /package.Service/Method` per line), and from the
 /// gRPC paths themselves when there is not — so a gateway can be generated before
-/// the URLs are decided, and rewritten when they are.
+/// the URLs are decided, and rewritten when they are. A segment written `:name`
+/// stands for one segment of the request path and binds under that name.
 async fn gateway(input : String) -> Unit {
   try {
     let proto = @moonctl.parse_proto(@fs.read_file(input).text())
@@ -17,7 +18,17 @@ async fn gateway(input : String) -> Unit {
       (@moonctl.default_routes(proto), [])
     }
     for line in skipped {
-      println("mctl: skipped route (no such method): " + line)
+      println("mctl: skipped route (unreadable, or no such method): " + line)
+    }
+    // Two routes of one shape answer the same requests, so one of them can never be
+    // reached: that is a spec error, and a table written anyway would hide it.
+    let clashes = @moonctl.route_clashes(routes)
+    if clashes.length() > 0 {
+      for clash in clashes {
+        println("mctl: " + clash)
+      }
+      println("mctl: nothing written; one of those routes would be unreachable")
+      return
     }
     if routes.length() == 0 {
       println("mctl: no route to generate for " + input)
