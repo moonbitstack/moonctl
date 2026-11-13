@@ -165,7 +165,7 @@ pub fn plugin_request(
     ("Style", Json(style)),
     ("Dir", Json(dir)),
   ])
-  Json(doc).stringify(indent=2)
+  @json.dumps(Json(doc), indent=2)
 }
 
 ///|

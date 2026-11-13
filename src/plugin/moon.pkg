@@ -3,8 +3,5 @@
 import {
   "moonbitstack/moonctl/internal/text",
   "moonbitstack/moonctl/api",
-}
-
-import {
   "moonbitstack/moonjson/json",
-} for "wbtest"
+}
