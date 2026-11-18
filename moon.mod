@@ -1,6 +1,6 @@
 name = "moonbitstack/moonctl"
 
-version = "0.13.0"
+version = "0.13.1"
 
 readme = "README.md"
 
@@ -52,8 +52,8 @@ description = "Project and code generator for MoonBit services."
 
 import {
   "moonbitlang/async@0.22.5",
-  "moonbitstack/moonjson@0.5.0",
-  "moonbitstack/moonyaml@0.1.7",
+  "moonbitstack/moonjson@0.5.1",
+  "moonbitstack/moonyaml@0.2.1",
   "moonbitstack/moondb@0.3.0",
   "moonbitstack/moonsqlite@0.4.0",
   "moonbitstack/moonpostgres@0.7.0",
