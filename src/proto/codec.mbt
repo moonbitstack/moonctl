@@ -43,7 +43,7 @@ priv enum Wire {
     raw~ : String?,
     read~ : String,
     zero~ : String,
-    nonzero~ : String
+    nonzero~ : String,
   )
   EnumOf(String)
   MessageOf(String)
