@@ -7,7 +7,7 @@ test "a rule that fits in a line is written on one, and one that does not is spl
     content="rule(name: \"orm\", command: \"moonx x\")\n",
   )
   let long = rule_line(
-    "orm", "moonx moonbitstack/moonorm/cmd/orm@0.11.7 -C \"$mod_dir\" \"$input\" -o \"$output\"",
+    "orm", "moonx moonbitstack/moonorm/cmd/orm@0.12.1 -C \"$mod_dir\" \"$input\" -o \"$output\"",
   )
   assert_eq(long.contains("rule(\n  name: \"orm\",\n  command: "), true)
   assert_eq(long.contains(",\n)\n"), true)
